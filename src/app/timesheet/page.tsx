@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Send, Download, Clock, Calendar, BarChart3, X, FolderOpen, FileText, Save } from 'lucide-react'
 import { TimeEntry } from '@/types'
+import ExportModal from '@/components/timesheet/ExportModal'
 
 function TimesheetContent() {
   const {
@@ -29,6 +30,7 @@ function TimesheetContent() {
   const [activeTab, setActiveTab] = useState('overview')
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
 
   const handleEditEntry = (entry: TimeEntry) => {
     if (entry.status === 'approved') {
@@ -58,6 +60,14 @@ function TimesheetContent() {
     setEditingEntry(null)
   }
 
+  const handleExportReport = () => {
+    setShowExportModal(true)
+  }
+
+  const closeExportModal = () => {
+    setShowExportModal(false)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="mx-auto px-5 py-6">
@@ -69,7 +79,12 @@ function TimesheetContent() {
               <p className="mt-2 text-gray-600">Track your work hours and manage your timesheets efficiently</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button variant="outline" size="lg" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="flex items-center gap-2"
+                onClick={handleExportReport}
+              >
                 <Download className="h-4 w-4" />
                 Export Report
               </Button>
@@ -192,6 +207,15 @@ function TimesheetContent() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <ExportModal
+          entries={entries}
+          projects={projects}
+          onClose={closeExportModal}
+        />
       )}
     </div>
   )
