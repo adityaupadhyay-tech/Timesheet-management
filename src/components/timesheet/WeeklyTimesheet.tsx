@@ -210,22 +210,33 @@ export default function WeeklyTimesheet({
                       </div>
                       
                       <div className="flex gap-1 ml-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onEditEntry(entry)}
-                          className="h-8 w-8 p-0 hover:bg-blue-50"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDeleteEntry(entry.id)}
-                          className="h-8 w-8 p-0 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        {entry.status !== 'approved' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onEditEntry(entry)}
+                            className="h-8 w-8 p-0 hover:bg-blue-50"
+                            title="Edit entry"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {entry.status === 'draft' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onDeleteEntry(entry.id)}
+                            className="h-8 w-8 p-0 hover:bg-red-50"
+                            title="Delete entry"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                        {entry.status === 'approved' && (
+                          <span className="text-xs text-green-600 font-medium px-2 py-1 bg-green-50 rounded">
+                            Approved
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -9,7 +9,8 @@ import WeeklyTimesheet from '@/components/timesheet/WeeklyTimesheet'
 import TimesheetSummary from '@/components/timesheet/TimesheetSummary'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Send, Download, Clock, Calendar, BarChart3 } from 'lucide-react'
+import { Send, Download, Clock, Calendar, BarChart3, X, FolderOpen, FileText, Save } from 'lucide-react'
+import { TimeEntry } from '@/types'
 
 function TimesheetContent() {
   const {
@@ -26,16 +27,35 @@ function TimesheetContent() {
   } = useTimesheet()
 
   const [activeTab, setActiveTab] = useState('overview')
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
 
-  const handleEditEntry = (entry: any) => {
-    // TODO: Implement edit modal/form
-    console.log('Edit entry:', entry)
+  const handleEditEntry = (entry: TimeEntry) => {
+    if (entry.status === 'approved') {
+      alert('Cannot edit approved entries. Please contact your manager if changes are needed.')
+      return
+    }
+    setEditingEntry(entry)
+    setShowEditModal(true)
+  }
+
+  const handleUpdateEntry = (entryData: Omit<TimeEntry, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    if (editingEntry) {
+      updateEntry(editingEntry.id, entryData)
+      setShowEditModal(false)
+      setEditingEntry(null)
+    }
   }
 
   const handleDeleteEntry = (entryId: string) => {
     if (confirm('Are you sure you want to delete this time entry?')) {
       deleteEntry(entryId)
     }
+  }
+
+  const closeEditModal = () => {
+    setShowEditModal(false)
+    setEditingEntry(null)
   }
 
   return (
@@ -146,7 +166,183 @@ function TimesheetContent() {
           </Tabs>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && editingEntry && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Edit Time Entry</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={closeEditModal}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="p-6">
+              <EditTimeEntryForm
+                entry={editingEntry}
+                projects={projects}
+                onSave={handleUpdateEntry}
+                onCancel={closeEditModal}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  )
+}
+
+// Edit form component that pre-fills the data
+function EditTimeEntryForm({ 
+  entry, 
+  projects, 
+  onSave, 
+  onCancel 
+}: { 
+  entry: TimeEntry
+  projects: any[]
+  onSave: (entry: Omit<TimeEntry, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void
+  onCancel: () => void
+}) {
+  const [formData, setFormData] = useState({
+    date: entry.date,
+    startTime: entry.startTime,
+    endTime: entry.endTime || '',
+    projectId: entry.projectId || '',
+    description: entry.description
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!formData.startTime || !formData.description) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    const startTime = new Date(`${formData.date}T${formData.startTime}`)
+    const endTime = formData.endTime ? new Date(`${formData.date}T${formData.endTime}`) : undefined
+    
+    const duration = endTime 
+      ? Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60))
+      : 0
+
+    onSave({
+      projectId: formData.projectId || undefined,
+      date: formData.date,
+      startTime: formData.startTime,
+      endTime: formData.endTime || undefined,
+      duration,
+      description: formData.description,
+      status: entry.status // Preserve the current status
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Date and Project Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Date
+          </label>
+          <input
+            type="date"
+            value={formData.date}
+            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            className="w-full h-11 px-3 border border-gray-200 rounded-md focus:border-blue-500 focus:ring-blue-500"
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+            <FolderOpen className="h-4 w-4" />
+            Project (Optional)
+          </label>
+          <select
+            className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white focus:border-blue-500 focus:ring-blue-500 transition-colors"
+            value={formData.projectId}
+            onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+          >
+            <option value="">Select a project</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Time Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">
+            Start Time
+          </label>
+          <input
+            type="time"
+            value={formData.startTime}
+            onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+            className="w-full h-11 px-3 border border-gray-200 rounded-md focus:border-blue-500 focus:ring-blue-500"
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">
+            End Time
+          </label>
+          <input
+            type="time"
+            value={formData.endTime}
+            onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+            className="w-full h-11 px-3 border border-gray-200 rounded-md focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      {/* Description */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <FileText className="h-4 w-4" />
+          Description
+        </label>
+        <textarea
+          className="w-full p-3 border border-gray-200 rounded-md h-24 resize-none focus:border-blue-500 focus:ring-blue-500 transition-colors"
+          placeholder="What did you work on? Describe your activities..."
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          required
+        />
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-3 pt-4">
+        <Button 
+          type="submit" 
+          className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+        >
+          <Save className="h-4 w-4 mr-2" />
+          Update Entry
+        </Button>
+        <Button 
+          type="button" 
+          onClick={onCancel}
+          variant="outline"
+          className="flex-1 h-12"
+        >
+          Cancel
+        </Button>
+      </div>
+    </form>
   )
 }
 
