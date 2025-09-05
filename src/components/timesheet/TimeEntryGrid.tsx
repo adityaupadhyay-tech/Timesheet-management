@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TimeEntry, Project } from '@/types'
@@ -17,7 +18,9 @@ import {
   Square,
   Check,
   X,
-  RotateCcw
+  RotateCcw,
+  ChevronDown,
+  Briefcase
 } from 'lucide-react'
 
 interface TimeEntryGridProps {
@@ -63,8 +66,18 @@ export default function TimeEntryGrid({
     startOfWeek.setDate(now.getDate() - now.getDay())
     return startOfWeek
   })
+  const [includeSaturday, setIncludeSaturday] = useState(false)
+  const [includeSunday, setIncludeSunday] = useState(false)
+  const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({})
+  const [dropdownPositions, setDropdownPositions] = useState<{ [key: string]: { top: number, left: number, width: number } }>({})
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
   const saveTimeoutRef = useRef<{ [key: string]: NodeJS.Timeout }>({})
   const lastWeekRef = useRef<string>('')
+
+  // Set up portal container
+  useEffect(() => {
+    setPortalContainer(document.body)
+  }, [])
 
   // Initialize grid with current week's entries grouped by project/task
   useEffect(() => {
@@ -117,10 +130,11 @@ export default function TimeEntryGrid({
       // Add existing rows
       existingRows.forEach(row => rows.push(row))
       
-      // Add one empty row if there are no existing rows (for initial state)
-      if (existingRows.length === 0) {
+      // Add empty rows to reach 3 total rows by default
+      const targetRows = 3
+      for (let i = existingRows.length; i < targetRows; i++) {
         rows.push({
-          id: `new-${Date.now()}-0`,
+          id: `new-${Date.now()}-${i}`,
           projectId: '',
           description: '',
           weekEntries: {},
@@ -144,11 +158,31 @@ export default function TimeEntryGrid({
 
   const getWeekDays = () => {
     const days = []
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(selectedWeek)
-      date.setDate(selectedWeek.getDate() + i)
+    
+    // selectedWeek is the start of the week (Sunday)
+    // Create dates for each day of the week
+    const weekStart = new Date(selectedWeek)
+    
+    // Monday (day 1)
+    for (let dayOffset = 1; dayOffset <= 5; dayOffset++) {
+      const date = new Date(weekStart)
+      date.setDate(weekStart.getDate() + dayOffset)
       days.push(date)
     }
+    
+    // Conditionally include Saturday (day 6)
+    if (includeSaturday) {
+      const saturday = new Date(weekStart)
+      saturday.setDate(weekStart.getDate() + 6)
+      days.push(saturday)
+    }
+    
+    // Conditionally include Sunday (day 0 - the start of the week)
+    if (includeSunday) {
+      const sunday = new Date(weekStart)
+      days.push(sunday) // Add Sunday at the end
+    }
+    
     return days
   }
 
@@ -345,6 +379,40 @@ export default function TimeEntryGrid({
     return project?.name || 'Unknown Project'
   }
 
+  const toggleDropdown = (rowId: string, buttonElement?: HTMLButtonElement) => {
+    const isOpening = !openDropdowns[rowId]
+    
+    // Close all other dropdowns first
+    setOpenDropdowns({ [rowId]: isOpening })
+    
+    if (isOpening && buttonElement) {
+      const rect = buttonElement.getBoundingClientRect()
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
+      
+      setDropdownPositions(prev => ({
+        ...prev,
+        [rowId]: {
+          top: rect.bottom + scrollTop + 4,
+          left: rect.left + scrollLeft,
+          width: Math.max(rect.width, 200)
+        }
+      }))
+    }
+  }
+
+  const closeDropdown = (rowId: string) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [rowId]: false
+    }))
+  }
+
+  const selectProject = (rowId: string, projectId: string) => {
+    updateRow(rowId, 'projectId', projectId)
+    closeDropdown(rowId)
+  }
+
   const getTotalMinutesForWeek = () => {
     const totalMinutes = gridRows.reduce((total, row) => {
       const rowTotal = Object.values(row.weekEntries).reduce((dayTotal, dayEntry) => 
@@ -368,6 +436,18 @@ export default function TimeEntryGrid({
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
+  }
+
+  const formatDateForDisplay = (date: Date) => {
+    const year = date.getFullYear()
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    return `${month}/${day}/${year}`
+  }
+
+  const getWeekdayShort = (date: Date) => {
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    return weekdays[date.getDay()]
   }
 
   const validateAndFormatTimeInput = (value: string, isOnChange: boolean = true) => {
@@ -473,7 +553,7 @@ export default function TimeEntryGrid({
               ←
             </Button>
             <span className="text-sm font-medium text-gray-700 px-3 py-1 bg-gray-100 rounded-md">
-              {weekDays[0].toLocaleDateString()} - {weekDays[6].toLocaleDateString()}
+              {weekDays[0] && formatDateForDisplay(weekDays[0])} - {weekDays[weekDays.length - 1] && formatDateForDisplay(weekDays[weekDays.length - 1])}
             </span>
             <Button
               variant="outline"
@@ -512,49 +592,57 @@ export default function TimeEntryGrid({
         )}
 
         {/* Grid Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-visible">
           <table className="w-full border-collapse">
                          <thead>
                <tr className="border-b border-gray-200">
-                 <th className="text-left py-3 px-4 font-medium text-gray-700">Project</th>
-                 <th className="text-left py-3 px-4 font-medium text-gray-700">Description</th>
+                 <th className="text-left py-3 px-4 font-medium text-gray-700 w-1/4 min-w-[200px]">Project</th>
+                 <th className="text-left py-3 px-4 font-medium text-gray-700 w-1/3 min-w-[250px]">Description</th>
                 {weekDays.map((day) => (
-                  <th key={day.toISOString()} className="text-center py-3 px-2 font-medium text-gray-700 min-w-[120px]">
+                  <th key={day.toISOString()} className="text-center py-2 px-1 font-medium text-gray-700 w-20 min-w-[80px]">
                     <div className="text-xs text-gray-500 mb-1">
-                      {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                      {getWeekdayShort(day)}
                     </div>
                     <div className="text-sm">
                       {day.getDate()}
                     </div>
                   </th>
                 ))}
-                <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
+                <th className="text-left py-3 px-2 font-medium text-gray-700 w-20">Actions</th>
               </tr>
             </thead>
             <tbody>
               {gridRows.map((row) => (
                 <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50">
-                                     <td className="py-3 px-4">
-                     <select
-                       value={row.projectId}
-                       onChange={(e) => updateRow(row.id, 'projectId', e.target.value)}
-                       className="w-full px-2 py-1 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500"
-                     >
-                       <option value="">Select Project</option>
-                       {projects.map((project) => (
-                         <option key={project.id} value={project.id}>
-                           {project.name}
-                         </option>
-                       ))}
-                     </select>
+                                                       <td className="py-4 px-4">
+                    <div className="relative">
+                       <button
+                         type="button"
+                         onClick={(e) => toggleDropdown(row.id, e.currentTarget)}
+                         className="w-full h-10 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md group flex items-center justify-between"
+                       >
+                         <div className="flex items-center gap-2 flex-1 text-left">
+                           <Briefcase className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                           <span className="text-gray-700 truncate">
+                             {row.projectId ? getProjectName(row.projectId) : "Select Project"}
+                           </span>
+                         </div>
+                         <ChevronDown 
+                           className={`w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-all duration-200 ${
+                             openDropdowns[row.id] ? 'rotate-180' : 'rotate-0'
+                           }`} 
+                         />
+                       </button>
+                       
+                     </div>
                    </td>
-                   <td className="py-3 px-4">
+                   <td className="py-4 px-4">
                      <input
                        type="text"
                        value={row.description}
                        onChange={(e) => updateRow(row.id, 'description', e.target.value)}
                        placeholder="Enter description..."
-                       className="w-full px-2 py-1 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500"
+                       className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500 h-10"
                      />
                    </td>
                   {weekDays.map((day) => {
@@ -562,7 +650,7 @@ export default function TimeEntryGrid({
                     const dayEntry = row.weekEntries[dateStr] || { duration: '' }
                     
                     return (
-                      <td key={dateStr} className="py-3 px-2 text-center">
+                      <td key={dateStr} className="py-4 px-1 text-center">
                         <input
                           type="text"
                           value={dayEntry.duration || ''}
@@ -591,7 +679,7 @@ export default function TimeEntryGrid({
                               e.preventDefault()
                             }
                           }}
-                          className="w-full px-2 py-2 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500 text-center"
+                          className="w-full px-2 py-2 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500 text-center h-10"
                           placeholder="hh:mm"
                           title="Enter time in hh:mm format (e.g., 8:30, 12:45). You can type hours beyond 24 for tracking total work hours."
                           maxLength={6}
@@ -599,8 +687,8 @@ export default function TimeEntryGrid({
                       </td>
                     )
                   })}
-                                     <td className="py-3 px-4">
-                     <div className="flex items-center gap-1">
+                                     <td className="py-4 px-2">
+                     <div className="flex items-center gap-1 justify-center">
                        <Button
                          variant="ghost"
                          size="sm"
@@ -626,38 +714,65 @@ export default function TimeEntryGrid({
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-gray-300 bg-gray-50">
-                <td className="py-3 px-4 font-semibold text-gray-900">Daily Totals</td>
-                <td className="py-3 px-4"></td>
+                <td className="py-4 px-4 font-semibold text-gray-900">Daily Totals</td>
+                <td className="py-4 px-4"></td>
                 {weekDays.map((day) => {
                   const dateStr = day.toISOString().split('T')[0]
                   const dailyTotalMinutes = getDailyTotal(dateStr)
                   const formattedTotal = formatMinutesToHHMM(dailyTotalMinutes)
                   
                   return (
-                    <td key={dateStr} className="py-3 px-2 text-center">
-                      <div className="font-semibold text-blue-600">
+                    <td key={dateStr} className="py-4 px-1 text-center">
+                      <div className="font-semibold text-blue-600 text-sm">
                         {formattedTotal || '-'}
                       </div>
                     </td>
                   )
                 })}
-                <td className="py-3 px-4"></td>
+                <td className="py-4 px-2"></td>
               </tr>
             </tfoot>
           </table>
         </div>
 
-        {/* Add New Entry Button */}
-        <div className="flex justify-start pt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={addNewRow}
-            className="flex items-center gap-2"
-          >
-                         <Plus className="h-4 w-4" />
-             Add New Entry
-          </Button>
+        {/* Action Buttons */}
+        <div className="flex justify-between items-center pt-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addNewRow}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add New Entry
+            </Button>
+          </div>
+          
+          {/* Weekend Toggle Buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant={includeSaturday ? "default" : "outline"}
+              size="sm"
+              onClick={() => setIncludeSaturday(!includeSaturday)}
+              className="flex items-center gap-2"
+              title={includeSaturday ? "Remove Saturday" : "Add Saturday"}
+            >
+              <Calendar className="h-4 w-4" />
+              {includeSaturday ? "Remove Sat" : "Add Saturday"}
+            </Button>
+            
+            <Button
+              variant={includeSunday ? "default" : "outline"}
+              size="sm"
+              onClick={() => setIncludeSunday(!includeSunday)}
+              className="flex items-center gap-2"
+              title={includeSunday ? "Remove Sunday" : "Add Sunday"}
+            >
+              <Calendar className="h-4 w-4" />
+              {includeSunday ? "Remove Sun" : "Add Sunday"}
+            </Button>
+          </div>
         </div>
 
         {/* Weekly Summary */}
@@ -675,6 +790,64 @@ export default function TimeEntryGrid({
           </div>
         </div>
       </CardContent>
+
+      {/* Portal-rendered dropdowns */}
+      {portalContainer && Object.entries(openDropdowns).map(([rowId, isOpen]) => 
+        isOpen && dropdownPositions[rowId] ? createPortal(
+          <>
+            <div 
+              className="fixed inset-0 z-[100]"
+              onClick={() => closeDropdown(rowId)}
+            ></div>
+            <div 
+              className="fixed z-[101] max-h-60 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg"
+              style={{
+                top: `${dropdownPositions[rowId].top}px`,
+                left: `${dropdownPositions[rowId].left}px`,
+                width: `${dropdownPositions[rowId].width}px`,
+                minWidth: '200px'
+              }}
+            >
+              <div
+                onClick={() => selectProject(rowId, '')}
+                className="px-3 py-2 text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-100"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-gray-300"></div>
+                  <span className="font-medium">No Project</span>
+                </div>
+              </div>
+              {projects.length === 0 ? (
+                <div className="px-3 py-2 text-gray-500 text-center">
+                  No projects available
+                </div>
+              ) : (
+                projects.map((project, index) => (
+                  <div
+                    key={project.id}
+                    onClick={() => selectProject(rowId, project.id)}
+                    className="px-3 py-2 cursor-pointer hover:bg-blue-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className={`w-3 h-3 rounded-full ${
+                          index % 6 === 0 ? 'bg-blue-500' :
+                          index % 6 === 1 ? 'bg-green-500' :
+                          index % 6 === 2 ? 'bg-purple-500' :
+                          index % 6 === 3 ? 'bg-orange-500' :
+                          index % 6 === 4 ? 'bg-red-500' : 'bg-teal-500'
+                        }`}
+                      ></div>
+                      <span className="font-medium text-gray-700">{project.name}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </>,
+          portalContainer
+        ) : null
+      )}
     </Card>
   )
 }
