@@ -110,17 +110,17 @@ export default function TimeEntryGrid({
         }
       })
 
-      // Convert to array and ensure we have exactly 5 rows
+      // Convert to array - start with existing entries
       const existingRows: GridRow[] = Object.values(groupedEntries)
       const rows: GridRow[] = []
       
       // Add existing rows
       existingRows.forEach(row => rows.push(row))
       
-      // Add empty rows to reach 5 total rows
-      for (let i = existingRows.length; i < 5; i++) {
+      // Add one empty row if there are no existing rows (for initial state)
+      if (existingRows.length === 0) {
         rows.push({
-          id: `new-${Date.now()}-${i}`,
+          id: `new-${Date.now()}-0`,
           projectId: '',
           description: '',
           weekEntries: {},
@@ -185,6 +185,22 @@ export default function TimeEntryGrid({
         }
         return row
       }))
+    }
+  }
+
+  const removeRow = (id: string) => {
+    const confirmed = confirm('Are you sure you want to completely remove this row? This action cannot be undone.')
+    
+    if (confirmed) {
+      // If it's an existing entry (not new), also delete from backend
+      const row = gridRows.find(r => r.id === id)
+      
+      if (row && !row.isNew) {
+        onDelete(id)
+      }
+      
+      // Remove the row completely - no minimum row constraint
+      setGridRows(prev => prev.filter(r => r.id !== id))
     }
   }
 
@@ -274,7 +290,10 @@ export default function TimeEntryGrid({
     }))
   }
 
-  const updateDayEntry = (id: string, date: string, duration: string) => {
+  const updateDayEntry = (id: string, date: string, duration: string, isOnChange: boolean = true) => {
+    // Validate and format the input
+    const formattedDuration = validateAndFormatTimeInput(duration, isOnChange)
+    
     setGridRows(prev => prev.map(row => {
       if (row.id === id) {
         const updatedRow = { ...row }
@@ -282,7 +301,7 @@ export default function TimeEntryGrid({
           updatedRow.weekEntries[date] = { duration: '' }
         }
         
-        updatedRow.weekEntries[date].duration = duration
+        updatedRow.weekEntries[date].duration = formattedDuration
         
         // Auto-save with debouncing
         if (saveTimeoutRef.current[id]) {
@@ -326,14 +345,107 @@ export default function TimeEntryGrid({
     return project?.name || 'Unknown Project'
   }
 
-  const getTotalHoursForWeek = () => {
+  const getTotalMinutesForWeek = () => {
     const totalMinutes = gridRows.reduce((total, row) => {
       const rowTotal = Object.values(row.weekEntries).reduce((dayTotal, dayEntry) => 
         dayTotal + hhmmToMinutes(dayEntry.duration), 0
       )
       return total + rowTotal
     }, 0)
-    return totalMinutes / 60 // Convert to hours
+    return totalMinutes
+  }
+
+  const getDailyTotal = (date: string) => {
+    const totalMinutes = gridRows.reduce((total, row) => {
+      const dayEntry = row.weekEntries[date]
+      return total + (dayEntry ? hhmmToMinutes(dayEntry.duration) : 0)
+    }, 0)
+    return totalMinutes
+  }
+
+  const formatMinutesToHHMM = (minutes: number) => {
+    if (minutes <= 0) return ''
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
+  }
+
+  const validateAndFormatTimeInput = (value: string, isOnChange: boolean = true) => {
+    // Allow empty string for deletion
+    if (value === '') return ''
+    
+    // Remove any non-digit and non-colon characters
+    let cleaned = value.replace(/[^0-9:]/g, '')
+    
+    // Handle multiple colons - keep only the first one
+    const colonIndex = cleaned.indexOf(':')
+    if (colonIndex !== -1) {
+      const beforeColon = cleaned.slice(0, colonIndex)
+      const afterColon = cleaned.slice(colonIndex + 1).replace(/:/g, '')
+      cleaned = beforeColon + ':' + afterColon
+    }
+    
+    // Only auto-format on blur or when user stops typing, not during onChange
+    if (!cleaned.includes(':') && !isOnChange) {
+      if (cleaned.length === 1) {
+        // Single digit: "8" -> "8:00"
+        cleaned = cleaned + ':00'
+      } else if (cleaned.length === 2) {
+        // Two digits: "12" -> "12:00"
+        cleaned = cleaned + ':00'
+      } else if (cleaned.length === 3) {
+        // Three digits: "830" -> "8:30"
+        cleaned = cleaned.slice(0, 1) + ':' + cleaned.slice(1)
+      } else if (cleaned.length === 4) {
+        // Four digits: Check if it's a valid hour format
+        const lastTwoDigits = parseInt(cleaned.slice(2, 4))
+        
+        // If last two digits are valid minutes (0-59), treat first two as hours
+        if (lastTwoDigits <= 59) {
+          // "1001" -> "10:01", "1200" -> "12:00", "0830" -> "08:30"
+          cleaned = cleaned.slice(0, 2) + ':' + cleaned.slice(2)
+        } else {
+          // "1299" -> "1:29" (since 99 > 59 minutes)
+          cleaned = cleaned.slice(0, 1) + ':' + cleaned.slice(1, 3)
+        }
+      } else if (cleaned.length >= 5) {
+        // Five or more digits: "11305" -> "113:05"
+        cleaned = cleaned.slice(0, 3) + ':' + cleaned.slice(3, 5)
+      }
+    }
+    
+    // Always validate and limit the formatted input
+    if (cleaned.includes(':')) {
+      const parts = cleaned.split(':')
+      if (parts.length === 2) {
+        let hours = parts[0]
+        let minutes = parts[1]
+        
+        // Limit minutes to 2 digits and max 59
+        if (minutes.length > 2) {
+          minutes = minutes.slice(0, 2)
+        }
+        if (minutes.length === 2) {
+          const m = parseInt(minutes)
+          if (m > 59) minutes = '59'
+        }
+        
+        // Allow hours to be any reasonable number (for work hours tracking)
+        // Limit to 3 digits max (up to 999 hours)
+        if (hours.length > 3) {
+          hours = hours.slice(0, 3)
+        }
+        
+        cleaned = hours + ':' + minutes
+      }
+    }
+    
+    return cleaned
+  }
+
+  const formatTimeOnBlur = (value: string) => {
+    // Use the validation function with isOnChange=false to apply full formatting
+    return validateAndFormatTimeInput(value, false)
   }
 
   const weekDays = getWeekDays()
@@ -455,10 +567,34 @@ export default function TimeEntryGrid({
                           type="text"
                           value={dayEntry.duration || ''}
                           onChange={(e) => updateDayEntry(row.id, dateStr, e.target.value)}
+                          onBlur={(e) => {
+                            const formattedValue = formatTimeOnBlur(e.target.value)
+                            if (formattedValue !== e.target.value) {
+                              updateDayEntry(row.id, dateStr, formattedValue, false)
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down
+                            const allowedKeys = [
+                              'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                              'Home', 'End', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'
+                            ]
+                            
+                            // Allow numbers and colon
+                            const isNumber = e.key >= '0' && e.key <= '9'
+                            const isColon = e.key === ':'
+                            
+                            // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
+                            const isCtrlKey = e.ctrlKey && ['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase())
+                            
+                            if (!isNumber && !isColon && !allowedKeys.includes(e.key) && !isCtrlKey) {
+                              e.preventDefault()
+                            }
+                          }}
                           className="w-full px-2 py-2 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500 text-center"
                           placeholder="hh:mm"
-                          pattern="[0-9]{1,2}:[0-9]{2}"
-                          title="Enter time in hh:mm format (e.g., 8:30, 7:45)"
+                          title="Enter time in hh:mm format (e.g., 8:30, 12:45). You can type hours beyond 24 for tracking total work hours."
+                          maxLength={6}
                         />
                       </td>
                     )
@@ -474,11 +610,40 @@ export default function TimeEntryGrid({
                        >
                          <RotateCcw className="h-3 w-3" />
                        </Button>
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => removeRow(row.id)}
+                         className="h-8 w-8 p-0 hover:bg-red-50"
+                         title="Remove Row"
+                       >
+                         <Trash2 className="h-3 w-3" />
+                       </Button>
                      </div>
                    </td>
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-gray-300 bg-gray-50">
+                <td className="py-3 px-4 font-semibold text-gray-900">Daily Totals</td>
+                <td className="py-3 px-4"></td>
+                {weekDays.map((day) => {
+                  const dateStr = day.toISOString().split('T')[0]
+                  const dailyTotalMinutes = getDailyTotal(dateStr)
+                  const formattedTotal = formatMinutesToHHMM(dailyTotalMinutes)
+                  
+                  return (
+                    <td key={dateStr} className="py-3 px-2 text-center">
+                      <div className="font-semibold text-blue-600">
+                        {formattedTotal || '-'}
+                      </div>
+                    </td>
+                  )
+                })}
+                <td className="py-3 px-4"></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
 
@@ -504,7 +669,7 @@ export default function TimeEntryGrid({
             </div>
             <div className="text-right">
               <span className="text-2xl font-bold text-indigo-600">
-                {getTotalHoursForWeek().toFixed(1)}h
+                {formatMinutesToHHMM(getTotalMinutesForWeek()) || '00:00'}
               </span>
             </div>
           </div>
