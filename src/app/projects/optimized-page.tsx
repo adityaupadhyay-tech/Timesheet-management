@@ -2,12 +2,13 @@
 
 import { memo, lazy, Suspense } from 'react'
 import PageWrapper from '@/components/PageWrapper'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import OptimizedIcon from '@/components/ui/OptimizedIcon'
 
 // Lazy load heavy components
 const ComingSoon = lazy(() => import('@/components/ComingSoon'))
 
-const ProjectsPage = memo(function ProjectsPage() {
+const OptimizedProjectsPage = memo(function OptimizedProjectsPage() {
   return (
     <PageWrapper>
       <div className="min-h-screen bg-gray-50/50">
@@ -48,4 +49,4 @@ const ProjectsPage = memo(function ProjectsPage() {
   )
 })
 
-export default ProjectsPage
+export default OptimizedProjectsPage

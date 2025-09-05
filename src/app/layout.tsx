@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Poppins } from 'next/font/google'
 import './globals.css'
 import { SidebarProvider } from '@/contexts/SidebarContext'
+import { UserProvider } from '@/contexts/UserContext'
 
 const poppins = Poppins({ 
   subsets: ['latin'],
@@ -24,9 +25,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${poppins.variable} font-sans`}>
         <div className="min-h-screen bg-background">
-          <SidebarProvider>
-            {children}
-          </SidebarProvider>
+          <UserProvider>
+            <SidebarProvider>
+              {children}
+            </SidebarProvider>
+          </UserProvider>
         </div>
       </body>
     </html>
