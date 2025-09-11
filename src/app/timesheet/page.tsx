@@ -6,8 +6,10 @@ import { UserRole } from '@/types'
 import { TimesheetProvider, useTimesheet } from '@/contexts/TimesheetContext'
 import TimeEntryGrid from '@/components/timesheet/TimeEntryGrid'
 import TimesheetSummary from '@/components/timesheet/TimesheetSummary'
+import ProjectOverview from '@/components/timesheet/ProjectOverview'
 import { Button } from '@/components/ui/button'
-import { Send, Download } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Send, Download, Calendar, FolderOpen } from 'lucide-react'
 import { TimeEntry } from '@/types'
 import ExportModal from '@/components/timesheet/ExportModal'
 
@@ -70,20 +72,42 @@ function TimesheetContent() {
           <TimesheetSummary entries={entries} projects={projects} />
         </div>
 
-        {/* Main Content */}
+        {/* Main Content with Tabs */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-5">
-            <TimeEntryGrid
-              projects={projects}
-              entries={entries}
-              onSave={addEntry}
-              onUpdate={updateEntry}
-              onDelete={deleteEntry}
-              onStartTimer={startTimer}
-              onStopTimer={stopTimer}
-              isTracking={trackingState.isTracking}
-              currentTime={trackingState.isTracking ? getCurrentTime() : undefined}
-            />
+            <Tabs defaultValue="timesheet" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="timesheet" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Time Entry
+                </TabsTrigger>
+                <TabsTrigger value="projects" className="flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4" />
+                  Project Overview
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="timesheet" className="space-y-4">
+                <TimeEntryGrid
+                  projects={projects}
+                  entries={entries}
+                  onSave={addEntry}
+                  onUpdate={updateEntry}
+                  onDelete={deleteEntry}
+                  onStartTimer={startTimer}
+                  onStopTimer={stopTimer}
+                  isTracking={trackingState.isTracking}
+                  currentTime={trackingState.isTracking ? getCurrentTime() : undefined}
+                />
+              </TabsContent>
+              
+              <TabsContent value="projects" className="space-y-4">
+                <ProjectOverview
+                  projects={projects}
+                  entries={entries}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

@@ -637,12 +637,12 @@ export default function TimeEntryGrid({
                      </div>
                    </td>
                    <td className="py-4 px-4">
-                     <input
-                       type="text"
+                     <textarea
                        value={row.description}
                        onChange={(e) => updateRow(row.id, 'description', e.target.value)}
                        placeholder="Enter description..."
-                       className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500 h-10"
+                       className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500 min-h-[40px] resize-y cursor-text"
+                       rows={2}
                      />
                    </td>
                   {weekDays.map((day) => {
