@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -71,11 +71,47 @@ export default function TimeEntryGrid({
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
   const saveTimeoutRef = useRef<{ [key: string]: NodeJS.Timeout }>({})
   const lastWeekRef = useRef<string>('')
+  const [pendingAutoSaves, setPendingAutoSaves] = useState<Array<{
+    id: string
+    date: string
+    duration: string
+    isNew: boolean
+  }>>([])
 
   // Set up portal container
   useEffect(() => {
     setPortalContainer(document.body)
   }, [])
+
+  // Handle pending auto-saves
+  useEffect(() => {
+    if (pendingAutoSaves.length > 0) {
+      pendingAutoSaves.forEach(({ id, date, duration, isNew }) => {
+        const durationMinutes = hhmmToMinutes(duration)
+        if (durationMinutes > 0) {
+          const currentRow = gridRows.find(row => row.id === id)
+          if (currentRow) {
+            const entryData = {
+              projectId: currentRow.projectId || undefined,
+              date,
+              startTime: '09:00',
+              endTime: '17:00',
+              duration: durationMinutes,
+              description: currentRow.description || 'Time entry',
+              status: currentRow.status
+            }
+
+            if (isNew) {
+              onSave(entryData)
+            } else {
+              onUpdate(id, entryData)
+            }
+          }
+        }
+      })
+      setPendingAutoSaves([])
+    }
+  }, [pendingAutoSaves, gridRows, onSave, onUpdate])
 
   // Initialize grid with current week's entries grouped by project/task
   useEffect(() => {
@@ -333,7 +369,7 @@ export default function TimeEntryGrid({
         
         updatedRow.weekEntries[date].duration = formattedDuration
         
-        // Auto-save with debouncing
+        // Auto-save with debouncing for full row
         if (saveTimeoutRef.current[id]) {
           clearTimeout(saveTimeoutRef.current[id])
         }
@@ -348,6 +384,22 @@ export default function TimeEntryGrid({
       }
       return row
     }))
+
+    // Queue auto-save individual day entry if it has valid duration (outside of setState)
+    if (formattedDuration && formattedDuration !== '' && !isOnChange) {
+      const durationMinutes = hhmmToMinutes(formattedDuration)
+      if (durationMinutes > 0) {
+        const currentRow = gridRows.find(row => row.id === id)
+        if (currentRow) {
+          setPendingAutoSaves(prev => [...prev, {
+            id,
+            date,
+            duration: formattedDuration,
+            isNew: currentRow.isNew
+          }])
+        }
+      }
+    }
   }
 
   const formatDuration = (minutes: number) => {

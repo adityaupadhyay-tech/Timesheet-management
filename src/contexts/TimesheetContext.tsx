@@ -103,78 +103,8 @@ const mockProjects: Project[] = [
   }
 ]
 
-const mockEntries: TimeEntry[] = [
-  {
-    id: '1',
-    userId: 'user1',
-    projectId: '1',
-    date: '2024-01-15',
-    startTime: '09:00',
-    endTime: '12:00',
-    duration: 180,
-    description: 'Worked on homepage layout and responsive design',
-    status: 'approved',
-    createdAt: '2024-01-15T09:00:00Z',
-    updatedAt: '2024-01-15T12:00:00Z',
-    companyId: '1'
-  },
-  {
-    id: '2',
-    userId: 'user1',
-    projectId: '1',
-    date: '2024-01-15',
-    startTime: '13:00',
-    endTime: '17:00',
-    duration: 240,
-    description: 'Implemented user authentication system',
-    status: 'approved',
-    createdAt: '2024-01-15T13:00:00Z',
-    updatedAt: '2024-01-15T17:00:00Z',
-    companyId: '1'
-  },
-  {
-    id: '3',
-    userId: 'user1',
-    projectId: '2',
-    date: '2024-01-16',
-    startTime: '09:00',
-    endTime: '11:30',
-    duration: 150,
-    description: 'Set up React Native project structure',
-    status: 'submitted',
-    createdAt: '2024-01-16T09:00:00Z',
-    updatedAt: '2024-01-16T11:30:00Z',
-    companyId: '1'
-  },
-  {
-    id: '4',
-    userId: 'user1',
-    projectId: '4',
-    date: '2024-01-17',
-    startTime: '10:00',
-    endTime: '15:00',
-    duration: 300,
-    description: 'Created brand guidelines and color palette',
-    status: 'approved',
-    createdAt: '2024-01-17T10:00:00Z',
-    updatedAt: '2024-01-17T15:00:00Z',
-    companyId: '2'
-  },
-  {
-    id: '5',
-    userId: 'user1',
-    projectId: '6',
-    date: '2024-01-18',
-    startTime: '09:00',
-    endTime: '12:00',
-    duration: 180,
-    description: 'Analyzed current business processes and workflows',
-    status: 'submitted',
-    createdAt: '2024-01-18T09:00:00Z',
-    updatedAt: '2024-01-18T12:00:00Z',
-    companyId: '3'
-  }
-]
+// Empty mock entries - no default data
+const mockEntries: TimeEntry[] = []
 
 export function TimesheetProvider({ children }: { children: ReactNode }) {
   const [allEntries, setAllEntries] = useState<TimeEntry[]>(mockEntries)
@@ -194,6 +124,16 @@ export function TimesheetProvider({ children }: { children: ReactNode }) {
   const projects = selectedCompany
     ? allProjects.filter(project => project.companyId === selectedCompany.id)
     : allProjects
+
+  // Debug filtered data
+  console.log('TimesheetContext - Filtered data:', {
+    selectedCompany: selectedCompany?.name,
+    allEntries: allEntries.length,
+    filteredEntries: entries.length,
+    allProjects: allProjects.length,
+    filteredProjects: projects.length,
+    entries: entries
+  })
 
   // Timer effect
   useEffect(() => {
@@ -225,15 +165,25 @@ export function TimesheetProvider({ children }: { children: ReactNode }) {
       updatedAt: new Date().toISOString()
     }
 
-    setAllEntries(prev => [...prev, newEntry])
+    console.log('TimesheetContext - Adding entry:', newEntry)
+    setAllEntries(prev => {
+      const updated = [...prev, newEntry]
+      console.log('TimesheetContext - All entries after add:', updated.length, updated)
+      return updated
+    })
   }
 
   const updateEntry = (id: string, updates: Partial<TimeEntry>) => {
-    setAllEntries(prev => prev.map(entry => 
-      entry.id === id 
-        ? { ...entry, ...updates, updatedAt: new Date().toISOString() }
-        : entry
-    ))
+    console.log('TimesheetContext - Updating entry:', id, updates)
+    setAllEntries(prev => {
+      const updated = prev.map(entry => 
+        entry.id === id 
+          ? { ...entry, ...updates, companyId: selectedCompany?.id, updatedAt: new Date().toISOString() }
+          : entry
+      )
+      console.log('TimesheetContext - All entries after update:', updated.length, updated)
+      return updated
+    })
   }
 
   const deleteEntry = (id: string) => {

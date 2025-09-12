@@ -10,6 +10,10 @@ interface TimesheetSummaryProps {
 }
 
 export default function TimesheetSummary({ entries, projects }: TimesheetSummaryProps) {
+  // Debug logging to see what data we're receiving
+  console.log('TimesheetSummary - entries:', entries.length, entries)
+  console.log('TimesheetSummary - projects:', projects.length, projects)
+
   const getCurrentWeekEntries = () => {
     const now = new Date()
     const startOfWeek = new Date(now)
@@ -74,6 +78,16 @@ export default function TimesheetSummary({ entries, projects }: TimesheetSummary
   const monthHours = getTotalHours(currentMonthEntries)
   const weekProjectBreakdown = getProjectBreakdown(currentWeekEntries)
   const avgHoursPerDay = getAverageHoursPerDay(currentWeekEntries)
+
+  // Debug calculations
+  console.log('TimesheetSummary Calculations:', {
+    currentWeekEntries: currentWeekEntries.length,
+    currentMonthEntries: currentMonthEntries.length,
+    weekHours,
+    monthHours,
+    avgHoursPerDay,
+    weekProjectBreakdown
+  })
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
