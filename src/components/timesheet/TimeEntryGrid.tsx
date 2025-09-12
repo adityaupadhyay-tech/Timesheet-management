@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DatePickerComponent } from '@/components/ui/date-picker'
 import { TimeEntry, Project } from '@/types'
 import { 
   Plus, 
@@ -186,10 +187,6 @@ export default function TimeEntryGrid({
     return days
   }
 
-  const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newDate = new Date(event.target.value)
-    setSelectedDate(newDate)
-  }
 
   const addNewRow = () => {
     const newRow: GridRow = {
@@ -544,15 +541,12 @@ export default function TimeEntryGrid({
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <label htmlFor="date-picker" className="text-sm text-gray-600">
+              <label className="text-sm text-gray-600">
                 Date:
               </label>
-              <input
-                id="date-picker"
-                type="date"
-                value={selectedDate.toISOString().split('T')[0]}
-                onChange={handleDateChange}
-                className="px-3 py-1.5 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 bg-white"
+              <DatePickerComponent
+                value={selectedDate}
+                onChange={setSelectedDate}
               />
             </div>
             <div className="flex items-center gap-2">
