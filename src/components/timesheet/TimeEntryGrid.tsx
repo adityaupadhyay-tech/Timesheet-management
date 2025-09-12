@@ -506,10 +506,14 @@ export default function TimeEntryGrid({
           if (m > 59) minutes = '59'
         }
         
-        // Allow hours to be any reasonable number (for work hours tracking)
-        // Limit to 3 digits max (up to 999 hours)
-        if (hours.length > 3) {
-          hours = hours.slice(0, 3)
+        // Limit hours to maximum 24 hours
+        const h = parseInt(hours)
+        if (h > 24) {
+          hours = '24'
+        }
+        if (h === 24 && parseInt(minutes) > 0) {
+          // If 24 hours, minutes must be 00
+          minutes = '00'
         }
         
         cleaned = hours + ':' + minutes
@@ -667,13 +671,39 @@ export default function TimeEntryGrid({
                             // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
                             const isCtrlKey = e.ctrlKey && ['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase())
                             
+                            // Prevent typing if it would exceed 24:00
+                            if (isNumber) {
+                              const currentValue = e.currentTarget.value
+                              const cursorPosition = e.currentTarget.selectionStart || 0
+                              const newValue = currentValue.slice(0, cursorPosition) + e.key + currentValue.slice(cursorPosition)
+                              
+                              // Check if the new value would exceed 24:00
+                              if (newValue.includes(':')) {
+                                const [hours, minutes] = newValue.split(':')
+                                const h = parseInt(hours) || 0
+                                const m = parseInt(minutes) || 0
+                                
+                                if (h > 24 || (h === 24 && m > 0)) {
+                                  e.preventDefault()
+                                  return
+                                }
+                              } else {
+                                // If no colon yet, check if hours would exceed 24
+                                const h = parseInt(newValue) || 0
+                                if (h > 24) {
+                                  e.preventDefault()
+                                  return
+                                }
+                              }
+                            }
+                            
                             if (!isNumber && !isColon && !allowedKeys.includes(e.key) && !isCtrlKey) {
                               e.preventDefault()
                             }
                           }}
                           className="w-full px-2 py-2 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500 text-center h-10"
                           placeholder="hh:mm"
-                          title="Enter time in hh:mm format (e.g., 8:30, 12:45). You can type hours beyond 24 for tracking total work hours."
+                          title="Enter time in hh:mm format (e.g., 8:30, 12:45). Maximum time is 24:00."
                           maxLength={6}
                         />
                       </td>

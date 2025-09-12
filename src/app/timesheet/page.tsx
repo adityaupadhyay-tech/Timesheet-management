@@ -70,29 +70,30 @@ function TimesheetContent() {
           </div>
           
           {/* Company Selector */}
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-sm text-gray-500">Company:</span>
-            <select
-              value={selectedCompany?.id || ''}
-              onChange={(e) => {
-                const company = companies.find(c => c.id === e.target.value)
-                setSelectedCompany(company || null)
-              }}
-              className="px-2 py-1 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 bg-white"
-            >
-              <option value="">All</option>
-              {companies.map((company) => (
-                <option key={company.id} value={company.id}>
-                  {company.name}
-                </option>
-              ))}
-            </select>
-            {selectedCompany && (
-              <div 
-                className="w-2 h-2 rounded-full" 
-                style={{ backgroundColor: selectedCompany.color }}
-              ></div>
-            )}
+          <div className="mt-4 flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700">Company:</span>
+            <div className="relative">
+              <select
+                value={selectedCompany?.id || ''}
+                onChange={(e) => {
+                  const company = companies.find(c => c.id === e.target.value)
+                  setSelectedCompany(company || null)
+                }}
+                className="appearance-none px-4 py-2.5 pr-10 border border-gray-200 rounded-lg text-sm font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer min-w-[160px]"
+              >
+                <option value="">All Companies</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
