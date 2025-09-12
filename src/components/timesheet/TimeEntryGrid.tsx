@@ -91,6 +91,26 @@ export default function TimeEntryGrid({
       setIsAutoSaving(true)
       pendingAutoSaves.forEach(({ id, date, duration, isNew }) => {
         const durationMinutes = hhmmToMinutes(duration)
+        
+        // Handle empty values - delete existing entry if it exists
+        if (durationMinutes === 0 || duration === '' || duration === '0:00') {
+          const currentRow = gridRows.find(row => row.id === id)
+          if (currentRow) {
+            // Find and delete existing entry for this date and project
+            const existingEntry = entries.find(entry => 
+              entry.date === date && 
+              entry.projectId === (currentRow.projectId || undefined) &&
+              entry.description === (currentRow.description || 'Time entry')
+            )
+            
+            if (existingEntry) {
+              console.log(`Deleting entry for row ${id}, date ${date}:`, existingEntry.id)
+              onDelete(existingEntry.id)
+            }
+          }
+          return // Skip the rest of the processing for empty values
+        }
+        
         if (durationMinutes > 0) {
           const currentRow = gridRows.find(row => row.id === id)
           if (currentRow) {
@@ -104,16 +124,32 @@ export default function TimeEntryGrid({
               status: currentRow.status
             }
 
+            // Check if there's already an existing entry for this specific date and project
+            const existingEntry = entries.find(entry => 
+              entry.date === date && 
+              entry.projectId === entryData.projectId &&
+              entry.description === entryData.description
+            )
+
+            const shouldCreateNew = isNew && !existingEntry
+            const shouldUpdate = existingEntry || !isNew
+
             console.log(`Auto-saving entry for row ${id}:`, {
               isNew,
+              existingEntry: existingEntry?.id,
+              shouldCreateNew,
+              shouldUpdate,
               entryData,
               currentRow: { id: currentRow.id, projectId: currentRow.projectId, description: currentRow.description }
             })
 
-            if (isNew) {
+            if (shouldCreateNew) {
               onSave(entryData)
-            } else {
-              onUpdate(id, entryData)
+            } else if (shouldUpdate && existingEntry) {
+              onUpdate(existingEntry.id, entryData)
+            } else if (shouldUpdate) {
+              // Fallback: if we can't find existing entry but row is not new, try to save as new
+              onSave(entryData)
             }
           } else {
             console.log(`Row ${id} not found in gridRows`)
@@ -456,32 +492,53 @@ export default function TimeEntryGrid({
           }
         }, 1000)
         
+        // Also queue individual day entry auto-save with debouncing for real-time updates
+        if (formattedDuration && formattedDuration !== '') {
+          const debounceKey = `${id}-${date}`
+          if (saveTimeoutRef.current[debounceKey]) {
+            clearTimeout(saveTimeoutRef.current[debounceKey])
+          }
+          
+          saveTimeoutRef.current[debounceKey] = setTimeout(() => {
+            console.log(`Debounced auto-save for row ${id}, date ${date}, duration ${formattedDuration}`)
+            setTimeout(() => {
+              const currentRow = gridRows.find(row => row.id === id)
+              if (currentRow) {
+                setPendingAutoSaves(prev => [...prev, {
+                  id,
+                  date,
+                  duration: formattedDuration,
+                  isNew: currentRow.isNew
+                }])
+              }
+            }, 0)
+          }, 2000) // 2 second debounce for real-time updates
+        }
+        
         return updatedRow
       }
       return row
     }))
 
-    // Queue auto-save individual day entry if it has valid duration (outside of setState)
-    if (formattedDuration && formattedDuration !== '' && !isOnChange) {
-      const durationMinutes = hhmmToMinutes(formattedDuration)
-      if (durationMinutes > 0) {
-        console.log(`Queuing auto-save for row ${id}, date ${date}, duration ${formattedDuration}`)
-        // Use setTimeout to ensure we get the updated state
-        setTimeout(() => {
-          const currentRow = gridRows.find(row => row.id === id)
-          if (currentRow) {
-            console.log(`Adding to pending auto-saves:`, { id, date, duration: formattedDuration, isNew: currentRow.isNew })
-            setPendingAutoSaves(prev => [...prev, {
-              id,
-              date,
-              duration: formattedDuration,
-              isNew: currentRow.isNew
-            }])
-          } else {
-            console.log(`Row ${id} not found when queuing auto-save`)
-          }
-        }, 0)
-      }
+    // Queue auto-save for real-time updates
+    // Only queue on blur (when user finishes editing) to avoid too frequent saves
+    if (!isOnChange) {
+      console.log(`Queuing auto-save for row ${id}, date ${date}, duration ${formattedDuration}, isOnChange: ${isOnChange}`)
+      // Use setTimeout to ensure we get the updated state
+      setTimeout(() => {
+        const currentRow = gridRows.find(row => row.id === id)
+        if (currentRow) {
+          console.log(`Adding to pending auto-saves:`, { id, date, duration: formattedDuration, isNew: currentRow.isNew })
+          setPendingAutoSaves(prev => [...prev, {
+            id,
+            date,
+            duration: formattedDuration,
+            isNew: currentRow.isNew
+          }])
+        } else {
+          console.log(`Row ${id} not found when queuing auto-save`)
+        }
+      }, 0)
     }
   }
 
