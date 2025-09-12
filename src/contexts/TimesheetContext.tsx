@@ -125,14 +125,12 @@ export function TimesheetProvider({ children }: { children: ReactNode }) {
     ? allProjects.filter(project => project.companyId === selectedCompany.id)
     : allProjects
 
-  // Debug filtered data
-  console.log('TimesheetContext - Filtered data:', {
-    selectedCompany: selectedCompany?.name,
-    allEntries: allEntries.length,
-    filteredEntries: entries.length,
-    allProjects: allProjects.length,
-    filteredProjects: projects.length,
-    entries: entries
+  console.log('TimesheetContext - Filtering:', {
+    selectedCompany: selectedCompany?.id,
+    allEntriesCount: allEntries.length,
+    filteredEntriesCount: entries.length,
+    allProjectsCount: allProjects.length,
+    filteredProjectsCount: projects.length
   })
 
   // Timer effect
@@ -165,23 +163,23 @@ export function TimesheetProvider({ children }: { children: ReactNode }) {
       updatedAt: new Date().toISOString()
     }
 
-    console.log('TimesheetContext - Adding entry:', newEntry)
+    console.log('TimesheetContext - addEntry called:', { entryData, newEntry, selectedCompany })
     setAllEntries(prev => {
       const updated = [...prev, newEntry]
-      console.log('TimesheetContext - All entries after add:', updated.length, updated)
+      console.log('TimesheetContext - allEntries updated:', updated.length, 'entries')
       return updated
     })
   }
 
   const updateEntry = (id: string, updates: Partial<TimeEntry>) => {
-    console.log('TimesheetContext - Updating entry:', id, updates)
+    console.log('TimesheetContext - updateEntry called:', { id, updates, selectedCompany })
     setAllEntries(prev => {
       const updated = prev.map(entry => 
         entry.id === id 
           ? { ...entry, ...updates, companyId: selectedCompany?.id, updatedAt: new Date().toISOString() }
           : entry
       )
-      console.log('TimesheetContext - All entries after update:', updated.length, updated)
+      console.log('TimesheetContext - allEntries updated:', updated.length, 'entries')
       return updated
     })
   }

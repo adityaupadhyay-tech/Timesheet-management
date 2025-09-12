@@ -77,6 +77,7 @@ export default function TimeEntryGrid({
     duration: string
     isNew: boolean
   }>>([])
+  const [isAutoSaving, setIsAutoSaving] = useState(false)
 
   // Set up portal container
   useEffect(() => {
@@ -86,6 +87,8 @@ export default function TimeEntryGrid({
   // Handle pending auto-saves
   useEffect(() => {
     if (pendingAutoSaves.length > 0) {
+      console.log('Processing pending auto-saves:', pendingAutoSaves)
+      setIsAutoSaving(true)
       pendingAutoSaves.forEach(({ id, date, duration, isNew }) => {
         const durationMinutes = hhmmToMinutes(duration)
         if (durationMinutes > 0) {
@@ -101,20 +104,37 @@ export default function TimeEntryGrid({
               status: currentRow.status
             }
 
+            console.log(`Auto-saving entry for row ${id}:`, {
+              isNew,
+              entryData,
+              currentRow: { id: currentRow.id, projectId: currentRow.projectId, description: currentRow.description }
+            })
+
             if (isNew) {
               onSave(entryData)
             } else {
               onUpdate(id, entryData)
             }
+          } else {
+            console.log(`Row ${id} not found in gridRows`)
           }
         }
       })
       setPendingAutoSaves([])
+      setIsAutoSaving(false)
     }
   }, [pendingAutoSaves, gridRows, onSave, onUpdate])
 
   // Initialize grid with current week's entries grouped by project/task
   useEffect(() => {
+    console.log('Grid initialization effect triggered - entries:', entries.length, 'selectedDate:', selectedDate, 'isAutoSaving:', isAutoSaving)
+    
+    // Skip reinitialization if we're in the middle of auto-saving
+    if (isAutoSaving) {
+      console.log('Skipping grid reinitialization - auto-saving in progress')
+      return
+    }
+    
     // Calculate the start of the week (Sunday) for the selected date
     const weekStart = new Date(selectedDate)
     weekStart.setDate(selectedDate.getDate() - selectedDate.getDay())
@@ -126,7 +146,15 @@ export default function TimeEntryGrid({
     
     // Only reinitialize if we're actually changing weeks or if grid is empty
     setGridRows(prevRows => {
+      console.log('Grid reinitialization check:', {
+        lastWeek: lastWeekRef.current,
+        currentWeek: currentWeekKey,
+        prevRowsLength: prevRows.length,
+        willReinitialize: !(lastWeekRef.current === currentWeekKey && prevRows.length > 0)
+      })
+      
       if (lastWeekRef.current === currentWeekKey && prevRows.length > 0) {
+        console.log('Skipping grid reinitialization - same week and rows exist')
         return prevRows
       }
       
@@ -180,9 +208,10 @@ export default function TimeEntryGrid({
         })
       }
 
+      console.log('Grid reinitialized with rows:', rows.length, rows.map(r => ({ id: r.id, isNew: r.isNew, projectId: r.projectId, description: r.description })))
       return rows
     })
-  }, [entries, selectedDate])
+  }, [entries, selectedDate, isAutoSaving])
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -238,6 +267,32 @@ export default function TimeEntryGrid({
 
   const clearRow = (id: string) => {
     if (confirm('Are you sure you want to clear this record? This will remove all data from this row.')) {
+      const row = gridRows.find(r => r.id === id)
+      
+      if (row) {
+        // Delete all entries that were created from this row
+        console.log(`Clearing row ${id} - Project: ${row.projectId}, Description: ${row.description}`)
+        Object.keys(row.weekEntries).forEach(date => {
+          const dayEntry = row.weekEntries[date]
+          if (dayEntry.duration && dayEntry.duration !== '') {
+            // Find and delete the corresponding entry from context
+            // Use more flexible matching since projectId and description might have changed
+            const entriesToDelete = entries.filter(entry => 
+              entry.date === date &&
+              (entry.projectId === row.projectId || 
+               (entry.description === row.description && row.description !== '') ||
+               (entry.description === 'Time entry' && (!row.description || row.description === '')))
+            )
+            console.log(`Found ${entriesToDelete.length} entries to delete for date ${date}`, {
+              rowProjectId: row.projectId,
+              rowDescription: row.description,
+              matchingEntries: entriesToDelete.map(e => ({ id: e.id, projectId: e.projectId, description: e.description }))
+            })
+            entriesToDelete.forEach(entry => onDelete(entry.id))
+          }
+        })
+      }
+      
       setGridRows(prev => prev.map(row => {
         if (row.id === id) {
           return {
@@ -258,11 +313,30 @@ export default function TimeEntryGrid({
     const confirmed = confirm('Are you sure you want to completely remove this row? This action cannot be undone.')
     
     if (confirmed) {
-      // If it's an existing entry (not new), also delete from backend
       const row = gridRows.find(r => r.id === id)
       
-      if (row && !row.isNew) {
-        onDelete(id)
+      if (row) {
+        // Delete all entries that were created from this row
+        console.log(`Removing row ${id} - Project: ${row.projectId}, Description: ${row.description}`)
+        Object.keys(row.weekEntries).forEach(date => {
+          const dayEntry = row.weekEntries[date]
+          if (dayEntry.duration && dayEntry.duration !== '') {
+            // Find and delete the corresponding entry from context
+            // Use more flexible matching since projectId and description might have changed
+            const entriesToDelete = entries.filter(entry => 
+              entry.date === date &&
+              (entry.projectId === row.projectId || 
+               (entry.description === row.description && row.description !== '') ||
+               (entry.description === 'Time entry' && (!row.description || row.description === '')))
+            )
+            console.log(`Found ${entriesToDelete.length} entries to delete for date ${date}`, {
+              rowProjectId: row.projectId,
+              rowDescription: row.description,
+              matchingEntries: entriesToDelete.map(e => ({ id: e.id, projectId: e.projectId, description: e.description }))
+            })
+            entriesToDelete.forEach(entry => onDelete(entry.id))
+          }
+        })
       }
       
       // Remove the row completely - no minimum row constraint
@@ -360,6 +434,8 @@ export default function TimeEntryGrid({
     // Validate and format the input
     const formattedDuration = validateAndFormatTimeInput(duration, isOnChange)
     
+    console.log(`updateDayEntry called:`, { id, date, duration, formattedDuration, isOnChange })
+    
     setGridRows(prev => prev.map(row => {
       if (row.id === id) {
         const updatedRow = { ...row }
@@ -389,15 +465,22 @@ export default function TimeEntryGrid({
     if (formattedDuration && formattedDuration !== '' && !isOnChange) {
       const durationMinutes = hhmmToMinutes(formattedDuration)
       if (durationMinutes > 0) {
-        const currentRow = gridRows.find(row => row.id === id)
-        if (currentRow) {
-          setPendingAutoSaves(prev => [...prev, {
-            id,
-            date,
-            duration: formattedDuration,
-            isNew: currentRow.isNew
-          }])
-        }
+        console.log(`Queuing auto-save for row ${id}, date ${date}, duration ${formattedDuration}`)
+        // Use setTimeout to ensure we get the updated state
+        setTimeout(() => {
+          const currentRow = gridRows.find(row => row.id === id)
+          if (currentRow) {
+            console.log(`Adding to pending auto-saves:`, { id, date, duration: formattedDuration, isNew: currentRow.isNew })
+            setPendingAutoSaves(prev => [...prev, {
+              id,
+              date,
+              duration: formattedDuration,
+              isNew: currentRow.isNew
+            }])
+          } else {
+            console.log(`Row ${id} not found when queuing auto-save`)
+          }
+        }, 0)
       }
     }
   }
@@ -706,6 +789,9 @@ export default function TimeEntryGrid({
                           onBlur={(e) => {
                             const formattedValue = formatTimeOnBlur(e.target.value)
                             if (formattedValue !== e.target.value) {
+                              updateDayEntry(row.id, dateStr, formattedValue, false)
+                            } else if (formattedValue && formattedValue !== '') {
+                              // Even if the value didn't change, trigger auto-save on blur
                               updateDayEntry(row.id, dateStr, formattedValue, false)
                             }
                           }}

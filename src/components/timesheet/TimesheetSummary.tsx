@@ -10,9 +10,8 @@ interface TimesheetSummaryProps {
 }
 
 export default function TimesheetSummary({ entries, projects }: TimesheetSummaryProps) {
-  // Debug logging to see what data we're receiving
-  console.log('TimesheetSummary - entries:', entries.length, entries)
-  console.log('TimesheetSummary - projects:', projects.length, projects)
+  console.log('TimesheetSummary - Received entries:', entries.length, entries)
+  console.log('TimesheetSummary - Received projects:', projects.length, projects)
 
   const getCurrentWeekEntries = () => {
     const now = new Date()
@@ -79,18 +78,11 @@ export default function TimesheetSummary({ entries, projects }: TimesheetSummary
   const weekProjectBreakdown = getProjectBreakdown(currentWeekEntries)
   const avgHoursPerDay = getAverageHoursPerDay(currentWeekEntries)
 
-  // Debug calculations
-  console.log('TimesheetSummary Calculations:', {
-    currentWeekEntries: currentWeekEntries.length,
-    currentMonthEntries: currentMonthEntries.length,
-    weekHours,
-    monthHours,
-    avgHoursPerDay,
-    weekProjectBreakdown
-  })
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    return (
+      <div className="space-y-4">
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Current Week Hours */}
       <Card className="border-0 shadow-sm bg-white/50 backdrop-blur-sm hover:shadow-md transition-shadow">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -180,6 +172,7 @@ export default function TimesheetSummary({ entries, projects }: TimesheetSummary
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   )
 }
