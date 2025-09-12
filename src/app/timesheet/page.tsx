@@ -17,10 +17,13 @@ function TimesheetContent() {
   const {
     entries,
     projects,
+    companies,
+    selectedCompany,
     trackingState,
     addEntry,
     updateEntry,
     deleteEntry,
+    setSelectedCompany,
     startTimer,
     stopTimer,
     submitTimesheet,
@@ -64,6 +67,32 @@ function TimesheetContent() {
                 Submit Timesheet
               </Button>
             </div>
+          </div>
+          
+          {/* Company Selector */}
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-sm text-gray-500">Company:</span>
+            <select
+              value={selectedCompany?.id || ''}
+              onChange={(e) => {
+                const company = companies.find(c => c.id === e.target.value)
+                setSelectedCompany(company || null)
+              }}
+              className="px-2 py-1 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 bg-white"
+            >
+              <option value="">All</option>
+              {companies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+            {selectedCompany && (
+              <div 
+                className="w-2 h-2 rounded-full" 
+                style={{ backgroundColor: selectedCompany.color }}
+              ></div>
+            )}
           </div>
         </div>
 

@@ -60,11 +60,8 @@ export default function TimeEntryGrid({
   currentTime
 }: TimeEntryGridProps) {
   const [gridRows, setGridRows] = useState<GridRow[]>([])
-  const [selectedWeek, setSelectedWeek] = useState(() => {
-    const now = new Date()
-    const startOfWeek = new Date(now)
-    startOfWeek.setDate(now.getDate() - now.getDay())
-    return startOfWeek
+  const [selectedDate, setSelectedDate] = useState(() => {
+    return new Date()
   })
   const [includeSaturday, setIncludeSaturday] = useState(false)
   const [includeSunday, setIncludeSunday] = useState(false)
@@ -81,7 +78,10 @@ export default function TimeEntryGrid({
 
   // Initialize grid with current week's entries grouped by project/task
   useEffect(() => {
-    const weekStart = selectedWeek
+    // Calculate the start of the week (Sunday) for the selected date
+    const weekStart = new Date(selectedDate)
+    weekStart.setDate(selectedDate.getDate() - selectedDate.getDay())
+    
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekStart.getDate() + 6)
     
@@ -145,7 +145,7 @@ export default function TimeEntryGrid({
 
       return rows
     })
-  }, [entries, selectedWeek])
+  }, [entries, selectedDate])
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -159,9 +159,9 @@ export default function TimeEntryGrid({
   const getWeekDays = () => {
     const days = []
     
-    // selectedWeek is the start of the week (Sunday)
-    // Create dates for each day of the week
-    const weekStart = new Date(selectedWeek)
+    // Calculate the start of the week (Sunday) for the selected date
+    const weekStart = new Date(selectedDate)
+    weekStart.setDate(selectedDate.getDate() - selectedDate.getDay())
     
     // Monday (day 1)
     for (let dayOffset = 1; dayOffset <= 5; dayOffset++) {
@@ -186,10 +186,9 @@ export default function TimeEntryGrid({
     return days
   }
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const newWeek = new Date(selectedWeek)
-    newWeek.setDate(selectedWeek.getDate() + (direction === 'next' ? 7 : -7))
-    setSelectedWeek(newWeek)
+  const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = new Date(event.target.value)
+    setSelectedDate(newDate)
   }
 
   const addNewRow = () => {
@@ -543,26 +542,25 @@ export default function TimeEntryGrid({
                <p className="text-gray-600 text-sm">Select project, add description, then enter time in hh:mm format for each day</p>
              </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigateWeek('prev')}
-              className="h-9 w-9 p-0"
-            >
-              ←
-            </Button>
-            <span className="text-sm font-medium text-gray-700 px-3 py-1 bg-gray-100 rounded-md">
-              {weekDays[0] && formatDateForDisplay(weekDays[0])} - {weekDays[weekDays.length - 1] && formatDateForDisplay(weekDays[weekDays.length - 1])}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigateWeek('next')}
-              className="h-9 w-9 p-0"
-            >
-              →
-            </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label htmlFor="date-picker" className="text-sm text-gray-600">
+                Date:
+              </label>
+              <input
+                id="date-picker"
+                type="date"
+                value={selectedDate.toISOString().split('T')[0]}
+                onChange={handleDateChange}
+                className="px-3 py-1.5 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 bg-white"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Week:</span>
+              <span className="text-sm font-medium text-gray-800">
+                {weekDays[0] && formatDateForDisplay(weekDays[0])} - {weekDays[weekDays.length - 1] && formatDateForDisplay(weekDays[weekDays.length - 1])}
+              </span>
+            </div>
           </div>
         </div>
       </CardHeader>

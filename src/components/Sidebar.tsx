@@ -15,6 +15,7 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import MenuIcon from '@mui/icons-material/Menu'
 import LogoutIcon from '@mui/icons-material/Logout'
+import CursorIcon from '@mui/icons-material/OpenWith'
 
 interface SidebarProps {
   userRole: UserRole
@@ -46,6 +47,7 @@ export default function Sidebar({ userRole, userName, isOpen, onToggle }: Sideba
         { href: '/users', label: 'User Management', icon: <PeopleIcon /> },
         { href: '/projects', label: 'Project Management', icon: <AssignmentIcon /> },
         { href: '/reports', label: 'Reports', icon: <BarChartIcon /> },
+        // { href: '/magnetic-cursor', label: 'Magnetic Cursor', icon: <CursorIcon /> },
         { href: '/settings', label: 'System Settings', icon: <SettingsIcon /> },
       ]
     }

@@ -1,5 +1,14 @@
 export type UserRole = 'admin' | 'manager' | 'employee';
 
+export interface Company {
+  id: string;
+  name: string;
+  description?: string;
+  logo?: string;
+  color?: string;
+  isActive: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -8,6 +17,7 @@ export interface User {
   department?: string;
   managerId?: string;
   avatar?: string;
+  companyId?: string;
 }
 
 export interface TimesheetEntry {
@@ -30,6 +40,7 @@ export interface Project {
   endDate?: string;
   status: 'active' | 'completed' | 'on-hold';
   color?: string;
+  companyId?: string;
 }
 
 export interface LeaveRequest {
@@ -55,6 +66,7 @@ export interface TimeEntry {
   status: 'draft' | 'submitted' | 'approved' | 'rejected';
   createdAt: string;
   updatedAt: string;
+  companyId?: string;
 }
 
 export interface Timesheet {
