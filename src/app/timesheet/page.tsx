@@ -34,6 +34,7 @@ function TimesheetContent() {
 
   const [showExportModal, setShowExportModal] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [gridRows, setGridRows] = useState<any[]>([])
 
 
 
@@ -43,6 +44,10 @@ function TimesheetContent() {
 
   const closeExportModal = () => {
     setShowExportModal(false)
+  }
+
+  const handleGridDataChange = (newGridRows: any[]) => {
+    setGridRows(newGridRows)
   }
 
   return (
@@ -102,7 +107,7 @@ function TimesheetContent() {
 
         {/* Summary Cards */}
         <div className="mb-6">
-          <TimesheetSummary entries={allEntries} projects={allProjects} selectedDate={selectedDate} />
+          <TimesheetSummary entries={entries} projects={projects} selectedDate={selectedDate} gridRows={gridRows} />
         </div>
 
         {/* Main Content with Tabs */}
@@ -124,6 +129,7 @@ function TimesheetContent() {
                 <TimeEntryGrid
                   projects={projects}
                   entries={entries}
+                  allEntries={allEntries}
                   onSave={addEntry}
                   onUpdate={updateEntry}
                   onDelete={deleteEntry}
@@ -132,6 +138,7 @@ function TimesheetContent() {
                   isTracking={trackingState.isTracking}
                   currentTime={trackingState.isTracking ? getCurrentTime() : undefined}
                   onSelectedDateChange={setSelectedDate}
+                  onGridDataChange={handleGridDataChange}
                 />
               </TabsContent>
               

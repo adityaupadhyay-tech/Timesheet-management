@@ -8,9 +8,21 @@ interface TimesheetSummaryProps {
   entries: TimeEntry[]
   projects: Project[]
   selectedDate?: Date
+  gridRows?: Array<{
+    id: string
+    projectId: string
+    description: string
+    weekEntries: {
+      [day: string]: {
+        duration: string // hh:mm format
+      }
+    }
+    status: 'draft' | 'submitted' | 'approved' | 'rejected'
+    isNew: boolean
+  }>
 }
 
-export default function TimesheetSummary({ entries, projects, selectedDate }: TimesheetSummaryProps) {
+export default function TimesheetSummary({ entries, projects, selectedDate, gridRows }: TimesheetSummaryProps) {
   console.log('TimesheetSummary - Received entries:', entries.length, entries)
   console.log('TimesheetSummary - Received projects:', projects.length, projects)
   
@@ -75,12 +87,35 @@ export default function TimesheetSummary({ entries, projects, selectedDate }: Ti
     return totalHours / uniqueDays.size
   }
 
+  // Helper function to convert hh:mm to minutes
+  const hhmmToMinutes = (hhmm: string) => {
+    if (!hhmm || hhmm === '') return 0
+    const [hours, minutes] = hhmm.split(':').map(Number)
+    if (isNaN(hours) || isNaN(minutes)) return 0
+    return hours * 60 + minutes
+  }
+
+  // Calculate totals from grid data
+  const getGridTotalMinutes = () => {
+    if (!gridRows || gridRows.length === 0) return 0
+    
+    return gridRows.reduce((total, row) => {
+      const rowTotal = Object.values(row.weekEntries).reduce((dayTotal, dayEntry) => 
+        dayTotal + hhmmToMinutes(dayEntry.duration), 0
+      )
+      return total + rowTotal
+    }, 0)
+  }
+
   const currentWeekEntries = getCurrentWeekEntries()
   const currentMonthEntries = getCurrentMonthEntries()
-  const weekHours = getTotalHours(currentWeekEntries)
-  const monthHours = getTotalHours(currentMonthEntries)
+  
+  // Use grid data if available, otherwise fall back to entries
+  const gridTotalMinutes = getGridTotalMinutes()
+  const weekHours = gridRows && gridRows.length > 0 ? gridTotalMinutes : getTotalHours(currentWeekEntries)
+  const monthHours = gridRows && gridRows.length > 0 ? gridTotalMinutes : getTotalHours(currentMonthEntries)
   const weekProjectBreakdown = getProjectBreakdown(currentWeekEntries)
-  const avgHoursPerDay = getAverageHoursPerDay(currentWeekEntries)
+  const avgHoursPerDay = gridRows && gridRows.length > 0 ? (gridTotalMinutes / 60) / 7 : getAverageHoursPerDay(currentWeekEntries)
 
   console.log('TimesheetSummary - Calculations:', {
     selectedDate: selectedDate?.toISOString().split('T')[0] || 'current date',
@@ -89,7 +124,12 @@ export default function TimesheetSummary({ entries, projects, selectedDate }: Ti
     weekHours,
     monthHours,
     avgHoursPerDay,
-    entriesKey
+    entriesKey,
+    gridRowsCount: gridRows?.length || 0,
+    gridTotalMinutes,
+    usingGridData: gridRows && gridRows.length > 0,
+    weekUsingGrid: gridRows && gridRows.length > 0,
+    monthUsingGrid: gridRows && gridRows.length > 0
   })
 
 
