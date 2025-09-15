@@ -5,7 +5,9 @@ import { TimeEntry, Project, TimeTrackingState, Company } from '@/types'
 
 interface TimesheetContextType {
   entries: TimeEntry[]
+  allEntries: TimeEntry[]
   projects: Project[]
+  allProjects: Project[]
   companies: Company[]
   selectedCompany: Company | null
   trackingState: TimeTrackingState
@@ -218,7 +220,9 @@ export function TimesheetProvider({ children }: { children: ReactNode }) {
 
   const value: TimesheetContextType = {
     entries,
+    allEntries,
     projects,
+    allProjects,
     companies,
     selectedCompany,
     trackingState,

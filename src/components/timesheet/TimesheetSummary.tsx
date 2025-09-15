@@ -7,16 +7,20 @@ import { Clock, Calendar, TrendingUp, Target, BarChart3 } from 'lucide-react'
 interface TimesheetSummaryProps {
   entries: TimeEntry[]
   projects: Project[]
+  selectedDate?: Date
 }
 
-export default function TimesheetSummary({ entries, projects }: TimesheetSummaryProps) {
+export default function TimesheetSummary({ entries, projects, selectedDate }: TimesheetSummaryProps) {
   console.log('TimesheetSummary - Received entries:', entries.length, entries)
   console.log('TimesheetSummary - Received projects:', projects.length, projects)
+  
+  // Force re-render when entries change by using a key based on entries length and content
+  const entriesKey = entries.length + entries.reduce((sum, entry) => sum + entry.duration, 0) + (selectedDate?.getTime() || 0)
 
   const getCurrentWeekEntries = () => {
-    const now = new Date()
-    const startOfWeek = new Date(now)
-    startOfWeek.setDate(now.getDate() - now.getDay())
+    const referenceDate = selectedDate || new Date()
+    const startOfWeek = new Date(referenceDate)
+    startOfWeek.setDate(referenceDate.getDate() - referenceDate.getDay())
     const endOfWeek = new Date(startOfWeek)
     endOfWeek.setDate(startOfWeek.getDate() + 6)
 
@@ -27,9 +31,9 @@ export default function TimesheetSummary({ entries, projects }: TimesheetSummary
   }
 
   const getCurrentMonthEntries = () => {
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    const referenceDate = selectedDate || new Date()
+    const startOfMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1)
+    const endOfMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth() + 1, 0)
 
     return entries.filter(entry => {
       const entryDate = new Date(entry.date)
@@ -78,9 +82,19 @@ export default function TimesheetSummary({ entries, projects }: TimesheetSummary
   const weekProjectBreakdown = getProjectBreakdown(currentWeekEntries)
   const avgHoursPerDay = getAverageHoursPerDay(currentWeekEntries)
 
+  console.log('TimesheetSummary - Calculations:', {
+    selectedDate: selectedDate?.toISOString().split('T')[0] || 'current date',
+    currentWeekEntries: currentWeekEntries.length,
+    currentMonthEntries: currentMonthEntries.length,
+    weekHours,
+    monthHours,
+    avgHoursPerDay,
+    entriesKey
+  })
+
 
     return (
-      <div className="space-y-4">
+      <div key={entriesKey} className="space-y-4">
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Current Week Hours */}

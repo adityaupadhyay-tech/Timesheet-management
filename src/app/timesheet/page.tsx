@@ -16,7 +16,9 @@ import ExportModal from '@/components/timesheet/ExportModal'
 function TimesheetContent() {
   const {
     entries,
+    allEntries,
     projects,
+    allProjects,
     companies,
     selectedCompany,
     trackingState,
@@ -31,6 +33,7 @@ function TimesheetContent() {
   } = useTimesheet()
 
   const [showExportModal, setShowExportModal] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
 
 
 
@@ -99,7 +102,7 @@ function TimesheetContent() {
 
         {/* Summary Cards */}
         <div className="mb-6">
-          <TimesheetSummary entries={entries} projects={projects} />
+          <TimesheetSummary entries={allEntries} projects={allProjects} selectedDate={selectedDate} />
         </div>
 
         {/* Main Content with Tabs */}
@@ -128,6 +131,7 @@ function TimesheetContent() {
                   onStopTimer={stopTimer}
                   isTracking={trackingState.isTracking}
                   currentTime={trackingState.isTracking ? getCurrentTime() : undefined}
+                  onSelectedDateChange={setSelectedDate}
                 />
               </TabsContent>
               
