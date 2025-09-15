@@ -107,15 +107,33 @@ export default function TimesheetSummary({ entries, projects, selectedDate, grid
     }, 0)
   }
 
+  // Calculate working days from grid data
+  const getGridWorkingDays = () => {
+    if (!gridRows || gridRows.length === 0) return 0
+    
+    const workingDays = new Set()
+    gridRows.forEach(row => {
+      Object.entries(row.weekEntries).forEach(([date, dayEntry]) => {
+        if (dayEntry.duration && dayEntry.duration !== '' && hhmmToMinutes(dayEntry.duration) > 0) {
+          workingDays.add(date)
+        }
+      })
+    })
+    return workingDays.size
+  }
+
   const currentWeekEntries = getCurrentWeekEntries()
   const currentMonthEntries = getCurrentMonthEntries()
   
   // Use grid data if available, otherwise fall back to entries
   const gridTotalMinutes = getGridTotalMinutes()
+  const gridWorkingDays = getGridWorkingDays()
   const weekHours = gridRows && gridRows.length > 0 ? gridTotalMinutes : getTotalHours(currentWeekEntries)
   const monthHours = gridRows && gridRows.length > 0 ? gridTotalMinutes : getTotalHours(currentMonthEntries)
   const weekProjectBreakdown = getProjectBreakdown(currentWeekEntries)
-  const avgHoursPerDay = gridRows && gridRows.length > 0 ? (gridTotalMinutes / 60) / 7 : getAverageHoursPerDay(currentWeekEntries)
+  const avgHoursPerDay = gridRows && gridRows.length > 0 
+    ? (gridWorkingDays > 0 ? (gridTotalMinutes / 60) / gridWorkingDays : 0)
+    : getAverageHoursPerDay(currentWeekEntries)
 
   console.log('TimesheetSummary - Calculations:', {
     selectedDate: selectedDate?.toISOString().split('T')[0] || 'current date',
@@ -127,9 +145,11 @@ export default function TimesheetSummary({ entries, projects, selectedDate, grid
     entriesKey,
     gridRowsCount: gridRows?.length || 0,
     gridTotalMinutes,
+    gridWorkingDays,
     usingGridData: gridRows && gridRows.length > 0,
     weekUsingGrid: gridRows && gridRows.length > 0,
-    monthUsingGrid: gridRows && gridRows.length > 0
+    monthUsingGrid: gridRows && gridRows.length > 0,
+    avgUsingGrid: gridRows && gridRows.length > 0
   })
 
 
