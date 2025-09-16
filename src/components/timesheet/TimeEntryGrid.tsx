@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePickerComponent } from '@/components/ui/date-picker'
@@ -72,9 +71,6 @@ export default function TimeEntryGrid({
   })
   const [includeSaturday, setIncludeSaturday] = useState(false)
   const [includeSunday, setIncludeSunday] = useState(false)
-  const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({})
-  const [dropdownPositions, setDropdownPositions] = useState<{ [key: string]: { top: number, left: number, width: number } }>({})
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
   const saveTimeoutRef = useRef<{ [key: string]: NodeJS.Timeout }>({})
   const lastWeekRef = useRef<string>('')
   const [pendingAutoSaves, setPendingAutoSaves] = useState<Array<{
@@ -87,10 +83,6 @@ export default function TimeEntryGrid({
   }>>([])
   const [isAutoSaving, setIsAutoSaving] = useState(false)
 
-  // Set up portal container
-  useEffect(() => {
-    setPortalContainer(document.body)
-  }, [])
 
   // Notify parent when selectedDate changes
   useEffect(() => {
@@ -575,38 +567,8 @@ export default function TimeEntryGrid({
     return project?.name || 'Unknown Project'
   }
 
-  const toggleDropdown = (rowId: string, buttonElement?: HTMLButtonElement) => {
-    const isOpening = !openDropdowns[rowId]
-    
-    // Close all other dropdowns first
-    setOpenDropdowns({ [rowId]: isOpening })
-    
-    if (isOpening && buttonElement) {
-      const rect = buttonElement.getBoundingClientRect()
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
-      
-      setDropdownPositions(prev => ({
-        ...prev,
-        [rowId]: {
-          top: rect.bottom + scrollTop + 4,
-          left: rect.left + scrollLeft,
-          width: Math.max(rect.width, 200)
-        }
-      }))
-    }
-  }
-
-  const closeDropdown = (rowId: string) => {
-    setOpenDropdowns(prev => ({
-      ...prev,
-      [rowId]: false
-    }))
-  }
-
   const selectProject = (rowId: string, projectId: string) => {
     updateRow(rowId, 'projectId', projectId)
-    closeDropdown(rowId)
   }
 
   const getTotalMinutesForWeek = () => {
@@ -812,26 +774,23 @@ export default function TimeEntryGrid({
                 <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50">
                                                        <td className="py-4 px-4">
                     <div className="relative">
-                       <button
-                         type="button"
-                         onClick={(e) => toggleDropdown(row.id, e.currentTarget)}
-                         className="w-full h-10 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md group flex items-center justify-between"
-                       >
-                         <div className="flex items-center gap-2 flex-1 text-left">
-                           <Briefcase className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                           <span className="text-gray-700 truncate">
-                             {row.projectId ? getProjectName(row.projectId) : "Select Project"}
-                           </span>
-                         </div>
-                         <ChevronDown 
-                           className={`w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-all duration-200 ${
-                             openDropdowns[row.id] ? 'rotate-180' : 'rotate-0'
-                           }`} 
-                         />
-                       </button>
-                       
-                     </div>
-                   </td>
+                      <select
+                        value={row.projectId || ''}
+                        onChange={(e) => selectProject(row.id, e.target.value)}
+                        className="w-full h-10 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md appearance-none cursor-pointer"
+                      >
+                        <option value="">Select Project</option>
+                        {projects.map((project) => (
+                          <option key={project.id} value={project.id}>
+                            {project.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      </div>
+                    </div>
+                  </td>
                    <td className="py-4 px-4">
                      <textarea
                        value={row.description}
@@ -1016,63 +975,6 @@ export default function TimeEntryGrid({
         </div>
       </CardContent>
 
-      {/* Portal-rendered dropdowns */}
-      {portalContainer && Object.entries(openDropdowns).map(([rowId, isOpen]) => 
-        isOpen && dropdownPositions[rowId] ? createPortal(
-          <>
-            <div 
-              className="fixed inset-0 z-[100]"
-              onClick={() => closeDropdown(rowId)}
-            ></div>
-            <div 
-              className="fixed z-[101] max-h-60 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg"
-              style={{
-                top: `${dropdownPositions[rowId].top}px`,
-                left: `${dropdownPositions[rowId].left}px`,
-                width: `${dropdownPositions[rowId].width}px`,
-                minWidth: '200px'
-              }}
-            >
-              <div
-                onClick={() => selectProject(rowId, '')}
-                className="px-3 py-2 text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-100"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full bg-gray-300"></div>
-                  <span className="font-medium">No Project</span>
-                </div>
-              </div>
-              {projects.length === 0 ? (
-                <div className="px-3 py-2 text-gray-500 text-center">
-                  No projects available
-                </div>
-              ) : (
-                projects.map((project, index) => (
-                  <div
-                    key={project.id}
-                    onClick={() => selectProject(rowId, project.id)}
-                    className="px-3 py-2 cursor-pointer hover:bg-blue-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className={`w-3 h-3 rounded-full ${
-                          index % 6 === 0 ? 'bg-blue-500' :
-                          index % 6 === 1 ? 'bg-green-500' :
-                          index % 6 === 2 ? 'bg-purple-500' :
-                          index % 6 === 3 ? 'bg-orange-500' :
-                          index % 6 === 4 ? 'bg-red-500' : 'bg-teal-500'
-                        }`}
-                      ></div>
-                      <span className="font-medium text-gray-700">{project.name}</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </>,
-          portalContainer
-        ) : null
-      )}
     </Card>
   )
 }
