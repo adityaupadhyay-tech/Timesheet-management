@@ -16,9 +16,7 @@ import ExportModal from '@/components/timesheet/ExportModal'
 function TimesheetContent() {
   const {
     entries,
-    allEntries,
     projects,
-    allProjects,
     companies,
     selectedCompany,
     trackingState,
@@ -57,8 +55,21 @@ function TimesheetContent() {
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Timesheet Management</h1>
-              <p className="mt-2 text-gray-600">Track your work hours using the grid-based time entry system</p>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900">Timesheet Management</h1>
+                {selectedCompany && (
+                  <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    {selectedCompany.name}
+                  </div>
+                )}
+              </div>
+              <p className="text-gray-600">
+                Track your work hours using the grid-based time entry system
+                {selectedCompany && (
+                  <span className="text-blue-600 font-medium"> for {selectedCompany.name}</span>
+                )}
+              </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button 
@@ -78,28 +89,32 @@ function TimesheetContent() {
           </div>
           
           {/* Company Selector */}
-          <div className="mt-4 flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700">Company:</span>
-            <div className="relative">
-              <select
-                value={selectedCompany?.id || ''}
-                onChange={(e) => {
-                  const company = companies.find(c => c.id === e.target.value)
-                  setSelectedCompany(company || null)
-                }}
-                className="appearance-none px-4 py-2.5 pr-10 border border-gray-200 rounded-lg text-sm font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer min-w-[160px]"
-              >
-                <option value="">All Companies</option>
-                {companies.map((company) => (
-                  <option key={company.id} value={company.id}>
-                    {company.name}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span className="text-sm font-semibold text-blue-900">Active Company:</span>
+              </div>
+              <div className="relative">
+                <select
+                  value={selectedCompany?.id || ''}
+                  onChange={(e) => {
+                    const company = companies.find(c => c.id === e.target.value)
+                    setSelectedCompany(company || null)
+                  }}
+                  className="appearance-none px-4 py-2.5 pr-10 border border-blue-300 rounded-lg text-sm font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer min-w-[200px]"
+                >
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg className="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
@@ -129,7 +144,6 @@ function TimesheetContent() {
                 <TimeEntryGrid
                   projects={projects}
                   entries={entries}
-                  allEntries={allEntries}
                   onSave={addEntry}
                   onUpdate={updateEntry}
                   onDelete={deleteEntry}

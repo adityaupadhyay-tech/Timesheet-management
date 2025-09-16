@@ -25,8 +25,7 @@ import {
 
 interface TimeEntryGridProps {
   projects: Project[]
-  entries: TimeEntry[]
-  allEntries?: TimeEntry[] // Add allEntries for proper entry lookup
+  entries: TimeEntry[] // Company-specific entries only
   onSave: (entry: Omit<TimeEntry, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void
   onUpdate: (id: string, entry: Omit<TimeEntry, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void
   onDelete: (id: string) => void
@@ -54,7 +53,6 @@ interface GridRow {
 export default function TimeEntryGrid({
   projects,
   entries,
-  allEntries = entries, // Default to entries if allEntries not provided
   onSave,
   onUpdate,
   onDelete,
@@ -73,6 +71,7 @@ export default function TimeEntryGrid({
   const [includeSunday, setIncludeSunday] = useState(false)
   const saveTimeoutRef = useRef<{ [key: string]: NodeJS.Timeout }>({})
   const lastWeekRef = useRef<string>('')
+  const lastEntriesRef = useRef<TimeEntry[]>([])
   const [pendingAutoSaves, setPendingAutoSaves] = useState<Array<{
     id: string
     date: string
@@ -83,6 +82,22 @@ export default function TimeEntryGrid({
   }>>([])
   const [isAutoSaving, setIsAutoSaving] = useState(false)
 
+  // Clear grid when company changes (entries change)
+  useEffect(() => {
+    // Check if entries have actually changed (different company)
+    const entriesChanged = JSON.stringify(entries) !== JSON.stringify(lastEntriesRef.current)
+    
+    if (entriesChanged) {
+      console.log('Company changed - clearing grid rows', {
+        previousEntries: lastEntriesRef.current.length,
+        currentEntries: entries.length
+      })
+      setGridRows([])
+      setPendingAutoSaves([])
+      lastWeekRef.current = ''
+      lastEntriesRef.current = entries
+    }
+  }, [entries]) // Trigger when entries array changes (company switch)
 
   // Notify parent when selectedDate changes
   useEffect(() => {
@@ -102,7 +117,7 @@ export default function TimeEntryGrid({
   useEffect(() => {
     if (pendingAutoSaves.length > 0) {
       console.log('Processing pending auto-saves:', pendingAutoSaves)
-      console.log('Current allEntries count:', allEntries.length)
+      console.log('Current entries count:', entries.length)
       setIsAutoSaving(true)
       pendingAutoSaves.forEach(({ id, date, duration, isNew, projectId, description }) => {
         const durationMinutes = hhmmToMinutes(duration)
@@ -110,7 +125,7 @@ export default function TimeEntryGrid({
         // Handle empty values - delete existing entry if it exists
         if (durationMinutes === 0 || duration === '' || duration === '0:00') {
           // Find and delete existing entry for this date and project
-          const existingEntry = allEntries.find(entry => 
+          const existingEntry = entries.find(entry => 
             entry.date === date && 
             entry.projectId === (projectId || undefined) &&
             entry.description === (description || 'Time entry')
@@ -135,7 +150,7 @@ export default function TimeEntryGrid({
           }
 
             // Check if there's already an existing entry for this specific date and project
-            const existingEntry = allEntries.find(entry => 
+            const existingEntry = entries.find(entry => 
               entry.date === date && 
               entry.projectId === entryData.projectId &&
               entry.description === entryData.description
@@ -150,7 +165,7 @@ export default function TimeEntryGrid({
               shouldCreateNew,
               shouldUpdate,
               entryData,
-              allEntriesCount: allEntries.length
+              entriesCount: entries.length
             })
 
             if (shouldCreateNew) {
@@ -166,7 +181,7 @@ export default function TimeEntryGrid({
       setPendingAutoSaves([])
       setIsAutoSaving(false)
     }
-  }, [pendingAutoSaves, allEntries, onSave, onUpdate, onDelete])
+  }, [pendingAutoSaves, entries, onSave, onUpdate, onDelete])
 
   // Initialize grid with current week's entries grouped by project/task
   useEffect(() => {
@@ -320,7 +335,7 @@ export default function TimeEntryGrid({
           if (dayEntry.duration && dayEntry.duration !== '') {
             // Find and delete the corresponding entry from context
             // Use more flexible matching since projectId and description might have changed
-            const entriesToDelete = allEntries.filter(entry => 
+            const entriesToDelete = entries.filter((entry: TimeEntry) => 
               entry.date === date &&
               (entry.projectId === row.projectId || 
                (entry.description === row.description && row.description !== '') ||
@@ -329,7 +344,7 @@ export default function TimeEntryGrid({
             console.log(`Found ${entriesToDelete.length} entries to delete for date ${date}`, {
               rowProjectId: row.projectId,
               rowDescription: row.description,
-              matchingEntries: entriesToDelete.map(e => ({ id: e.id, projectId: e.projectId, description: e.description }))
+              matchingEntries: entriesToDelete.map((e: TimeEntry) => ({ id: e.id, projectId: e.projectId, description: e.description }))
             })
             entriesToDelete.forEach(entry => onDelete(entry.id))
           }
@@ -366,7 +381,7 @@ export default function TimeEntryGrid({
           if (dayEntry.duration && dayEntry.duration !== '') {
             // Find and delete the corresponding entry from context
             // Use more flexible matching since projectId and description might have changed
-            const entriesToDelete = allEntries.filter(entry => 
+            const entriesToDelete = entries.filter((entry: TimeEntry) => 
               entry.date === date &&
               (entry.projectId === row.projectId || 
                (entry.description === row.description && row.description !== '') ||
@@ -375,7 +390,7 @@ export default function TimeEntryGrid({
             console.log(`Found ${entriesToDelete.length} entries to delete for date ${date}`, {
               rowProjectId: row.projectId,
               rowDescription: row.description,
-              matchingEntries: entriesToDelete.map(e => ({ id: e.id, projectId: e.projectId, description: e.description }))
+              matchingEntries: entriesToDelete.map((e: TimeEntry) => ({ id: e.id, projectId: e.projectId, description: e.description }))
             })
             entriesToDelete.forEach(entry => onDelete(entry.id))
           }

@@ -5,9 +5,7 @@ import { TimeEntry, Project, TimeTrackingState, Company } from '@/types'
 
 interface TimesheetContextType {
   entries: TimeEntry[]
-  allEntries: TimeEntry[]
   projects: Project[]
-  allProjects: Project[]
   companies: Company[]
   selectedCompany: Company | null
   trackingState: TimeTrackingState
@@ -28,21 +26,18 @@ const mockCompanies: Company[] = [
   {
     id: '1',
     name: 'TechCorp Solutions',
-    description: 'Leading technology solutions provider',
     color: '#3B82F6',
     isActive: true
   },
   {
     id: '2',
     name: 'Design Studio Inc',
-    description: 'Creative design and branding agency',
     color: '#10B981',
     isActive: true
   },
   {
     id: '3',
     name: 'Consulting Partners',
-    description: 'Business consulting and advisory services',
     color: '#F59E0B',
     isActive: true
   }
@@ -118,21 +113,20 @@ export function TimesheetProvider({ children }: { children: ReactNode }) {
     elapsedTime: 0
   })
 
-  // Filter entries and projects based on selected company
+  // Filter entries and projects based on selected company (company is required)
   const entries = selectedCompany 
     ? allEntries.filter(entry => entry.companyId === selectedCompany.id)
-    : allEntries
+    : []
   
   const projects = selectedCompany
     ? allProjects.filter(project => project.companyId === selectedCompany.id)
-    : allProjects
+    : []
 
-  console.log('TimesheetContext - Filtering:', {
-    selectedCompany: selectedCompany?.id,
-    allEntriesCount: allEntries.length,
-    filteredEntriesCount: entries.length,
-    allProjectsCount: allProjects.length,
-    filteredProjectsCount: projects.length
+  console.log('TimesheetContext - Company-specific data:', {
+    selectedCompany: selectedCompany?.name,
+    companyId: selectedCompany?.id,
+    entriesCount: entries.length,
+    projectsCount: projects.length
   })
 
   // Timer effect
@@ -156,11 +150,16 @@ export function TimesheetProvider({ children }: { children: ReactNode }) {
   }, [trackingState.isTracking])
 
   const addEntry = (entryData: Omit<TimeEntry, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    if (!selectedCompany) {
+      console.error('Cannot add entry: No company selected')
+      return
+    }
+
     const newEntry: TimeEntry = {
       ...entryData,
       id: Date.now().toString(),
       userId: 'user1', // TODO: Get from auth context
-      companyId: selectedCompany?.id,
+      companyId: selectedCompany.id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -174,11 +173,16 @@ export function TimesheetProvider({ children }: { children: ReactNode }) {
   }
 
   const updateEntry = (id: string, updates: Partial<TimeEntry>) => {
+    if (!selectedCompany) {
+      console.error('Cannot update entry: No company selected')
+      return
+    }
+
     console.log('TimesheetContext - updateEntry called:', { id, updates, selectedCompany })
     setAllEntries(prev => {
       const updated = prev.map(entry => 
         entry.id === id 
-          ? { ...entry, ...updates, companyId: selectedCompany?.id, updatedAt: new Date().toISOString() }
+          ? { ...entry, ...updates, companyId: selectedCompany.id, updatedAt: new Date().toISOString() }
           : entry
       )
       console.log('TimesheetContext - allEntries updated:', updated.length, 'entries')
@@ -220,9 +224,7 @@ export function TimesheetProvider({ children }: { children: ReactNode }) {
 
   const value: TimesheetContextType = {
     entries,
-    allEntries,
     projects,
-    allProjects,
     companies,
     selectedCompany,
     trackingState,
