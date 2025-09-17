@@ -144,6 +144,7 @@ function TimesheetContent() {
                 <TimeEntryGrid
                   projects={projects}
                   entries={entries}
+                  gridRows={gridRows}
                   onSave={addEntry}
                   onUpdate={updateEntry}
                   onDelete={deleteEntry}

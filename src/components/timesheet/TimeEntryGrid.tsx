@@ -26,6 +26,7 @@ import {
 interface TimeEntryGridProps {
   projects: Project[]
   entries: TimeEntry[] // Company-specific entries only
+  gridRows?: GridRow[] // Grid rows from parent to persist across tab switches
   onSave: (entry: Omit<TimeEntry, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void
   onUpdate: (id: string, entry: Omit<TimeEntry, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void
   onDelete: (id: string) => void
@@ -53,6 +54,7 @@ interface GridRow {
 export default function TimeEntryGrid({
   projects,
   entries,
+  gridRows: parentGridRows = [],
   onSave,
   onUpdate,
   onDelete,
@@ -63,10 +65,17 @@ export default function TimeEntryGrid({
   onSelectedDateChange,
   onGridDataChange
 }: TimeEntryGridProps) {
-  const [gridRows, setGridRows] = useState<GridRow[]>([])
+  const [gridRows, setGridRows] = useState<GridRow[]>(parentGridRows)
   const [selectedDate, setSelectedDate] = useState(() => {
     return new Date()
   })
+
+  // Sync local gridRows with parent gridRows when component mounts or parent changes
+  useEffect(() => {
+    if (parentGridRows && parentGridRows.length > 0) {
+      setGridRows(parentGridRows)
+    }
+  }, [parentGridRows])
   const [includeSaturday, setIncludeSaturday] = useState(false)
   const [includeSunday, setIncludeSunday] = useState(false)
   const saveTimeoutRef = useRef<{ [key: string]: NodeJS.Timeout }>({})
@@ -82,13 +91,110 @@ export default function TimeEntryGrid({
   }>>([])
   const [isAutoSaving, setIsAutoSaving] = useState(false)
 
-  // Clear grid when company changes (entries change)
+  // Clear grid only when company changes (not when entries are added/updated)
   useEffect(() => {
-    // Check if entries have actually changed (different company)
-    const entriesChanged = JSON.stringify(entries) !== JSON.stringify(lastEntriesRef.current)
+    // Only clear grid if we have entries but no grid rows (indicating a company switch)
+    // or if the entries array is completely different (different company)
+    const hasEntries = entries && entries.length > 0
+    const hasGridRows = gridRows && gridRows.length > 0
+    const isCompanySwitch = hasEntries && !hasGridRows
     
-    if (entriesChanged) {
-      console.log('Company changed - clearing grid rows', {
+    if (isCompanySwitch) {
+      console.log('Company switch detected - clearing grid rows', {
+        entriesCount: entries.length,
+        gridRowsCount: gridRows.length
+      })
+      setGridRows([])
+      setPendingAutoSaves([])
+      lastWeekRef.current = ''
+      lastEntriesRef.current = entries
+    }
+  }, [entries, gridRows]) // Only trigger when entries change and grid is empty
+
+  // Initialize grid with existing entries when needed
+  const initializeGridWithEntries = () => {
+    if (!entries || entries.length === 0 || gridRows.length > 0) return
+
+    const startOfWeek = new Date(selectedDate)
+    startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay())
+    const endOfWeek = new Date(startOfWeek)
+    endOfWeek.setDate(startOfWeek.getDate() + 6)
+
+    // Filter entries for the selected week
+    const weekEntries = entries.filter(entry => {
+      const entryDate = new Date(entry.date)
+      return entryDate >= startOfWeek && entryDate <= endOfWeek
+    })
+
+    if (weekEntries.length === 0) return
+
+    // Group entries by project and description
+    const groupedEntries: { [key: string]: TimeEntry[] } = {}
+    weekEntries.forEach(entry => {
+      const key = `${entry.projectId || 'no-project'}-${entry.description || 'no-description'}`
+      if (!groupedEntries[key]) {
+        groupedEntries[key] = []
+      }
+      groupedEntries[key].push(entry)
+    })
+
+    // Create grid rows from grouped entries
+    const newGridRows: GridRow[] = Object.entries(groupedEntries).map(([key, entries]) => {
+      const weekEntries: { [day: string]: { duration: string } } = {}
+      
+      // Initialize all days of the week
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek)
+        date.setDate(startOfWeek.getDate() + i)
+        const dateStr = date.toISOString().split('T')[0]
+        weekEntries[dateStr] = {
+          duration: ''
+        }
+      }
+
+      // Fill in the actual entries
+      entries.forEach(entry => {
+        const dateStr = entry.date
+        const hours = Math.floor(entry.duration / 60)
+        const minutes = entry.duration % 60
+        const duration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+        
+        weekEntries[dateStr] = {
+          duration
+        }
+      })
+
+      return {
+        id: `row-${Date.now()}-${Math.random()}`,
+        projectId: entries[0].projectId || '',
+        description: entries[0].description || '',
+        weekEntries,
+        status: 'draft',
+        isNew: false
+      }
+    })
+
+    setGridRows(newGridRows)
+    console.log('Initialized grid with existing entries:', newGridRows.length, 'rows')
+  }
+
+  // Initialize grid only when component mounts or when selectedDate changes (not when entries change)
+  useEffect(() => {
+    // Only initialize if grid is empty and we have entries
+    if (gridRows.length === 0 && entries && entries.length > 0) {
+      initializeGridWithEntries()
+    }
+  }, [selectedDate]) // Only trigger when selectedDate changes, not when entries change
+
+  // Handle company switches by clearing grid and reinitializing
+  useEffect(() => {
+    // Check if this is a company switch by comparing entry counts
+    const isCompanySwitch = entries.length !== lastEntriesRef.current.length && 
+                           entries.length > 0 && 
+                           lastEntriesRef.current.length > 0
+    
+    if (isCompanySwitch) {
+      console.log('Company switch detected - clearing and reinitializing grid', {
         previousEntries: lastEntriesRef.current.length,
         currentEntries: entries.length
       })
@@ -96,8 +202,13 @@ export default function TimeEntryGrid({
       setPendingAutoSaves([])
       lastWeekRef.current = ''
       lastEntriesRef.current = entries
+      
+      // Reinitialize with new company's entries
+      setTimeout(() => {
+        initializeGridWithEntries()
+      }, 0)
     }
-  }, [entries]) // Trigger when entries array changes (company switch)
+  }, [entries]) // Only trigger when entries change
 
   // Notify parent when selectedDate changes
   useEffect(() => {
