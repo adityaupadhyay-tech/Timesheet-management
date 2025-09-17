@@ -78,6 +78,63 @@ export default function TimeEntryGrid({
   }, [parentGridRows])
   const [includeSaturday, setIncludeSaturday] = useState(false)
   const [includeSunday, setIncludeSunday] = useState(false)
+  
+  // Clear Saturday and Sunday cells when those days are removed
+  useEffect(() => {
+    console.log('Weekend clearing effect triggered:', { includeSaturday, includeSunday, selectedDate })
+    
+    // Calculate the actual date strings for Saturday and Sunday
+    const weekStart = new Date(selectedDate)
+    weekStart.setDate(selectedDate.getDate() - selectedDate.getDay())
+    
+    const saturdayDate = new Date(weekStart)
+    saturdayDate.setDate(weekStart.getDate() + 6)
+    const saturdayDateStr = saturdayDate.toISOString().split('T')[0]
+    
+    const sundayDate = new Date(weekStart)
+    const sundayDateStr = sundayDate.toISOString().split('T')[0]
+    
+    console.log('Calculated dates:', { saturdayDateStr, sundayDateStr })
+    
+    // Clear grid rows for removed days
+    setGridRows(prevRows => {
+      return prevRows.map(row => {
+        const updatedRow = { ...row }
+        const updatedWeekEntries = { ...updatedRow.weekEntries }
+        
+        // Clear Saturday if not included
+        if (!includeSaturday && updatedWeekEntries[saturdayDateStr]) {
+          console.log(`Clearing Saturday (${saturdayDateStr}) for row ${row.id}:`, updatedWeekEntries[saturdayDateStr])
+          updatedWeekEntries[saturdayDateStr] = { duration: '' }
+        }
+        
+        // Clear Sunday if not included
+        if (!includeSunday && updatedWeekEntries[sundayDateStr]) {
+          console.log(`Clearing Sunday (${sundayDateStr}) for row ${row.id}:`, updatedWeekEntries[sundayDateStr])
+          updatedWeekEntries[sundayDateStr] = { duration: '' }
+        }
+        
+        return {
+          ...updatedRow,
+          weekEntries: updatedWeekEntries
+        }
+      })
+    })
+    
+    // Clear pending auto-saves for removed days
+    setPendingAutoSaves(prevSaves => {
+      return prevSaves.filter(save => {
+        const saveDate = new Date(save.date)
+        const dayOfWeek = saveDate.getDay()
+        
+        // Keep saves for days that are still included
+        if (dayOfWeek === 6 && !includeSaturday) return false // Remove Saturday saves
+        if (dayOfWeek === 0 && !includeSunday) return false // Remove Sunday saves
+        
+        return true
+      })
+    })
+  }, [includeSaturday, includeSunday, selectedDate])
   const saveTimeoutRef = useRef<{ [key: string]: NodeJS.Timeout }>({})
   const lastWeekRef = useRef<string>('')
   const lastEntriesRef = useRef<TimeEntry[]>([])
@@ -1064,9 +1121,15 @@ export default function TimeEntryGrid({
             <Button
               variant={includeSaturday ? "default" : "outline"}
               size="sm"
-              onClick={() => setIncludeSaturday(!includeSaturday)}
+              onClick={() => {
+                const wasIncluded = includeSaturday
+                setIncludeSaturday(!includeSaturday)
+                if (wasIncluded) {
+                  console.log('Saturday removed - cells will be cleared')
+                }
+              }}
               className="flex items-center gap-2"
-              title={includeSaturday ? "Remove Saturday" : "Add Saturday"}
+              title={includeSaturday ? "Remove Saturday (will clear all Saturday entries)" : "Add Saturday"}
             >
               <Calendar className="h-4 w-4" />
               {includeSaturday ? "Remove Sat" : "Add Saturday"}
@@ -1075,9 +1138,15 @@ export default function TimeEntryGrid({
             <Button
               variant={includeSunday ? "default" : "outline"}
               size="sm"
-              onClick={() => setIncludeSunday(!includeSunday)}
+              onClick={() => {
+                const wasIncluded = includeSunday
+                setIncludeSunday(!includeSunday)
+                if (wasIncluded) {
+                  console.log('Sunday removed - cells will be cleared')
+                }
+              }}
               className="flex items-center gap-2"
-              title={includeSunday ? "Remove Sunday" : "Add Sunday"}
+              title={includeSunday ? "Remove Sunday (will clear all Sunday entries)" : "Add Sunday"}
             >
               <Calendar className="h-4 w-4" />
               {includeSunday ? "Remove Sun" : "Add Sunday"}
