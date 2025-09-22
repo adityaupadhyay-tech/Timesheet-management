@@ -32,6 +32,7 @@ function TimesheetContent() {
   } = useTimesheet()
 
   const [showExportModal, setShowExportModal] = useState(false)
+  const [showSubmitModal, setShowSubmitModal] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [gridRows, setGridRows] = useState([])
 
@@ -41,6 +42,19 @@ function TimesheetContent() {
 
   const closeExportModal = () => {
     setShowExportModal(false)
+  }
+
+  const handleSubmitTimesheet = () => {
+    setShowSubmitModal(true)
+  }
+
+  const confirmSubmitTimesheet = () => {
+    submitTimesheet()
+    setShowSubmitModal(false)
+  }
+
+  const cancelSubmitTimesheet = () => {
+    setShowSubmitModal(false)
   }
 
   const handleGridDataChange = (newGridRows) => {
@@ -76,7 +90,7 @@ function TimesheetContent() {
                 <Button 
                   size="lg" 
                   className="flex items-center gap-2"
-                  onClick={submitTimesheet}
+                  onClick={handleSubmitTimesheet}
                 >
                   <Send className="h-4 w-4" />
                   Submit Timesheet
@@ -98,7 +112,7 @@ function TimesheetContent() {
                   size="lg" 
                   variant="outline"
                   className="flex items-center gap-2"
-                  onClick={submitTimesheet}
+                  onClick={handleSubmitTimesheet}
                 >
                   <Send className="h-4 w-4" />
                   Submit Revision
@@ -209,6 +223,84 @@ function TimesheetContent() {
           projects={projects}
           onClose={closeExportModal}
         />
+      )}
+
+      {/* Submit Confirmation Modal */}
+      {showSubmitModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-full">
+                  <Send className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Submit Timesheet</h3>
+                  <p className="text-sm text-gray-600">Confirm your submission</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-6">
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="p-1 bg-amber-100 rounded-full">
+                    <CheckCircle className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-amber-800">Ready to Submit?</p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      Your timesheet will be sent for review and cannot be edited after submission.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Total Hours:</span>
+                    <span className="font-semibold text-gray-900">
+                      {entries.reduce((total, entry) => total + (entry.duration || 0), 0).toFixed(1)}h
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Period:</span>
+                    <span className="font-semibold text-gray-900">
+                      {selectedDate.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Company:</span>
+                    <span className="font-semibold text-gray-900">{selectedCompany?.name}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
+              <Button
+                onClick={cancelSubmitTimesheet}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmSubmitTimesheet}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Submit Timesheet
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
