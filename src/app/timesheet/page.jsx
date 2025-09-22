@@ -35,6 +35,7 @@ function TimesheetContent() {
   const [showSubmitModal, setShowSubmitModal] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [gridRows, setGridRows] = useState([])
+  const [validationTrigger, setValidationTrigger] = useState(0)
 
   const handleExportReport = () => {
     setShowExportModal(true)
@@ -45,7 +46,33 @@ function TimesheetContent() {
   }
 
   const handleSubmitTimesheet = () => {
+    // Validate all rows before showing confirmation modal
+    const hasValidationErrors = validateTimesheetData()
+    if (hasValidationErrors) {
+      return // Don't show modal if there are validation errors
+    }
     setShowSubmitModal(true)
+  }
+
+  const validateTimesheetData = () => {
+    let hasErrors = false
+    
+    // Check if there are any rows with missing project or description
+    gridRows.forEach((row) => {
+      if (!row.projectId || row.projectId === '') {
+        hasErrors = true
+      }
+      if (!row.description || row.description.trim() === '') {
+        hasErrors = true
+      }
+    })
+    
+    // If there are errors, trigger validation in the TimeEntryGrid
+    if (hasErrors) {
+      setValidationTrigger(prev => prev + 1)
+    }
+    
+    return hasErrors
   }
 
   const confirmSubmitTimesheet = () => {
@@ -202,6 +229,7 @@ function TimesheetContent() {
                   onSubmitTimesheet={submitTimesheet}
                   onApproveTimesheet={approveTimesheet}
                   onRejectTimesheet={rejectTimesheet}
+                  validationTrigger={validationTrigger}
                   userRole="admin" // TODO: Get from user context
                 />
               </TabsContent>

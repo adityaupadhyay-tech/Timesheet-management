@@ -59,6 +59,7 @@ export default function TimeEntryGrid({
   onSubmitTimesheet,
   onApproveTimesheet,
   onRejectTimesheet,
+  validationTrigger,
   userRole = 'employee'
 }) {
   const [localGridRows, setLocalGridRows] = useState([])
@@ -67,6 +68,7 @@ export default function TimeEntryGrid({
   const [includeSunday, setIncludeSunday] = useState(false)
   const [pendingAutoSaves, setPendingAutoSaves] = useState([])
   const [isAutoSaving, setIsAutoSaving] = useState(false)
+  const [validationErrors, setValidationErrors] = useState({})
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
   
@@ -857,6 +859,56 @@ export default function TimeEntryGrid({
 
   const cycleDays = getCycleDays()
 
+  // Validation functions
+  const validateRow = (row) => {
+    const errors = {}
+    
+    if (!row.projectId || row.projectId === '') {
+      errors.projectId = 'Project selection is required'
+    }
+    
+    if (!row.description || row.description.trim() === '') {
+      errors.description = 'Task description cannot be blank'
+    }
+    
+    return errors
+  }
+
+  const validateAllRows = () => {
+    const allErrors = {}
+    let hasErrors = false
+    
+    localGridRows.forEach((row, index) => {
+      const rowErrors = validateRow(row)
+      if (Object.keys(rowErrors).length > 0) {
+        allErrors[row.id] = rowErrors
+        hasErrors = true
+      }
+    })
+    
+    setValidationErrors(allErrors)
+    return !hasErrors
+  }
+
+  const clearRowValidation = (rowId) => {
+    setValidationErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors[rowId]
+      return newErrors
+    })
+  }
+
+  const getRowValidationError = (rowId, field) => {
+    return validationErrors[rowId]?.[field] || null
+  }
+
+  // Trigger validation when parent requests it
+  useEffect(() => {
+    if (validationTrigger > 0) {
+      validateAllRows()
+    }
+  }, [validationTrigger])
+
   return (
     <Card className="w-full border-0 shadow-sm bg-white/50 backdrop-blur-sm">
       <CardHeader className="pb-6">
@@ -1019,12 +1071,17 @@ export default function TimeEntryGrid({
                     <div className="relative">
                       <select
                         value={row.projectId || ''}
-                        onChange={(e) => selectProject(row.id, e.target.value)}
+                        onChange={(e) => {
+                          selectProject(row.id, e.target.value)
+                          clearRowValidation(row.id)
+                        }}
                         disabled={isTimesheetLocked}
-                        className={`w-full h-10 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 shadow-sm hover:shadow-md appearance-none ${
-                          isTimesheetLocked 
-                            ? 'bg-gray-100 cursor-not-allowed opacity-60' 
-                            : 'bg-white hover:bg-gray-50 cursor-pointer'
+                        className={`w-full h-10 px-3 py-2 text-sm border rounded-lg focus:ring-2 transition-all duration-200 shadow-sm hover:shadow-md appearance-none ${
+                          getRowValidationError(row.id, 'projectId')
+                            ? 'border-red-300 focus:border-red-500 focus:ring-red-100 bg-red-50'
+                            : isTimesheetLocked 
+                              ? 'bg-gray-100 cursor-not-allowed opacity-60 border-gray-200' 
+                              : 'bg-white hover:bg-gray-50 cursor-pointer border-gray-200 focus:border-blue-500 focus:ring-blue-100'
                         }`}
                       >
                         <option value="">Select Project</option>
@@ -1038,20 +1095,43 @@ export default function TimeEntryGrid({
                         <ChevronDown className="w-4 h-4 text-gray-400" />
                       </div>
                     </div>
+                    {getRowValidationError(row.id, 'projectId') && (
+                      <div className="mt-1 flex items-center gap-1">
+                        <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                        <span className="text-xs text-red-600 font-medium">
+                          {getRowValidationError(row.id, 'projectId')}
+                        </span>
+                      </div>
+                    )}
                   </td>
                   <td className="py-4 px-4">
-                    <textarea
-                      value={row.description}
-                      onChange={(e) => updateRow(row.id, 'description', e.target.value)}
-                      placeholder="Enter description..."
-                      disabled={isTimesheetLocked}
-                      className={`w-full px-3 py-2 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500 min-h-[40px] resize-y ${
-                        isTimesheetLocked 
-                          ? 'bg-gray-100 cursor-not-allowed opacity-60' 
-                          : 'cursor-text'
-                      }`}
-                      rows={2}
-                    />
+                    <div>
+                      <textarea
+                        value={row.description}
+                        onChange={(e) => {
+                          updateRow(row.id, 'description', e.target.value)
+                          clearRowValidation(row.id)
+                        }}
+                        placeholder="Enter description..."
+                        disabled={isTimesheetLocked}
+                        className={`w-full px-3 py-2 border rounded text-sm focus:ring-2 min-h-[40px] resize-y transition-all duration-200 ${
+                          getRowValidationError(row.id, 'description')
+                            ? 'border-red-300 focus:border-red-500 focus:ring-red-100 bg-red-50'
+                            : isTimesheetLocked 
+                              ? 'bg-gray-100 cursor-not-allowed opacity-60 border-gray-200' 
+                              : 'cursor-text border-gray-200 focus:border-blue-500 focus:ring-blue-100'
+                        }`}
+                        rows={2}
+                      />
+                      {getRowValidationError(row.id, 'description') && (
+                        <div className="mt-1 flex items-center gap-1">
+                          <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                          <span className="text-xs text-red-600 font-medium">
+                            {getRowValidationError(row.id, 'description')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </td>
                   {cycleDays.map((day) => {
                     const dateStr = day.toISOString().split('T')[0]
