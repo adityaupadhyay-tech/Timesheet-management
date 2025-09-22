@@ -943,7 +943,12 @@ export default function TimeEntryGrid({
                   </div>
                 )}
               </div>
-              <p className="text-gray-600 text-sm">Select project, add description, then enter time in hh:mm format for each day</p>
+              <p className="text-gray-600 text-sm">
+                Select project, add description, then enter time in hh:mm format for each day
+                <span className="ml-2 text-xs text-blue-600 font-medium">
+                  ({cycleType === 'semi-monthly' ? 'Twice per month' : cycleType === 'weekly' ? '7 days' : cycleType === 'bi-weekly' ? '14 days' : 'Monthly view'})
+                </span>
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
