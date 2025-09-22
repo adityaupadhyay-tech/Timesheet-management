@@ -3,6 +3,14 @@
  */
 
 /**
+ * @typedef {'daily' | 'weekly' | 'bi-weekly' | 'monthly'} TimesheetCycle
+ */
+
+/**
+ * @typedef {'draft' | 'submitted' | 'approved' | 'rejected'} TimesheetStatus
+ */
+
+/**
  * @typedef {Object} Company
  * @property {string} id
  * @property {string} name
@@ -10,6 +18,7 @@
  * @property {string} [logo]
  * @property {string} [color]
  * @property {boolean} isActive
+ * @property {TimesheetCycle} timesheetCycle
  */
 
 /**
@@ -22,6 +31,7 @@
  * @property {string} [managerId]
  * @property {string} [avatar]
  * @property {string} [companyId]
+ * @property {Company} [company]
  */
 
 /**
@@ -81,14 +91,19 @@
  * @typedef {Object} Timesheet
  * @property {string} id
  * @property {string} userId
- * @property {string} weekStart
- * @property {string} weekEnd
+ * @property {string} companyId
+ * @property {string} cycleStart
+ * @property {string} cycleEnd
+ * @property {TimesheetCycle} cycleType
  * @property {number} totalHours
  * @property {TimeEntry[]} entries
- * @property {'draft' | 'submitted' | 'approved' | 'rejected'} status
+ * @property {TimesheetStatus} status
  * @property {string} [submittedAt]
  * @property {string} [approvedAt]
  * @property {string} [approvedBy]
+ * @property {string} [rejectedAt]
+ * @property {string} [rejectedBy]
+ * @property {string} [rejectionReason]
  */
 
 /**

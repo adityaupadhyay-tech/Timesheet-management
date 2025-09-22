@@ -9,6 +9,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
  * @property {Company[]} companies
  * @property {Company | null} selectedCompany
  * @property {TimeTrackingState} trackingState
+ * @property {Timesheet | null} currentTimesheet
  * @property {function(TimeEntry): void} addEntry
  * @property {function(string, Partial): void} updateEntry
  * @property {function(string): void} deleteEntry
@@ -17,6 +18,8 @@ import { createContext, useContext, useState, useEffect } from 'react'
  * @property {function(): void} stopTimer
  * @property {function(): void} submitTimesheet
  * @property {function(): string} getCurrentTime
+ * @property {function(): void} approveTimesheet
+ * @property {function(string): void} rejectTimesheet
  */
 
 const TimesheetContext = createContext(undefined)
@@ -27,19 +30,22 @@ const mockCompanies = [
     id: '1',
     name: 'TechCorp Solutions',
     color: '#3B82F6',
-    isActive: true
+    isActive: true,
+    timesheetCycle: 'weekly' // Default weekly timesheet
   },
   {
     id: '2',
     name: 'Design Studio Inc',
     color: '#10B981',
-    isActive: true
+    isActive: true,
+    timesheetCycle: 'bi-weekly' // Bi-weekly timesheet
   },
   {
     id: '3',
     name: 'Consulting Partners',
     color: '#F59E0B',
-    isActive: true
+    isActive: true,
+    timesheetCycle: 'monthly' // Monthly timesheet
   }
 ]
 
@@ -116,6 +122,7 @@ export function TimesheetProvider({ children }) {
     isTracking: false,
     elapsedTime: 0
   })
+  const [currentTimesheet, setCurrentTimesheet] = useState(null)
 
   // Filter entries and projects based on selected company (company is required)
   const entries = selectedCompany 
@@ -213,9 +220,76 @@ export function TimesheetProvider({ children }) {
     })
   }
 
+  // Get or create current timesheet for the selected company and cycle
+  const getCurrentTimesheet = () => {
+    if (!selectedCompany) return null
+    
+    // For now, we'll create a simple timesheet object based on current entries
+    // In a real app, this would be fetched from the database
+    const totalHours = entries.reduce((total, entry) => total + entry.duration, 0)
+    
+    return {
+      id: `timesheet-${selectedCompany.id}-${Date.now()}`,
+      userId: 'user1', // TODO: Get from auth context
+      companyId: selectedCompany.id,
+      cycleStart: new Date().toISOString().split('T')[0], // Simplified
+      cycleEnd: new Date().toISOString().split('T')[0], // Simplified
+      cycleType: selectedCompany.timesheetCycle,
+      totalHours: totalHours,
+      entries: entries,
+      status: currentTimesheet?.status || 'draft',
+      submittedAt: currentTimesheet?.submittedAt,
+      approvedAt: currentTimesheet?.approvedAt,
+      approvedBy: currentTimesheet?.approvedBy,
+      rejectedAt: currentTimesheet?.rejectedAt,
+      rejectedBy: currentTimesheet?.rejectedBy,
+      rejectionReason: currentTimesheet?.rejectionReason
+    }
+  }
+
   const submitTimesheet = () => {
-    // TODO: Implement timesheet submission logic
-    console.log('Submitting timesheet...')
+    if (!selectedCompany) {
+      console.error('Cannot submit timesheet: No company selected')
+      return
+    }
+
+    const timesheet = getCurrentTimesheet()
+    if (timesheet) {
+      const updatedTimesheet = {
+        ...timesheet,
+        status: 'submitted',
+        submittedAt: new Date().toISOString()
+      }
+      setCurrentTimesheet(updatedTimesheet)
+      console.log('Timesheet submitted:', updatedTimesheet)
+    }
+  }
+
+  const approveTimesheet = () => {
+    if (currentTimesheet && currentTimesheet.status === 'submitted') {
+      const updatedTimesheet = {
+        ...currentTimesheet,
+        status: 'approved',
+        approvedAt: new Date().toISOString(),
+        approvedBy: 'manager1' // TODO: Get from auth context
+      }
+      setCurrentTimesheet(updatedTimesheet)
+      console.log('Timesheet approved:', updatedTimesheet)
+    }
+  }
+
+  const rejectTimesheet = (reason) => {
+    if (currentTimesheet && currentTimesheet.status === 'submitted') {
+      const updatedTimesheet = {
+        ...currentTimesheet,
+        status: 'rejected',
+        rejectedAt: new Date().toISOString(),
+        rejectedBy: 'manager1', // TODO: Get from auth context
+        rejectionReason: reason
+      }
+      setCurrentTimesheet(updatedTimesheet)
+      console.log('Timesheet rejected:', updatedTimesheet)
+    }
   }
 
   const getCurrentTime = () => {
@@ -232,6 +306,7 @@ export function TimesheetProvider({ children }) {
     companies,
     selectedCompany,
     trackingState,
+    currentTimesheet: getCurrentTimesheet(),
     addEntry,
     updateEntry,
     deleteEntry,
@@ -239,7 +314,9 @@ export function TimesheetProvider({ children }) {
     startTimer,
     stopTimer,
     submitTimesheet,
-    getCurrentTime
+    getCurrentTime,
+    approveTimesheet,
+    rejectTimesheet
   }
 
   return (

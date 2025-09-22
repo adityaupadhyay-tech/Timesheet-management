@@ -19,8 +19,27 @@ import {
   X,
   RotateCcw,
   ChevronDown,
-  Briefcase
+  Briefcase,
+  ChevronLeft,
+  ChevronRight,
+  Send,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  ThumbsUp,
+  ThumbsDown,
+  MessageSquare
 } from 'lucide-react'
+import { 
+  getCycleStartDate, 
+  getCycleEndDate, 
+  getCycleDates, 
+  getGridDates,
+  formatCyclePeriod, 
+  getCycleTitle,
+  getNextCycle,
+  getPreviousCycle
+} from '@/lib/cycleUtils'
 
 export default function TimeEntryGrid({
   projects,
@@ -34,7 +53,13 @@ export default function TimeEntryGrid({
   isTracking,
   currentTime,
   onSelectedDateChange,
-  onGridDataChange
+  onGridDataChange,
+  selectedCompany,
+  timesheet,
+  onSubmitTimesheet,
+  onApproveTimesheet,
+  onRejectTimesheet,
+  userRole = 'employee'
 }) {
   const [localGridRows, setLocalGridRows] = useState([])
   const [selectedDate, setSelectedDate] = useState(() => new Date())
@@ -42,6 +67,17 @@ export default function TimeEntryGrid({
   const [includeSunday, setIncludeSunday] = useState(false)
   const [pendingAutoSaves, setPendingAutoSaves] = useState([])
   const [isAutoSaving, setIsAutoSaving] = useState(false)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectionReason, setRejectionReason] = useState('')
+  
+  // Get cycle information from selected company
+  const cycleType = selectedCompany?.timesheetCycle || 'weekly'
+  const cycleTitle = getCycleTitle(cycleType)
+  const cyclePeriod = formatCyclePeriod(selectedDate, cycleType)
+  
+  // Get timesheet status and check if locked for editing
+  const timesheetStatus = timesheet?.status || 'draft'
+  const isTimesheetLocked = timesheetStatus === 'submitted' || timesheetStatus === 'approved'
   
   const saveTimeoutRef = useRef({})
   const lastWeekRef = useRef('')
@@ -360,49 +396,43 @@ export default function TimeEntryGrid({
     }
   }, [])
 
-  const getWeekDays = () => {
-    const days = []
+  const getCycleDays = () => {
+    // Use getGridDates which handles monthly as weekly structure
+    const gridDates = getGridDates(selectedDate, cycleType)
     
-    const weekStart = new Date(selectedDate)
-    weekStart.setDate(selectedDate.getDate() - selectedDate.getDay())
-    
-    for (let dayOffset = 1; dayOffset <= 5; dayOffset++) {
-      const date = new Date(weekStart)
-      date.setDate(weekStart.getDate() + dayOffset)
-      days.push(date)
+    // For daily cycle, return just the selected date
+    if (cycleType === 'daily') {
+      return [selectedDate]
     }
     
-    if (includeSaturday) {
-      const saturday = new Date(weekStart)
-      saturday.setDate(weekStart.getDate() + 6)
-      days.push(saturday)
+    // For weekly, bi-weekly, and monthly (which uses weekly structure), filter out weekends unless explicitly included
+    if (cycleType === 'weekly' || cycleType === 'bi-weekly' || cycleType === 'monthly') {
+      return gridDates.filter(date => {
+        const dayOfWeek = date.getDay()
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) return true // Monday to Friday
+        if (dayOfWeek === 6 && includeSaturday) return true // Saturday
+        if (dayOfWeek === 0 && includeSunday) return true // Sunday
+        return false
+      })
     }
     
-    if (includeSunday) {
-      const sunday = new Date(weekStart)
-      days.push(sunday)
-    }
-    
-    return days
+    return gridDates
   }
 
   const addNewRow = () => {
-    const weekEntries = {}
-    const weekStart = new Date(selectedDate)
-    weekStart.setDate(selectedDate.getDate() - selectedDate.getDay())
+    const cycleEntries = {}
+    const cycleDays = getCycleDays()
     
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(weekStart)
-      date.setDate(weekStart.getDate() + i)
+    cycleDays.forEach(date => {
       const dateStr = date.toISOString().split('T')[0]
-      weekEntries[dateStr] = { duration: '' }
-    }
+      cycleEntries[dateStr] = { duration: '' }
+    })
     
     const newRow = {
       id: `new-${Date.now()}`,
       projectId: '',
       description: '',
-      weekEntries,
+      weekEntries: cycleEntries, // Keep the same property name for compatibility
       status: 'draft',
       isNew: true
     }
@@ -430,16 +460,13 @@ export default function TimeEntryGrid({
         })
       }
       
-      const weekEntries = {}
-      const weekStart = new Date(selectedDate)
-      weekStart.setDate(selectedDate.getDate() - selectedDate.getDay())
+      const cycleEntries = {}
+      const cycleDays = getCycleDays()
       
-      for (let i = 0; i < 7; i++) {
-        const date = new Date(weekStart)
-        date.setDate(weekStart.getDate() + i)
+      cycleDays.forEach(date => {
         const dateStr = date.toISOString().split('T')[0]
-        weekEntries[dateStr] = { duration: '' }
-      }
+        cycleEntries[dateStr] = { duration: '' }
+      })
       
       setLocalGridRows(prev => prev.map(row => {
         if (row.id === id) {
@@ -447,7 +474,7 @@ export default function TimeEntryGrid({
             ...row,
             projectId: '',
             description: '',
-            weekEntries,
+            weekEntries: cycleEntries,
             status: 'draft',
             isNew: false
           }
@@ -739,18 +766,125 @@ export default function TimeEntryGrid({
     return validateAndFormatTimeInput(value, false)
   }
 
-  const weekDays = getWeekDays()
+  // Cycle navigation functions
+  const navigateCycle = (direction) => {
+    const newDate = direction === 'next' 
+      ? getNextCycle(selectedDate, cycleType)
+      : getPreviousCycle(selectedDate, cycleType)
+    setSelectedDate(newDate)
+  }
+
+  // Status helper functions
+  const getStatusConfig = (status) => {
+    switch (status) {
+      case 'draft':
+        return {
+          icon: Clock,
+          color: 'text-amber-600',
+          bgColor: 'bg-amber-100',
+          borderColor: 'border-amber-200',
+          label: 'In Progress',
+          indicatorColor: 'bg-gradient-to-r from-amber-400 to-orange-400', // Vibrant amber gradient
+          indicatorText: 'In Progress'
+        }
+      case 'submitted':
+        return {
+          icon: Send,
+          color: 'text-blue-600',
+          bgColor: 'bg-blue-100',
+          borderColor: 'border-blue-200',
+          label: 'Under Review',
+          indicatorColor: 'bg-gradient-to-r from-blue-400 to-cyan-400', // Vibrant blue gradient
+          indicatorText: 'Under Review'
+        }
+      case 'approved':
+        return {
+          icon: CheckCircle,
+          color: 'text-emerald-600',
+          bgColor: 'bg-emerald-100',
+          borderColor: 'border-emerald-200',
+          label: 'Approved',
+          indicatorColor: 'bg-gradient-to-r from-emerald-400 to-green-400', // Vibrant green gradient
+          indicatorText: 'Approved'
+        }
+      case 'rejected':
+        return {
+          icon: XCircle,
+          color: 'text-rose-600',
+          bgColor: 'bg-rose-100',
+          borderColor: 'border-rose-200',
+          label: 'Needs Revision',
+          indicatorColor: 'bg-gradient-to-r from-rose-400 to-red-400', // Vibrant red gradient
+          indicatorText: 'Needs Revision'
+        }
+      default:
+        return {
+          icon: AlertCircle,
+          color: 'text-gray-600',
+          bgColor: 'bg-gray-100',
+          borderColor: 'border-gray-200',
+          label: 'Unknown',
+          indicatorColor: 'bg-gray-400',
+          indicatorText: 'Unknown'
+        }
+    }
+  }
+
+  const handleReject = () => {
+    if (rejectionReason.trim() && onRejectTimesheet) {
+      onRejectTimesheet(rejectionReason)
+      setRejectionReason('')
+      setShowRejectModal(false)
+    }
+  }
+
+  const formatDate = (dateString) => {
+    if (!dateString) return ''
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const cycleDays = getCycleDays()
 
   return (
     <Card className="w-full border-0 shadow-sm bg-white/50 backdrop-blur-sm">
       <CardHeader className="pb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Calendar className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <CardTitle className="text-xl font-semibold text-gray-900">Time Entry Grid</CardTitle>
+              <div className="flex items-center gap-3 mb-1">
+                <CardTitle className="text-xl font-semibold text-gray-900">{cycleTitle} Time Entry Grid</CardTitle>
+                {/* Enhanced Status Indicator */}
+                {timesheet && (
+                  <div className="flex items-center gap-3 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className={`w-3 h-3 rounded-full ${getStatusConfig(timesheetStatus).indicatorColor} shadow-sm animate-pulse`}
+                        title={`Status: ${getStatusConfig(timesheetStatus).indicatorText}`}
+                      ></div>
+                      <span className={`text-xs font-semibold ${getStatusConfig(timesheetStatus).color}`}>
+                        {getStatusConfig(timesheetStatus).indicatorText}
+                      </span>
+                    </div>
+                    {getStatusConfig(timesheetStatus).icon && (
+                      <div className={`p-1 rounded-full ${getStatusConfig(timesheetStatus).bgColor}`}>
+                        {(() => {
+                          const IconComponent = getStatusConfig(timesheetStatus).icon
+                          return <IconComponent className={`h-3 w-3 ${getStatusConfig(timesheetStatus).color}`} />
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               <p className="text-gray-600 text-sm">Select project, add description, then enter time in hh:mm format for each day</p>
             </div>
           </div>
@@ -765,13 +899,67 @@ export default function TimeEntryGrid({
               />
             </div>
             <div className="flex items-center gap-2">
-              <span>Week:</span>
-              <span className="text-sm font-medium text-gray-800">
-                {weekDays[0] && formatDateForDisplay(weekDays[0])} - {weekDays[weekDays.length - 1] && formatDateForDisplay(weekDays[weekDays.length - 1])}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateCycle('prev')}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium text-gray-800 min-w-[200px] text-center">
+                {cyclePeriod}
               </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateCycle('next')}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>
+        
+        {/* Manager Actions - Only show for submitted timesheets */}
+        {timesheet && timesheetStatus === 'submitted' && userRole === 'manager' && (
+          <div className="mt-3 flex items-center justify-end gap-3">
+            <Button
+              onClick={onApproveTimesheet}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 shadow-sm transition-all duration-200"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Approve
+            </Button>
+            <Button
+              onClick={() => setShowRejectModal(true)}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 text-amber-600 border-amber-200 hover:bg-amber-50 hover:border-amber-300 shadow-sm transition-all duration-200"
+            >
+              <XCircle className="h-4 w-4" />
+              Request Revision
+            </Button>
+          </div>
+        )}
+        
+        {/* Revision feedback - only show if rejected */}
+        {timesheet && timesheetStatus === 'rejected' && timesheet.rejectionReason && (
+          <div className="mt-2 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="p-1.5 bg-amber-100 rounded-full">
+                <MessageSquare className="h-3 w-3 text-amber-600" />
+              </div>
+              <div>
+                <span className="font-semibold text-amber-800 text-xs">Revision Notes: </span>
+                <span className="text-amber-700 text-xs block mt-1">{timesheet.rejectionReason}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Timer Section */}
@@ -805,7 +993,7 @@ export default function TimeEntryGrid({
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-4 font-medium text-gray-700 w-1/4 min-w-[200px]">Project</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-700 w-1/3 min-w-[250px]">Description</th>
-                {weekDays.map((day) => (
+                {cycleDays.map((day) => (
                   <th key={day.toISOString()} className="text-center py-2 px-1 font-medium text-gray-700 w-20 min-w-[80px]">
                     <div className="text-xs text-gray-500 mb-1">
                       {getWeekdayShort(day)}
@@ -826,7 +1014,12 @@ export default function TimeEntryGrid({
                       <select
                         value={row.projectId || ''}
                         onChange={(e) => selectProject(row.id, e.target.value)}
-                        className="w-full h-10 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md appearance-none cursor-pointer"
+                        disabled={isTimesheetLocked}
+                        className={`w-full h-10 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 shadow-sm hover:shadow-md appearance-none ${
+                          isTimesheetLocked 
+                            ? 'bg-gray-100 cursor-not-allowed opacity-60' 
+                            : 'bg-white hover:bg-gray-50 cursor-pointer'
+                        }`}
                       >
                         <option value="">Select Project</option>
                         {projects.map((project) => (
@@ -845,11 +1038,16 @@ export default function TimeEntryGrid({
                       value={row.description}
                       onChange={(e) => updateRow(row.id, 'description', e.target.value)}
                       placeholder="Enter description..."
-                      className="w-full px-3 py-2 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500 min-h-[40px] resize-y cursor-text"
+                      disabled={isTimesheetLocked}
+                      className={`w-full px-3 py-2 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500 min-h-[40px] resize-y ${
+                        isTimesheetLocked 
+                          ? 'bg-gray-100 cursor-not-allowed opacity-60' 
+                          : 'cursor-text'
+                      }`}
                       rows={2}
                     />
                   </td>
-                  {weekDays.map((day) => {
+                  {cycleDays.map((day) => {
                     const dateStr = day.toISOString().split('T')[0]
                     const dayEntry = row.weekEntries[dateStr] || { duration: '' }
                     
@@ -881,9 +1079,14 @@ export default function TimeEntryGrid({
                               e.preventDefault()
                             }
                           }}
-                          className="w-full px-2 py-2 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500 text-center h-10"
+                          disabled={isTimesheetLocked}
+                          className={`w-full px-2 py-2 border border-gray-200 rounded text-sm focus:border-blue-500 focus:ring-blue-500 text-center h-10 ${
+                            isTimesheetLocked 
+                              ? 'bg-gray-100 cursor-not-allowed opacity-60' 
+                              : ''
+                          }`}
                           placeholder="hh:mm"
-                          title="Enter time in hh:mm format (e.g., 8, 12). Maximum time is 23:59."
+                          title={isTimesheetLocked ? "Timesheet is locked for editing" : "Enter time in hh:mm format (e.g., 8, 12). Maximum time is 23:59."}
                         />
                       </td>
                     )
@@ -894,8 +1097,13 @@ export default function TimeEntryGrid({
                         variant="ghost"
                         size="sm"
                         onClick={() => clearRow(row.id)}
-                        className="h-8 w-8 p-0 hover:bg-orange-50"
-                        title="Clear Record"
+                        disabled={isTimesheetLocked}
+                        className={`h-8 w-8 p-0 ${
+                          isTimesheetLocked 
+                            ? 'opacity-50 cursor-not-allowed' 
+                            : 'hover:bg-orange-50'
+                        }`}
+                        title={isTimesheetLocked ? "Timesheet is locked for editing" : "Clear Record"}
                       >
                         <RotateCcw className="h-3 w-3" />
                       </Button>
@@ -903,8 +1111,13 @@ export default function TimeEntryGrid({
                         variant="ghost"
                         size="sm"
                         onClick={() => removeRow(row.id)}
-                        className="h-8 w-8 p-0 hover:bg-red-50"
-                        title="Remove Row"
+                        disabled={isTimesheetLocked}
+                        className={`h-8 w-8 p-0 ${
+                          isTimesheetLocked 
+                            ? 'opacity-50 cursor-not-allowed' 
+                            : 'hover:bg-red-50'
+                        }`}
+                        title={isTimesheetLocked ? "Timesheet is locked for editing" : "Remove Row"}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -917,7 +1130,7 @@ export default function TimeEntryGrid({
               <tr className="border-t-2 border-gray-300 bg-gray-50">
                 <td className="py-4 px-4 font-semibold text-gray-900">Daily Totals</td>
                 <td className="py-4 px-4"></td>
-                {weekDays.map((day) => {
+                {cycleDays.map((day) => {
                   const dateStr = day.toISOString().split('T')[0]
                   const dailyTotalMinutes = getDailyTotal(dateStr)
                   const formattedTotal = formatMinutesToHHMM(dailyTotalMinutes)
@@ -943,57 +1156,65 @@ export default function TimeEntryGrid({
               variant="outline"
               size="sm"
               onClick={addNewRow}
-              className="flex items-center gap-2"
+              disabled={isTimesheetLocked}
+              className={`flex items-center gap-2 ${
+                isTimesheetLocked 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : ''
+              }`}
+              title={isTimesheetLocked ? "Timesheet is locked for editing" : "Add New Entry"}
             >
               <Plus className="h-4 w-4" />
               Add New Entry
             </Button>
           </div>
           
-          {/* Weekend Toggle Buttons */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant={includeSaturday ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                const wasIncluded = includeSaturday
-                setIncludeSaturday(!includeSaturday)
-                if (wasIncluded) {
-                  console.log('Saturday removed - cells will be cleared')
-                }
-              }}
-              className="flex items-center gap-2"
-              title={includeSaturday ? "Remove Saturday (will clear all Saturday entries)" : "Add Saturday"}
-            >
-              <Calendar className="h-4 w-4" />
-              {includeSaturday ? "Remove Sat" : "Add Saturday"}
-            </Button>
-            
-            <Button
-              variant={includeSunday ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                const wasIncluded = includeSunday
-                setIncludeSunday(!includeSunday)
-                if (wasIncluded) {
-                  console.log('Sunday removed - cells will be cleared')
-                }
-              }}
-              className="flex items-center gap-2"
-              title={includeSunday ? "Remove Sunday (will clear all Sunday entries)" : "Add Sunday"}
-            >
-              <Calendar className="h-4 w-4" />
-              {includeSunday ? "Remove Sun" : "Add Sunday"}
-            </Button>
-          </div>
+          {/* Weekend Toggle Buttons - Show for weekly, bi-weekly, and monthly cycles */}
+          {(cycleType === 'weekly' || cycleType === 'bi-weekly' || cycleType === 'monthly') && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant={includeSaturday ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  const wasIncluded = includeSaturday
+                  setIncludeSaturday(!includeSaturday)
+                  if (wasIncluded) {
+                    console.log('Saturday removed - cells will be cleared')
+                  }
+                }}
+                className="flex items-center gap-2"
+                title={includeSaturday ? "Remove Saturday (will clear all Saturday entries)" : "Add Saturday"}
+              >
+                <Calendar className="h-4 w-4" />
+                {includeSaturday ? "Remove Sat" : "Add Saturday"}
+              </Button>
+              
+              <Button
+                variant={includeSunday ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  const wasIncluded = includeSunday
+                  setIncludeSunday(!includeSunday)
+                  if (wasIncluded) {
+                    console.log('Sunday removed - cells will be cleared')
+                  }
+                }}
+                className="flex items-center gap-2"
+                title={includeSunday ? "Remove Sunday (will clear all Sunday entries)" : "Add Sunday"}
+              >
+                <Calendar className="h-4 w-4" />
+                {includeSunday ? "Remove Sun" : "Add Sunday"}
+              </Button>
+            </div>
+          )}
         </div>
 
-        {/* Weekly Summary */}
+        {/* Cycle Summary */}
         <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border border-indigo-200">
           <div className="flex justify-between items-center">
             <div>
-              <span className="font-semibold text-gray-900">Weekly Total</span>
-              <p className="text-sm text-gray-600">All time entries for this week</p>
+              <span className="font-semibold text-gray-900">{cycleTitle} Total</span>
+              <p className="text-sm text-gray-600">All time entries for this {cycleType === 'daily' ? 'day' : cycleType === 'monthly' ? 'month' : cycleType === 'bi-weekly' ? 'bi-week period' : 'week'}</p>
             </div>
             <div className="text-right">
               <span className="text-2xl font-bold text-indigo-600">
@@ -1003,6 +1224,44 @@ export default function TimeEntryGrid({
           </div>
         </div>
       </CardContent>
+      
+      {/* Revision Request Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Request Revision</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                What needs to be revised?
+              </label>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Please provide specific feedback on what needs to be changed..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                onClick={() => setShowRejectModal(false)}
+                variant="outline"
+                size="sm"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleReject}
+                className="bg-orange-600 hover:bg-orange-700"
+                size="sm"
+                disabled={!rejectionReason.trim()}
+              >
+                Request Revision
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }

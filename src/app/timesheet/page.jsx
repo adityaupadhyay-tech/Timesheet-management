@@ -8,7 +8,7 @@ import TimesheetSummary from '@/components/timesheet/TimesheetSummary'
 import ProjectOverview from '@/components/timesheet/ProjectOverview'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Send, Download, Calendar, FolderOpen } from 'lucide-react'
+import { Send, Download, Calendar, FolderOpen, CheckCircle } from 'lucide-react'
 import ExportModal from '@/components/timesheet/ExportModal'
 
 function TimesheetContent() {
@@ -18,6 +18,7 @@ function TimesheetContent() {
     companies,
     selectedCompany,
     trackingState,
+    currentTimesheet,
     addEntry,
     updateEntry,
     deleteEntry,
@@ -25,7 +26,9 @@ function TimesheetContent() {
     startTimer,
     stopTimer,
     submitTimesheet,
-    getCurrentTime
+    getCurrentTime,
+    approveTimesheet,
+    rejectTimesheet
   } = useTimesheet()
 
   const [showExportModal, setShowExportModal] = useState(false)
@@ -68,10 +71,50 @@ function TimesheetContent() {
                 <Download className="h-4 w-4" />
                 Export Report
               </Button>
-              <Button size="lg" onClick={submitTimesheet} className="flex items-center gap-2">
-                <Send className="h-4 w-4" />
-                Submit Timesheet
-              </Button>
+              {/* Submit Timesheet Button - Top Right */}
+              {(!currentTimesheet || currentTimesheet.status === 'draft') && (
+                <Button 
+                  size="lg" 
+                  className="flex items-center gap-2"
+                  onClick={submitTimesheet}
+                >
+                  <Send className="h-4 w-4" />
+                  Submit Timesheet
+                </Button>
+              )}
+              {currentTimesheet && currentTimesheet.status === 'submitted' && (
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="flex items-center gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                  disabled
+                >
+                  <Send className="h-4 w-4" />
+                  Under Review
+                </Button>
+              )}
+              {currentTimesheet && currentTimesheet.status === 'rejected' && (
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  onClick={submitTimesheet}
+                >
+                  <Send className="h-4 w-4" />
+                  Submit Revision
+                </Button>
+              )}
+              {currentTimesheet && currentTimesheet.status === 'approved' && (
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="flex items-center gap-2 bg-green-50 border-green-200 text-green-700"
+                  disabled
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Approved
+                </Button>
+              )}
             </div>
           </div>
           
@@ -140,6 +183,12 @@ function TimesheetContent() {
                   isTracking={trackingState.isTracking}
                   currentTime={trackingState.isTracking ? getCurrentTime() : '00:00:00'}
                   onGridDataChange={handleGridDataChange}
+                  selectedCompany={selectedCompany}
+                  timesheet={currentTimesheet}
+                  onSubmitTimesheet={submitTimesheet}
+                  onApproveTimesheet={approveTimesheet}
+                  onRejectTimesheet={rejectTimesheet}
+                  userRole="admin" // TODO: Get from user context
                 />
               </TabsContent>
               

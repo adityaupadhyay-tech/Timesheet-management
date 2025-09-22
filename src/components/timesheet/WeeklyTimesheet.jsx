@@ -4,6 +4,16 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, Edit, Trash2, Calendar, Clock } from 'lucide-react'
+import { 
+  getCycleStartDate, 
+  getCycleEndDate, 
+  getCycleDates, 
+  getGridDates,
+  formatCyclePeriod, 
+  getCycleTitle,
+  getNextCycle,
+  getPreviousCycle
+} from '@/lib/cycleUtils'
 
 
 
@@ -11,23 +21,19 @@ export default function WeeklyTimesheet({
   entries,
   projects,
   onEditEntry,
-  onDeleteEntry
+  onDeleteEntry,
+  selectedCompany
 }) {
-  const [currentWeek, setCurrentWeek] = useState(() => {
-    const now = new Date()
-    const startOfWeek = new Date(now)
-    startOfWeek.setDate(now.getDate() - now.getDay())
-    return startOfWeek
-  })
+  const [currentDate, setCurrentDate] = useState(() => new Date())
+  
+  // Get cycle information from selected company
+  const cycleType = selectedCompany?.timesheetCycle || 'weekly'
+  const cycleTitle = getCycleTitle(cycleType)
+  const cyclePeriod = formatCyclePeriod(currentDate, cycleType)
 
-  const getWeekDays = () => {
-    const days = []
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(currentWeek)
-      date.setDate(currentWeek.getDate() + i)
-      days.push(date)
-    }
-    return days
+  const getCycleDays = () => {
+    // Use getGridDates which handles monthly as weekly structure
+    return getGridDates(currentDate, cycleType)
   }
 
   const getEntriesForDay = (date) => {
@@ -59,17 +65,18 @@ export default function WeeklyTimesheet({
     return dayEntries.reduce((total, entry) => total + entry.duration, 0)
   }
 
-  const getTotalHoursForWeek = () => {
-    return getWeekDays().reduce((total, day) => total + getTotalHoursForDay(day), 0)
+  const getTotalHoursForCycle = () => {
+    return getCycleDays().reduce((total, day) => total + getTotalHoursForDay(day), 0)
   }
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const newWeek = new Date(currentWeek)
-    newWeek.setDate(currentWeek.getDate() + (direction === 'next' ? 7 : -7))
-    setCurrentWeek(newWeek)
+  const navigateCycle = (direction) => {
+    const newDate = direction === 'next' 
+      ? getNextCycle(currentDate, cycleType)
+      : getPreviousCycle(currentDate, cycleType)
+    setCurrentDate(newDate)
   }
 
-  const weekDays = getWeekDays()
+  const cycleDays = getCycleDays()
 
   return (
     <Card className="w-full border-0 shadow-sm bg-white/50 backdrop-blur-sm">
@@ -80,26 +87,26 @@ export default function WeeklyTimesheet({
               <Calendar className="h-5 w-5 text-indigo-600" />
             </div>
             
-              <CardTitle className="text-xl font-semibold text-gray-900">Weekly Timesheet</CardTitle>
-              <p className="text-gray-600 text-sm">View and manage your weekly time entries</p>
+              <CardTitle className="text-xl font-semibold text-gray-900">{cycleTitle} Timesheet</CardTitle>
+              <p className="text-gray-600 text-sm">View and manage your {cycleType === 'daily' ? 'daily' : cycleType === 'monthly' ? 'monthly' : cycleType === 'bi-weekly' ? 'bi-weekly' : 'weekly'} time entries</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigateWeek('prev')}
+              onClick={() => navigateCycle('prev')}
               className="h-9 w-9 p-0"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="text-sm font-medium text-gray-700 px-3 py-1 bg-gray-100 rounded-md">
-              {weekDays[0].toLocaleDateString()} - {weekDays[6].toLocaleDateString()}
+              {cyclePeriod}
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigateWeek('next')}
+              onClick={() => navigateCycle('next')}
               className="h-9 w-9 p-0"
             >
               <ChevronRight className="h-4 w-4" />
@@ -108,9 +115,13 @@ export default function WeeklyTimesheet({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Weekly Overview */}
-        <div className="grid grid-cols-7 gap-2 mb-6">
-          {weekDays.map((day) => {
+        {/* Cycle Overview */}
+        <div className={`grid gap-2 mb-6 ${
+          cycleType === 'daily' ? 'grid-cols-1' :
+          cycleType === 'bi-weekly' ? 'grid-cols-7' : // Bi-weekly shows 14 days in 7-column grid
+          'grid-cols-7' // weekly and monthly both use 7-day structure
+        }`}>
+          {cycleDays.map((day) => {
             const dayEntries = getEntriesForDay(day)
             const totalHours = getTotalHoursForDay(day)
             const isToday = day.toDateString() === new Date().toDateString()
@@ -144,7 +155,7 @@ export default function WeeklyTimesheet({
 
         {/* Entries List */}
         <div className="space-y-3">
-          {weekDays.map((day) => {
+          {cycleDays.map((day) => {
             const dayEntries = getEntriesForDay(day)
             
             if (dayEntries.length === 0) {
@@ -233,17 +244,18 @@ export default function WeeklyTimesheet({
           })}
         </div>
 
-        {/* Weekly Summary */}
+        {/* Cycle Summary */}
         <div className="mt-8 p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border border-indigo-200">
           <div className="flex justify-between items-center">
-            
-              <span className="font-semibold text-gray-900">Weekly Total</span>
-              <p className="text-sm text-gray-600">All time entries for this week</p>
+            <div>
+              <span className="font-semibold text-gray-900">{cycleTitle} Total</span>
+              <p className="text-sm text-gray-600">All time entries for this {cycleType === 'daily' ? 'day' : cycleType === 'monthly' ? 'month' : cycleType === 'bi-weekly' ? 'bi-week period' : 'week'}</p>
             </div>
             <div className="text-right">
               <span className="text-2xl font-bold text-indigo-600">
-                {formatDuration(getTotalHoursForWeek())}
-              </span></div></div>
+                {formatDuration(getTotalHoursForCycle())}
+              </span>
+            </div>
           </div>
         </div>
       </CardContent>

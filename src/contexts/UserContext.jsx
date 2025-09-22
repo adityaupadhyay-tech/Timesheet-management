@@ -27,7 +27,16 @@ export const UserProvider = memo(function UserProvider({ children }) {
   const [user, setUser] = useState({
     name: 'John Doe',
     role: 'admin',
-    email: 'john.doe@company.com'
+    email: 'john.doe@company.com',
+    company: {
+      id: 'company-1',
+      name: 'Acme Corporation',
+      description: 'A modern software company',
+      logo: '',
+      color: '#3B82F6',
+      isActive: true,
+      timesheetCycle: 'weekly' // Default to weekly, can be changed during company setup
+    }
   })
   const [isLoading] = useState(false)
 
