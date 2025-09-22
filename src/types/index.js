@@ -3,7 +3,7 @@
  */
 
 /**
- * @typedef {'daily' | 'weekly' | 'bi-weekly' | 'monthly'} TimesheetCycle
+ * @typedef {'semi-monthly' | 'weekly' | 'bi-weekly' | 'monthly'} TimesheetCycle
  */
 
 /**

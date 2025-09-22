@@ -5,16 +5,21 @@
 /**
  * Get the start date of a cycle based on the cycle type and a reference date
  * @param {Date} date - Reference date
- * @param {string} cycleType - 'daily', 'weekly', 'bi-weekly', or 'monthly'
+ * @param {string} cycleType - 'semi-monthly', 'weekly', 'bi-weekly', or 'monthly'
  * @returns {Date} Start date of the cycle
  */
 export function getCycleStartDate(date, cycleType) {
   const cycleDate = new Date(date)
   
   switch (cycleType) {
-    case 'daily':
-      // For daily, the start is the same day
-      return new Date(cycleDate.getFullYear(), cycleDate.getMonth(), cycleDate.getDate())
+    case 'semi-monthly':
+      // For semi-monthly, first half (1-15) or second half (16-end of month)
+      const day = cycleDate.getDate()
+      if (day <= 15) {
+        return new Date(cycleDate.getFullYear(), cycleDate.getMonth(), 1)
+      } else {
+        return new Date(cycleDate.getFullYear(), cycleDate.getMonth(), 16)
+      }
       
     case 'weekly':
       // Start of week (Sunday)
@@ -44,7 +49,7 @@ export function getCycleStartDate(date, cycleType) {
 /**
  * Get the end date of a cycle based on the cycle type and a reference date
  * @param {Date} date - Reference date
- * @param {string} cycleType - 'daily', 'weekly', 'bi-weekly', or 'monthly'
+ * @param {string} cycleType - 'semi-monthly', 'weekly', 'bi-weekly', or 'monthly'
  * @returns {Date} End date of the cycle
  */
 export function getCycleEndDate(date, cycleType) {
@@ -52,8 +57,15 @@ export function getCycleEndDate(date, cycleType) {
   const endDate = new Date(startDate)
   
   switch (cycleType) {
-    case 'daily':
-      // End of the same day
+    case 'semi-monthly':
+      // End of semi-monthly period (15th or end of month)
+      const day = date.getDate()
+      if (day <= 15) {
+        endDate.setDate(15)
+      } else {
+        // End of month
+        endDate.setMonth(endDate.getMonth() + 1, 0)
+      }
       endDate.setHours(23, 59, 59, 999)
       return endDate
       
@@ -104,12 +116,17 @@ export function getCycleDates(date, cycleType) {
 /**
  * Get dates for timesheet grid display (weekly structure for monthly)
  * @param {Date} date - Reference date
- * @param {string} cycleType - 'daily', 'weekly', 'bi-weekly', or 'monthly'
+ * @param {string} cycleType - 'semi-monthly', 'weekly', 'bi-weekly', or 'monthly'
  * @returns {Date[]} Array of dates for grid display
  */
 export function getGridDates(date, cycleType) {
   if (cycleType === 'monthly') {
     // For monthly, use weekly structure (7 days starting from the selected date's week)
+    return getCycleDates(date, 'weekly')
+  }
+  
+  if (cycleType === 'semi-monthly') {
+    // For semi-monthly, use weekly structure (7 days starting from the selected date's week)
     return getCycleDates(date, 'weekly')
   }
   
@@ -119,13 +136,13 @@ export function getGridDates(date, cycleType) {
 
 /**
  * Get the number of days in a cycle
- * @param {string} cycleType - 'daily', 'weekly', 'bi-weekly', or 'monthly'
+ * @param {string} cycleType - 'semi-monthly', 'weekly', 'bi-weekly', or 'monthly'
  * @returns {number} Number of days in the cycle
  */
 export function getCycleDays(cycleType) {
   switch (cycleType) {
-    case 'daily':
-      return 1
+    case 'semi-monthly':
+      return 15 // Approximate for semi-monthly periods
     case 'weekly':
       return 7
     case 'bi-weekly':
@@ -140,15 +157,22 @@ export function getCycleDays(cycleType) {
 /**
  * Navigate to the next cycle
  * @param {Date} currentDate - Current date
- * @param {string} cycleType - 'daily', 'weekly', 'bi-weekly', or 'monthly'
+ * @param {string} cycleType - 'semi-monthly', 'weekly', 'bi-weekly', or 'monthly'
  * @returns {Date} Date of the next cycle start
  */
 export function getNextCycle(currentDate, cycleType) {
   const nextDate = new Date(currentDate)
   
   switch (cycleType) {
-    case 'daily':
-      nextDate.setDate(currentDate.getDate() + 1)
+    case 'semi-monthly':
+      const day = currentDate.getDate()
+      if (day <= 15) {
+        // Move to second half of month (16th)
+        nextDate.setDate(16)
+      } else {
+        // Move to first half of next month (1st)
+        nextDate.setMonth(currentDate.getMonth() + 1, 1)
+      }
       break
     case 'weekly':
       nextDate.setDate(currentDate.getDate() + 7)
@@ -167,15 +191,22 @@ export function getNextCycle(currentDate, cycleType) {
 /**
  * Navigate to the previous cycle
  * @param {Date} currentDate - Current date
- * @param {string} cycleType - 'daily', 'weekly', 'bi-weekly', or 'monthly'
+ * @param {string} cycleType - 'semi-monthly', 'weekly', 'bi-weekly', or 'monthly'
  * @returns {Date} Date of the previous cycle start
  */
 export function getPreviousCycle(currentDate, cycleType) {
   const prevDate = new Date(currentDate)
   
   switch (cycleType) {
-    case 'daily':
-      prevDate.setDate(currentDate.getDate() - 1)
+    case 'semi-monthly':
+      const day = currentDate.getDate()
+      if (day <= 15) {
+        // Move to second half of previous month (16th)
+        prevDate.setMonth(currentDate.getMonth() - 1, 16)
+      } else {
+        // Move to first half of current month (1st)
+        prevDate.setDate(1)
+      }
       break
     case 'weekly':
       prevDate.setDate(currentDate.getDate() - 7)
@@ -228,13 +259,13 @@ export function formatCyclePeriod(date, cycleType) {
 
 /**
  * Get cycle title for display
- * @param {string} cycleType - 'daily', 'weekly', 'bi-weekly', or 'monthly'
+ * @param {string} cycleType - 'semi-monthly', 'weekly', 'bi-weekly', or 'monthly'
  * @returns {string} Cycle title
  */
 export function getCycleTitle(cycleType) {
   switch (cycleType) {
-    case 'daily':
-      return 'Daily'
+    case 'semi-monthly':
+      return 'Semi-monthly'
     case 'weekly':
       return 'Weekly'
     case 'bi-weekly':

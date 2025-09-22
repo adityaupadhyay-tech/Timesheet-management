@@ -88,6 +88,13 @@ function TimesheetContent() {
     setGridRows(newGridRows)
   }
 
+  const handleCycleChange = (newCycle) => {
+    if (selectedCompany) {
+      const updatedCompany = { ...selectedCompany, timesheetCycle: newCycle }
+      setSelectedCompany(updatedCompany)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="mx-auto px-5 py-6">
@@ -161,30 +168,54 @@ function TimesheetContent() {
           
           {/* Company Selector */}
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                <span className="text-sm font-semibold text-blue-900">Active Company:</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <span className="text-sm font-semibold text-blue-900">Active Company:</span>
+                </div>
+                <div className="relative">
+                  <select
+                    value={selectedCompany?.id || ''}
+                    onChange={(e) => {
+                      const company = companies.find(c => c.id === e.target.value)
+                      setSelectedCompany(company || null)
+                    }}
+                    className="appearance-none px-4 py-2.5 pr-10 border border-blue-300 rounded-lg text-sm font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer min-w-[200px]"
+                  >
+                    {companies.map((company) => (
+                      <option key={company.id} value={company.id}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
-              <div className="relative">
-                <select
-                  value={selectedCompany?.id || ''}
-                  onChange={(e) => {
-                    const company = companies.find(c => c.id === e.target.value)
-                    setSelectedCompany(company || null)
-                  }}
-                  className="appearance-none px-4 py-2.5 pr-10 border border-blue-300 rounded-lg text-sm font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer min-w-[200px]"
-                >
-                  {companies.map((company) => (
-                    <option key={company.id} value={company.id}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <svg className="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+              
+              {/* Cycle Selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-blue-900">Timesheet Cycle:</span>
+                <div className="relative">
+                  <select
+                    value={selectedCompany?.timesheetCycle || 'weekly'}
+                    onChange={(e) => handleCycleChange(e.target.value)}
+                    className="appearance-none px-3 py-2 pr-8 border border-blue-300 rounded-lg text-sm font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer min-w-[120px]"
+                  >
+                    <option value="semi-monthly">Semi-monthly</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="bi-weekly">Bi-weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                    <svg className="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
