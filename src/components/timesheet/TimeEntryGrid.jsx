@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePickerComponent } from '@/components/ui/date-picker'
@@ -82,13 +82,18 @@ export default function TimeEntryGrid({
   const saveTimeoutRef = useRef({})
   const lastWeekRef = useRef('')
   const lastEntriesRef = useRef([])
+  const isInternalUpdateRef = useRef(false)
 
+  // Memoize gridRows to prevent unnecessary re-renders
+  const memoizedGridRows = useMemo(() => gridRows, [gridRows?.length, gridRows?.[0]?.id])
+  
   // Sync local gridRows with parent gridRows when component mounts or parent changes
   useEffect(() => {
-    if (gridRows && gridRows.length > 0) {
-      setLocalGridRows(gridRows)
+    if (memoizedGridRows && memoizedGridRows.length > 0 && !isInternalUpdateRef.current) {
+      setLocalGridRows(memoizedGridRows)
     }
-  }, [gridRows])
+    isInternalUpdateRef.current = false
+  }, [memoizedGridRows])
 
   // Clear Saturday and Sunday cells when those days are removed
   useEffect(() => {
@@ -104,6 +109,7 @@ export default function TimeEntryGrid({
     const sundayDate = new Date(weekStart)
     const sundayDateStr = sundayDate.toISOString().split('T')[0]
     
+    isInternalUpdateRef.current = true
     setLocalGridRows(prevRows => {
       return prevRows.map(row => {
         const updatedRow = { ...row }
