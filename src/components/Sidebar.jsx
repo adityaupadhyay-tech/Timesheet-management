@@ -5,16 +5,16 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import DashboardIcon from '@mui/icons-material/Dashboard'
+import PersonIcon from '@mui/icons-material/Person'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 import BeachAccessIcon from '@mui/icons-material/BeachAccess'
 import PeopleIcon from '@mui/icons-material/People'
-import AssignmentIcon from '@mui/icons-material/Assignment'
-import BarChartIcon from '@mui/icons-material/BarChart'
-import SettingsIcon from '@mui/icons-material/Settings'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
+import BuildIcon from '@mui/icons-material/Build'
+import FolderIcon from '@mui/icons-material/Folder'
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import MenuIcon from '@mui/icons-material/Menu'
 import LogoutIcon from '@mui/icons-material/Logout'
-import CursorIcon from '@mui/icons-material/OpenWith'
 
 /**
  * @typedef {Object} SidebarProps
@@ -34,33 +34,17 @@ export default function Sidebar({ userRole, userName, isOpen, onToggle }) {
   }
 
   const getMenuItems = () => {
-    const baseItems = [
+    return [
       { href: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
-      { href: '/timesheet', label: 'My Timesheet', icon: <ScheduleIcon /> },
-      { href: '/leave', label: 'Leave Requests', icon: <BeachAccessIcon /> },
+      { href: '/my-stuff', label: 'My stuff', icon: <PersonIcon /> },
+      { href: '/timesheet', label: 'Timesheet management', icon: <ScheduleIcon /> },
+      { href: '/pto-requests', label: 'PTO Requests', icon: <BeachAccessIcon /> },
+      { href: '/personnel', label: 'Personnel', icon: <PeopleIcon /> },
+      { href: '/payroll', label: 'Payroll', icon: <AttachMoneyIcon /> },
+      { href: '/tools', label: 'Tools', icon: <BuildIcon /> },
+      { href: '/resources', label: 'Resources', icon: <FolderIcon /> },
+      { href: '/administration', label: 'Administration', icon: <AdminPanelSettingsIcon /> },
     ]
-
-    if (userRole === 'admin') {
-      return [
-        ...baseItems,
-        { href: '/users', label: 'User Management', icon: <PeopleIcon /> },
-        { href: '/projects', label: 'Project Management', icon: <AssignmentIcon /> },
-        { href: '/reports', label: 'Reports', icon: <BarChartIcon /> },
-        // { href: '/magnetic-cursor', label: 'Magnetic Cursor', icon: <CursorIcon /> },
-        { href: '/settings', label: 'System Settings', icon: <SettingsIcon /> },
-      ]
-    }
-
-    if (userRole === 'manager') {
-      return [
-        ...baseItems,
-        { href: '/team', label: 'Team Management', icon: <PeopleIcon /> },
-        { href: '/approvals', label: 'Approvals', icon: <CheckCircleIcon /> },
-        { href: '/reports', label: 'Team Reports', icon: <BarChartIcon /> },
-      ]
-    }
-
-    return baseItems
   }
 
   return (

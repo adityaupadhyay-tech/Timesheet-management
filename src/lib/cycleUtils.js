@@ -243,6 +243,8 @@ export function formatCyclePeriod(date, cycleType) {
   switch (cycleType) {
     case 'daily':
       return formatDate(startDate)
+    case 'semi-monthly':
+      return `${formatDate(startDate)} - ${formatDate(endDate)}`
     case 'weekly':
       return `${formatDate(startDate)} - ${formatDate(endDate)}`
     case 'bi-weekly':

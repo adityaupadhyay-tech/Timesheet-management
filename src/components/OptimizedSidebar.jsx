@@ -24,33 +24,18 @@ const OptimizedSidebar = memo(function OptimizedSidebar({
 
   // Memoize menu items to prevent recalculation on every render
   const menuItems = useMemo(() => {
-    const baseItems = [
+    return [
       { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-      { href: '/timesheet', label: 'My Timesheet', icon: 'schedule' },
-      { href: '/leave', label: 'Leave Requests', icon: 'beach' },
+      { href: '/my-stuff', label: 'My stuff', icon: 'person' },
+      { href: '/timesheet', label: 'Timesheet management', icon: 'schedule' },
+      { href: '/pto-requests', label: 'PTO Requests', icon: 'beach' },
+      { href: '/personnel', label: 'Personnel', icon: 'people' },
+      { href: '/payroll', label: 'Payroll', icon: 'attach-money' },
+      { href: '/tools', label: 'Tools', icon: 'build' },
+      { href: '/resources', label: 'Resources', icon: 'folder' },
+      { href: '/administration', label: 'Administration', icon: 'admin-panel-settings' },
     ]
-
-    if (userRole === 'admin') {
-      return [
-        ...baseItems,
-        { href: '/users', label: 'User Management', icon: 'people' },
-        { href: '/projects', label: 'Project Management', icon: 'assignment' },
-        { href: '/reports', label: 'Reports', icon: 'bar-chart' },
-        { href: '/settings', label: 'System Settings', icon: 'settings' },
-      ]
-    }
-
-    if (userRole === 'manager') {
-      return [
-        ...baseItems,
-        { href: '/team', label: 'Team Management', icon: 'people' },
-        { href: '/approvals', label: 'Approvals', icon: 'check-circle' },
-        { href: '/reports', label: 'Team Reports', icon: 'bar-chart' },
-      ]
-    }
-
-    return baseItems
-  }, [userRole])
+  }, [])
 
   return (
     <>

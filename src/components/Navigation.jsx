@@ -15,32 +15,17 @@ export default function Navigation({ userRole, userName }) {
   }
 
   const getMenuItems = () => {
-    const baseItems = [
+    return [
       { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-      { href: '/timesheet', label: 'My Timesheet', icon: '⏰' },
-      { href: '/leave', label: 'Leave Requests', icon: '🏖️' },
+      { href: '/my-stuff', label: 'My stuff', icon: '👤' },
+      { href: '/timesheet', label: 'Timesheet management', icon: '⏰' },
+      { href: '/pto-requests', label: 'PTO Requests', icon: '🏖️' },
+      { href: '/personnel', label: 'Personnel', icon: '👥' },
+      { href: '/payroll', label: 'Payroll', icon: '💰' },
+      { href: '/tools', label: 'Tools', icon: '🔧' },
+      { href: '/resources', label: 'Resources', icon: '📁' },
+      { href: '/administration', label: 'Administration', icon: '⚙️' },
     ]
-
-    if (userRole === 'admin') {
-      return [
-        ...baseItems,
-        { href: '/users', label: 'User Management', icon: '👥' },
-        { href: '/projects', label: 'Project Management', icon: '📋' },
-        { href: '/reports', label: 'Reports', icon: '📈' },
-        { href: '/settings', label: 'System Settings', icon: '⚙️' },
-      ]
-    }
-
-    if (userRole === 'manager') {
-      return [
-        ...baseItems,
-        { href: '/team', label: 'Team Management', icon: '👥' },
-        { href: '/approvals', label: 'Approvals', icon: '✅' },
-        { href: '/reports', label: 'Team Reports', icon: '📈' },
-      ]
-    }
-
-    return baseItems
   }
 
   return (

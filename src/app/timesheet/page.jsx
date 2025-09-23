@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Send, Download, Calendar, FolderOpen, CheckCircle } from 'lucide-react'
 import ExportModal from '@/components/timesheet/ExportModal'
+import { formatCyclePeriod } from '@/lib/cycleUtils'
 
 function TimesheetContent() {
   const {
@@ -318,17 +319,40 @@ function TimesheetContent() {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Total Hours:</span>
                     <span className="font-semibold text-gray-900">
-                      {entries.reduce((total, entry) => total + (entry.duration || 0), 0).toFixed(1)}h
+                      {(() => {
+                        // Helper function to convert HH:MM to minutes
+                        const hhmmToMinutes = (hhmm) => {
+                          if (!hhmm || hhmm === '') return 0
+                          const [hours, minutes] = hhmm.split(':').map(Number)
+                          if (isNaN(hours) || isNaN(minutes)) return 0
+                          return hours * 60 + minutes
+                        }
+                        
+                        // Calculate total minutes from gridRows
+                        const totalMinutes = gridRows.reduce((total, row) => {
+                          if (!row.weekEntries) return total
+                          const rowTotal = Object.values(row.weekEntries).reduce((dayTotal, dayEntry) => 
+                            dayTotal + hhmmToMinutes(dayEntry.duration), 0
+                          )
+                          return total + rowTotal
+                        }, 0)
+                        
+                        // Convert minutes to hours with 1 decimal place
+                        return (totalMinutes / 60).toFixed(1) + 'h'
+                      })()}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Period:</span>
                     <span className="font-semibold text-gray-900">
-                      {selectedDate.toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
+                      {selectedCompany?.timesheetCycle ? 
+                        formatCyclePeriod(selectedDate, selectedCompany.timesheetCycle) :
+                        selectedDate.toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          year: 'numeric'
+                        })
+                      }
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
