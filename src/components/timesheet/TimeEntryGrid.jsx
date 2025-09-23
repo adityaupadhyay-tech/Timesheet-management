@@ -912,9 +912,9 @@ export default function TimeEntryGrid({
   return (
     <Card className="w-full border-0 shadow-sm bg-white/50 backdrop-blur-sm">
       <CardHeader className="pb-6">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           {/* Title Section */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Calendar className="h-5 w-5 text-blue-600" />
             </div>
@@ -953,8 +953,8 @@ export default function TimeEntryGrid({
             </div>
           </div>
           
-          {/* Date and Cycle Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+          {/* Date and Cycle Controls - Right side on desktop, below title on mobile */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 lg:flex-shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <label className="text-sm text-gray-600 whitespace-nowrap">
                 Date:
