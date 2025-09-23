@@ -100,64 +100,70 @@ function TimesheetContent() {
     <div className="min-h-screen bg-gray-50/50">
       <div className="mx-auto px-5 py-6">
         <div className="mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-gray-900">Timesheet Management</h1>
-              {selectedCompany && (
-                <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  {selectedCompany.name}
-                </div>
-              )}
+          <div className="flex flex-col gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Timesheet Management</h1>
+                {selectedCompany && (
+                  <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex-shrink-0">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span className="truncate">{selectedCompany.name}</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button 
                 variant="outline" 
-                size="lg" 
-                className="flex items-center gap-2"
+                size="sm"
+                className="flex items-center gap-2 w-full sm:w-auto"
                 onClick={handleExportReport}
               >
                 <Download className="h-4 w-4" />
-                Export Report
+                <span className="hidden sm:inline">Export Report</span>
+                <span className="sm:hidden">Export</span>
               </Button>
               {/* Submit Timesheet Button - Top Right */}
               {(!currentTimesheet || currentTimesheet.status === 'draft') && (
                 <Button 
-                  size="lg" 
-                  className="flex items-center gap-2"
+                  size="sm"
+                  className="flex items-center gap-2 w-full sm:w-auto"
                   onClick={handleSubmitTimesheet}
                 >
                   <Send className="h-4 w-4" />
-                  Submit Timesheet
+                  <span className="hidden sm:inline">Submit Timesheet</span>
+                  <span className="sm:hidden">Submit</span>
                 </Button>
               )}
               {currentTimesheet && currentTimesheet.status === 'submitted' && (
                 <Button 
-                  size="lg" 
+                  size="sm"
                   variant="outline"
-                  className="flex items-center gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                  className="flex items-center gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 w-full sm:w-auto"
                   disabled
                 >
                   <Send className="h-4 w-4" />
-                  Under Review
+                  <span className="hidden sm:inline">Under Review</span>
+                  <span className="sm:hidden">Review</span>
                 </Button>
               )}
               {currentTimesheet && currentTimesheet.status === 'rejected' && (
                 <Button 
-                  size="lg" 
+                  size="sm"
                   variant="outline"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 w-full sm:w-auto"
                   onClick={handleSubmitTimesheet}
                 >
                   <Send className="h-4 w-4" />
-                  Submit Revision
+                  <span className="hidden sm:inline">Submit Revision</span>
+                  <span className="sm:hidden">Revise</span>
                 </Button>
               )}
               {currentTimesheet && currentTimesheet.status === 'approved' && (
                 <Button 
-                  size="lg" 
+                  size="sm"
                   variant="outline"
-                  className="flex items-center gap-2 bg-green-50 border-green-200 text-green-700"
+                  className="flex items-center gap-2 bg-green-50 border-green-200 text-green-700 w-full sm:w-auto"
                   disabled
                 >
                   <CheckCircle className="h-4 w-4" />

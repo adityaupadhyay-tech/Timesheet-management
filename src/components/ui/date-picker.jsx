@@ -16,13 +16,13 @@ export function DatePickerComponent({ value, onChange, className, placeholder = 
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer min-w-[180px]",
+        "flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 border border-gray-200 rounded-lg text-xs sm:text-sm font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer w-full sm:min-w-[180px]",
         className
       )}
     >
-      <Calendar className="h-4 w-4 text-gray-400" />
-      <span className="text-gray-700">{value || placeholder}</span>
-      <svg className="h-4 w-4 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+      <span className="text-gray-700 truncate">{value || placeholder}</span>
+      <svg className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
       </svg>
     </button>
