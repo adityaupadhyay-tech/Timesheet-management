@@ -34,16 +34,18 @@ export default function TimeEntryForm({
     }
 
     const startTime = new Date(`${formData.date}T${formData.startTime}`)
-    const endTime = formData.endTime ? new Date(`${formData.date}T${formData.endTime}`) = endTime 
+    const endTime = formData.endTime ? new Date(`${formData.date}T${formData.endTime}`) : null
+    const duration = endTime 
       ? Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60))
       : 0
 
     onSave({
-      projectId,
-      date,
+      projectId: formData.projectId,
+      date: formData.date,
       startTime,
       endTime,
-      description,
+      description: formData.description,
+      duration,
       status: 'draft'
     })
 
@@ -81,7 +83,7 @@ export default function TimeEntryForm({
                 id="date"
                 type="date"
                 value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date)}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 required
               />
@@ -96,7 +98,7 @@ export default function TimeEntryForm({
                 id="project"
                 className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white focus:border-blue-500 focus:ring-blue-500 transition-colors"
                 value={formData.projectId}
-                onChange={(e) => setFormData({ ...formData, projectId)}
+                onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
               >
                 <option value="">Select a project</option>
                 {projects.map((project) => (
@@ -118,7 +120,7 @@ export default function TimeEntryForm({
                 id="startTime"
                 type="time"
                 value={formData.startTime}
-                onChange={(e) => setFormData({ ...formData, startTime)}
+                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                 className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 required
               />
@@ -132,7 +134,7 @@ export default function TimeEntryForm({
                 id="endTime"
                 type="time"
                 value={formData.endTime}
-                onChange={(e) => setFormData({ ...formData, endTime)}
+                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
                 className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
@@ -149,7 +151,7 @@ export default function TimeEntryForm({
               className="w-full p-3 border border-gray-200 rounded-md h-24 resize-none focus:border-blue-500 focus:ring-blue-500 transition-colors"
               placeholder="What did you work on? Describe your activities..."
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description)}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               required
             />
           </div>
