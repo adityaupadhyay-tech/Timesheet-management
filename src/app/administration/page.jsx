@@ -18,6 +18,7 @@ export default function AdministrationPage() {
   })
 
   const [activeSection, setActiveSection] = useState('overview')
+  const [showNavigation, setShowNavigation] = useState(false)
 
   const adminSections = [
     {
@@ -47,53 +48,144 @@ export default function AdministrationPage() {
   ]
 
   const renderContent = () => {
+    if (!showNavigation) {
+      // Show card selection menu
+      return (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {
+            setActiveSection('company')
+            setShowNavigation(true)
+          }}>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Building className="mr-2" />
+                Company Setup
+              </CardTitle>
+              <CardDescription>Setup company structure, locations, departments, and employees</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
+                Configure your organization's structure including locations, departments, and employee assignments.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {
+            setActiveSection('users')
+            setShowNavigation(true)
+          }}>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="mr-2" />
+                User Management
+              </CardTitle>
+              <CardDescription>Manage user accounts, roles, and permissions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
+                Create, modify, and manage user accounts, roles, and access permissions.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {
+            setActiveSection('monitoring')
+            setShowNavigation(true)
+          }}>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BarChart className="mr-2" />
+                System Monitoring
+              </CardTitle>
+              <CardDescription>Monitor system performance and usage statistics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
+                View system performance metrics, usage statistics, and health monitoring.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+
+    // Show navigation when a card is selected
     switch (activeSection) {
       case 'company':
-        return <CompanySetup />
-      case 'overview':
-      default:
         return (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveSection('company')}>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Building className="mr-2" />
-                  Company Setup
-                </CardTitle>
-                <CardDescription>Setup company structure, locations, departments, and employees</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">
-                  Configure your organization's structure including locations, departments, and employee assignments.
-                </p>
-              </CardContent>
-            </Card>
-
+          <>
+            {/* Back Button */}
+            <div className="mb-6">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setActiveSection('overview')
+                  setShowNavigation(false)
+                }}
+                className="flex items-center mb-4"
+              >
+                ← Back to Administration
+              </Button>
+            </div>
+            <CompanySetup />
+          </>
+        )
+      case 'users':
+        return (
+          <>
+            {/* Back Button */}
+            <div className="mb-6">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setActiveSection('overview')
+                  setShowNavigation(false)
+                }}
+                className="flex items-center mb-4"
+              >
+                ← Back to Administration
+              </Button>
+            </div>
             <Card>
               <CardHeader>
                 <CardTitle>User Management</CardTitle>
                 <CardDescription>Manage user accounts, roles, and permissions</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600">
-                  Create, modify, and manage user accounts, roles, and access permissions.
-                </p>
+                <p className="text-center text-gray-500">User Management module coming soon...</p>
               </CardContent>
             </Card>
-
+          </>
+        )
+      case 'monitoring':
+        return (
+          <>
+            {/* Back Button */}
+            <div className="mb-6">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setActiveSection('overview')
+                  setShowNavigation(false)
+                }}
+                className="flex items-center mb-4"
+              >
+                ← Back to Administration
+              </Button>
+            </div>
             <Card>
               <CardHeader>
                 <CardTitle>System Monitoring</CardTitle>
                 <CardDescription>Monitor system performance and usage statistics</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600">
-                  View system performance metrics, usage statistics, and health monitoring.
-                </p>
+                <p className="text-center text-gray-500">Monitoring module coming soon...</p>
               </CardContent>
             </Card>
-          </div>
+          </>
         )
+      default:
+        return null
     }
   }
 
@@ -105,25 +197,6 @@ export default function AdministrationPage() {
           <p className="text-gray-600">System administration, configuration, and advanced management features</p>
         </div>
 
-        {/* Navigation Pills */}
-        <div className="mb-8">
-          <nav className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-            {adminSections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeSection === section.id
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                <span className="mr-2">{section.icon}</span>
-                {section.title}
-              </button>
-            ))}
-          </nav>
-        </div>
 
         {/* Content */}
         {renderContent()}
