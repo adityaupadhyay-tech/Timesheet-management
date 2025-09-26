@@ -15,6 +15,8 @@ import Edit from '@mui/icons-material/Edit'
 import Delete from '@mui/icons-material/Delete'
 import CheckCircle from '@mui/icons-material/CheckCircle'
 import ArrowRight from '@mui/icons-material/ArrowForward'
+import Search from '@mui/icons-material/Search'
+import Clear from '@mui/icons-material/Clear'
 
 export default function CompanySetup() {
   // Initial companies data with first company auto-selected
@@ -22,7 +24,7 @@ export default function CompanySetup() {
     {
       id: '1',
       name: 'Acme Corporation',
-      description: 'A software development company',
+      description: 'A software development company specializing in enterprise solutions and cloud architecture',
       headquarters: 'San Francisco, CA',
       logo: '',
       locations: [
@@ -36,6 +38,221 @@ export default function CompanySetup() {
         }
       ],
       departments: [],
+      employees: []
+    },
+    {
+      id: '2',
+      name: 'TechFlow Systems',
+      description: 'Leading provider of fintech solutions and payment processing systems',
+      headquarters: 'New York, NY',
+      logo: '',
+      locations: [
+        {
+          id: 'loc2',
+          name: 'Manhattan Office',
+          address: '456 Broadway, New York, NY',
+          phone: '+1 555-234-5678',
+          manager: 'Sarah Thompson',
+          departments: []
+        }
+      ],
+      departments: [
+        {
+          id: 'dept1',
+          name: 'Engineering',
+          description: 'Software development and technical architecture',
+          locationId: 'loc2',
+          manager: 'Mike Johnson',
+          employees: []
+        }
+      ],
+      employees: [
+        {
+          id: 'emp1',
+          name: 'Alice Williams',
+          email: 'alice.williams@techflow.com',
+          position: 'Software Engineer',
+          departmentId: 'dept1',
+          locationId: 'loc2'
+        }
+      ]
+    },
+    {
+      id: '3',
+      name: 'Global Logistics Inc',
+      description: 'International shipping and freight forwarding services worldwide',
+      headquarters: 'Seattle, WA',
+      logo: '',
+      locations: [
+        {
+          id: 'loc3',
+          name: 'Seattle Headquarters',
+          address: '789 Harbor Way, Seattle, WA',
+          phone: '+1 555-345-6789',
+          manager: 'Robert Chen',
+          departments: []
+        },
+        {
+          id: 'loc4',
+          name: 'Port Authority Branch',
+          address: '321 Port Boulevard, Tacoma, WA',
+          phone: '+1 555-456-7890',
+          manager: 'Lisa Rodriguez',
+          departments: []
+        }
+      ],
+      departments: [
+        {
+          id: 'dept2',
+          name: 'Operations',
+          description: 'Warehouse and shipping management',
+          locationId: 'loc3',
+          manager: 'David Park',
+          employees: []
+        },
+        {
+          id: 'dept3',
+          name: 'Customer Service',
+          description: 'Client support and account management',
+          locationId: 'loc4',
+          manager: 'Maria Garcia',
+          employees: []
+        }
+      ],
+      employees: [
+        {
+          id: 'emp2',
+          name: 'James Wilson',
+          email: 'james.wilson@globallogistics.com',
+          position: 'Operations Manager',
+          departmentId: 'dept2',
+          locationId: 'loc3'
+        },
+        {
+          id: 'emp3',
+          name: 'Emma Davis',
+          email: 'emma.davis@globallogistics.com',
+          position: 'Customer Service Representative',
+          departmentId: 'dept3',
+          locationId: 'loc4'
+        }
+      ]
+    },
+    {
+      id: '4',
+      name: 'HealthTech Partners',
+      description: 'Medical technology innovations and healthcare management systems',
+      headquarters: 'Austin, TX',
+      logo: '',
+      locations: [
+        {
+          id: 'loc5',
+          name: 'Austin Research Center',
+          address: '654 Innovation Drive, Austin, TX',
+          phone: '+1 555-567-8901',
+          manager: 'Dr. Jennifer Lee',
+          departments: []
+        }
+      ],
+      departments: [
+        {
+          id: 'dept4',
+          name: 'Research & Development',
+          description: 'Medical device research and clinical trials',
+          locationId: 'loc5',
+          manager: 'Dr. Michael Brown',
+          employees: []
+        },
+        {
+          id: 'dept5',
+          name: 'Quality Assurance',
+          description: 'Regulatory compliance and testing protocols',
+          locationId: 'loc5',
+          manager: 'Karen Smith',
+          employees: []
+        }
+      ],
+      employees: [
+        {
+          id: 'emp4',
+          name: 'Dr. Sarah Taylor',
+          email: 'sarah.taylor@healthtech.com',
+          position: 'Research Scientist',
+          departmentId: 'dept4',
+          locationId: 'loc5'
+        },
+        {
+          id: 'emp5',
+          name: 'Robert Martinez',
+          email: 'robert.martinez@healthtech.com',
+          position: 'QA Engineer',
+          departmentId: 'dept5',
+          locationId: 'loc5'
+        },
+        {
+          id: 'emp6',
+          name: 'Linda Clark',
+          email: 'linda.clark@healthtech.com',
+          position: 'Regulatory Affairs Specialist',
+          departmentId: 'dept5',
+          locationId: 'loc5'
+        }
+      ]
+    },
+    {
+      id: '5',
+      name: 'Retail Dynamics',
+      description: 'E-commerce platform and retail analytics for small and medium businesses',
+      headquarters: 'Miami, FL',
+      logo: '',
+      locations: [],
+      departments: [
+        {
+          id: 'dept6',
+          name: 'Sales',
+          description: 'Business development and client acquisition',
+          locationId: '',
+          manager: 'Carlos Rodriguez',
+          employees: []
+        }
+      ],
+      employees: [
+        {
+          id: 'emp7',
+          name: 'Patricia Johnson',
+          email: 'patricia.johnson@retaildynamics.com',
+          position: 'Sales Director',
+          departmentId: 'dept6',
+          locationId: ''
+        }
+      ]
+    },
+    {
+      id: '6',
+      name: 'EcoEnergy Solutions',
+      description: 'Renewable energy infrastructure and sustainable development projects',
+      headquarters: 'Denver, CO',
+      logo: '',
+      locations: [
+        {
+          id: 'loc6',
+          name: 'Denver Headquarters',
+          address: '888 Energy Plaza, Denver, CO',
+          phone: '+1 555-678-9012',
+          manager: 'Jennifer Green',
+          departments: []
+        }
+      ],
+      departments: [
+        {
+          id: 'dept7',
+          name: 'Engineering',
+          description: 'Solar and wind energy system design',
+          locationId: 'loc6',
+          manager: 'Tom Wright',
+          employees: []
+        }
+      ],
       employees: []
     }
   ]
@@ -52,6 +269,7 @@ export default function CompanySetup() {
   const [showCompanyDetails, setShowCompanyDetails] = useState(false)
   const [showEditCompany, setShowEditCompany] = useState(false)
   const [editingCompany, setEditingCompany] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
 
   // Auto-select first company when companies change
   useEffect(() => {
@@ -267,6 +485,18 @@ export default function CompanySetup() {
     return getCompanyDepartments()
   }
 
+  // Filter companies based on search term
+  const filteredCompanies = companies.filter(company => 
+    company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    company.headquarters.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    company.description.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  // Clear search function
+  const clearSearch = () => {
+    setSearchTerm('')
+  }
+
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -368,22 +598,61 @@ export default function CompanySetup() {
                    <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-md">
                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                      <span className="text-sm text-gray-600">
-                       {companies.length} Total
+                       {searchTerm ? `${filteredCompanies.length}/` : ''}{companies.length} Total
                      </span>
                    </div>
                    {companies.length > 0 && (
                      <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-md">
                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                        <span className="text-sm text-gray-600">
-                         {companies.filter(c => (c.locations?.length || 0) > 0).length} with Locations
+                         {(searchTerm ? filteredCompanies : companies).filter(c => (c.locations?.length || 0) > 0).length} with Locations
                        </span>
                      </div>
                    )}
                  </div>
               </div>
             </CardHeader>
+            {companies.length > 0 && (
+              <div className="px-6 pb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    type="text"
+                    placeholder="Search companies by name, headquarters, or description..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  {searchTerm && (
+                    <Button
+                      onClick={clearSearch}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 h-auto w-auto"
+                      variant="ghost"
+                      size="sm"
+                    >
+                      <Clear className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
             <CardContent>
-              {companies.length === 0 ? (
+              {filteredCompanies.length === 0 && companies.length > 0 && searchTerm.length > 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No companies found matching "{searchTerm}"</p>
+                  <p className="text-sm">Try adjusting your search terms</p>
+                  <Button variant="outline" onClick={clearSearch} className="mt-4">
+                    <Clear className="w-4 h-4 mr-2" />
+                    Clear search
+                  </Button>
+                </div>
+              ) : filteredCompanies.length === 0 && companies.length > 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No companies match your current filters</p>
+                </div>
+              ) : companies.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                   <p>No companies added yet</p>
@@ -411,7 +680,7 @@ export default function CompanySetup() {
                       </tr>
                     </thead>
                     <tbody>
-                      {companies.map((company) => (
+                      {filteredCompanies.map((company) => (
                         <tr 
                           key={company.id}
                           className={`border-b hover:bg-gray-50 cursor-pointer transition-colors ${
