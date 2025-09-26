@@ -17,6 +17,7 @@ import CheckCircle from '@mui/icons-material/CheckCircle'
 import ArrowRight from '@mui/icons-material/ArrowForward'
 import Search from '@mui/icons-material/Search'
 import Clear from '@mui/icons-material/Clear'
+import Settings from '@mui/icons-material/Settings'
 
 export default function CompanySetup() {
   // Initial companies data with first company auto-selected
@@ -270,6 +271,12 @@ export default function CompanySetup() {
   const [showEditCompany, setShowEditCompany] = useState(false)
   const [editingCompany, setEditingCompany] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [showLocationDepartmentManagement, setShowLocationDepartmentManagement] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [companyToDelete, setCompanyToDelete] = useState(null)
+  const [companyNameConfirmation, setCompanyNameConfirmation] = useState('')
+  const [showLocationSection, setShowLocationSection] = useState(false)
+  const [showDepartmentSection, setShowDepartmentSection] = useState(false)
 
   // Auto-select first company when companies change
   useEffect(() => {
@@ -281,6 +288,22 @@ export default function CompanySetup() {
       setSelectedCompany(companies[0].id)
     }
   }, [companies, selectedCompany])
+
+  // Reset location/department management view when changing tabs (but not when selectedCompany changes via edit button)
+
+  // Handle escape key for closing delete confirmation modal
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === 'Escape' && showDeleteConfirm) {
+        cancelDeleteCompany()
+      }
+    }
+
+    if (showDeleteConfirm) {
+      document.addEventListener('keydown', handleKeyPress)
+      return () => document.removeEventListener('keydown', handleKeyPress)
+    }
+  }, [showDeleteConfirm])
 
   // Form states
   const [newCompany, setNewCompany] = useState({ name: '', description: '', headquarters: '', logo: '' })
@@ -390,17 +413,36 @@ export default function CompanySetup() {
     }
   }
 
-  const deleteCompany = (companyId) => {
-    setCompanies(companies.filter(comp => comp.id !== companyId))
-    // If deleted company was selected, select another one
-    if (selectedCompany === companyId) {
-      const remainingCompanies = companies.filter(comp => comp.id !== companyId)
-      if (remainingCompanies.length > 0) {
-        setSelectedCompany(remainingCompanies[0].id)
-      } else {
-        setSelectedCompany('')
+  const confirmDeleteCompany = (companyId) => {
+    const company = companies.find(c => c.id === companyId)
+    setCompanyToDelete({ id: companyId, name: company?.name })
+    setCompanyNameConfirmation('')
+    setShowDeleteConfirm(true)
+  }
+
+  const deleteCompany = () => {
+    if (companyToDelete && companyNameConfirmation === companyToDelete.name) {
+      setCompanies(companies.filter(comp => comp.id !== companyToDelete.id))
+      // If deleted company was selected, select another one
+      if (selectedCompany === companyToDelete.id) {
+        const remainingCompanies = companies.filter(comp => comp.id !== companyToDelete.id)
+        if (remainingCompanies.length > 0) {
+          setSelectedCompany(remainingCompanies[0].id)
+        } else {
+          setSelectedCompany('')
+        }
       }
+      // Close the confirmation dialog
+      setShowDeleteConfirm(false)
+      setCompanyToDelete(null)
+      setCompanyNameConfirmation('')
     }
+  }
+
+  const cancelDeleteCompany = () => {
+    setShowDeleteConfirm(false)
+    setCompanyToDelete(null)
+    setCompanyNameConfirmation('')
   }
 
   const editCompany = (company) => {
@@ -676,7 +718,6 @@ export default function CompanySetup() {
                           <People className="w-4 h-4 mx-auto mb-1" />
                           <span className="text-xs">Employees</span>
                         </th>
-                        <th className="text-center py-3 px-4 font-medium text-gray-900">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -711,23 +752,6 @@ export default function CompanySetup() {
                             <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-800 font-medium text-sm">
                               {company.employees?.length || 0}
                             </span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex justify-center">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setSelectedCompany(company.id)
-                                  setActiveTab('locations')
-                                }}
-                                className="flex items-center"
-                              >
-                                <LocationOn className="w-4 h-4 mr-2" />
-                                Manage
-                              </Button>
-                            </div>
                           </td>
                         </tr>
                       ))}
@@ -832,7 +856,13 @@ export default function CompanySetup() {
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                onClick={() => editCompany(company)}
+                                onClick={() => {
+                                  setSelectedCompany(company.id)
+                                  setActiveTab('manage')
+                                  setShowLocationSection(true)
+                                  setShowDepartmentSection(true)
+                                  setShowLocationDepartmentManagement(true)
+                                }}
                                 className="flex items-center"
                               >
                                 <Edit className="w-4 h-4 mr-1" />
@@ -841,7 +871,16 @@ export default function CompanySetup() {
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                onClick={() => deleteCompany(company.id)}
+                                onClick={() => editCompany(company)}
+                                className="flex items-center"
+                              >
+                                <Settings className="w-4 h-4 mr-1" />
+                                Settings
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => confirmDeleteCompany(company.id)}
                                 className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
                                 <Delete className="w-4 h-4 mr-1" />
@@ -963,58 +1002,206 @@ export default function CompanySetup() {
               </CardContent>
             </Card>
           )}
-        </TabsContent>
 
-        {/* Locations Tab */}
-        <TabsContent value="locations" className="space-y-6">
-          {selectedCompany ? (
-            <>
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <CardTitle className="flex items-center">
-                        <LocationOn className="mr-2" />
-                        Company Locations
-                      </CardTitle>
-                      <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-md">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <span className="text-sm text-gray-600">
-                          {getCompanyLocations().length} Total
-                        </span>
-                      </div>
+          {/* Add Location Section in Manage Tab */}
+          {selectedCompany && showLocationSection && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <CardTitle className="flex items-center">
+                      <LocationOn className="mr-2" />
+                      Company Locations
+                    </CardTitle>
+                    <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-md">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm text-gray-600">
+                        {getCompanyLocations().length} Total
+                      </span>
                     </div>
-                    <Button onClick={() => setShowAddLocation(true)} className="flex items-center">
-                      <Add className="w-4 h-4 mr-2" />
-                      Add Location
-                    </Button>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {getCompanyLocations().length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <LocationOn className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                      <p>No locations added yet for {getSelectedCompanyDetail().name}</p>
-                      <p className="text-sm">Click "Add Location" to get started</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowLocationSection(false)}
+                    className="flex items-center"
+                  >
+                    <Clear className="w-4 h-4 mr-1" />
+                    Close
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {getCompanyLocations().length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <LocationOn className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>No locations added yet for {getSelectedCompanyDetail().name}</p>
+                    <p className="text-sm">Click "Add Location" to get started</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 mb-4">
+                    {getCompanyLocations().map((location) => (
+                      <Card key={location.id} className="border border-gray-200">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-lg">{location.name}</h3>
+                              <p className="text-gray-600 text-sm">{location.address}</p>
+                              {location.phone && (
+                                <p className="text-gray-500 text-sm">Phone: {location.phone}</p>
+                              )}
+                              {location.manager && (
+                                <p className="text-gray-500 text-sm">Manager: {location.manager}</p>
+                              )}
+                              <div className="mt-2">
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  {location.departments?.length || 0} departments
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => deleteLocation(location.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Delete className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="flex space-x-2">
+                  <Button onClick={() => setShowAddLocation(true)} className="flex items-center">
+                    <Add className="w-4 h-4 mr-2" />
+                    Add Location
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Add Location Modal in Manage Tab */}
+          {showAddLocation && selectedCompany && showLocationSection && (
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader>
+                <CardTitle className="text-lg">Add New Location</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="locationName">Location Name</Label>
+                    <Input
+                      id="locationName"
+                      value={newLocation.name}
+                      onChange={(e) => setNewLocation({ ...newLocation, name: e.target.value })}
+                      placeholder="e.g., New York Office"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="locationManager">Manager</Label>
+                    <Input
+                      id="locationManager"
+                      value={newLocation.manager}
+                      onChange={(e) => setNewLocation({ ...newLocation, manager: e.target.value })}
+                      placeholder="Location manager name"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="locationAddress">Address</Label>
+                  <Input
+                    id="locationAddress"
+                    value={newLocation.address}
+                    onChange={(e) => setNewLocation({ ...newLocation, address: e.target.value })}
+                    placeholder="Full address"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="locationPhone">Phone (Optional)</Label>
+                  <Input
+                    id="locationPhone"
+                    value={newLocation.phone}
+                    onChange={(e) => setNewLocation({ ...newLocation, phone: e.target.value })}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button onClick={addLocation} className="flex items-center">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Add Location
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddLocation(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Add Department Section in Manage Tab */}
+          {selectedCompany && showDepartmentSection && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <CardTitle className="flex items-center">
+                      <Business className="mr-2" />
+                      Departments
+                    </CardTitle>
+                    <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-md">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-gray-600">
+                        {getCompanyDepartments().length} Total
+                      </span>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {getCompanyLocations().map((location) => (
-                        <Card key={location.id} className="border border-gray-200">
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowDepartmentSection(false)}
+                    className="flex items-center"
+                  >
+                    <Clear className="w-4 h-4 mr-1" />
+                    Close
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {getCompanyDepartments().length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Business className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>No departments added yet for {getSelectedCompanyDetail().name}</p>
+                    <p className="text-sm">Add locations first, then create departments</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 mb-4">
+                    {getCompanyDepartments().map((department) => {
+                      const location = getCompanyLocations().find(loc => loc.id === department.locationId)
+                      return (
+                        <Card key={department.id} className="border border-gray-200">
                           <CardContent className="p-4">
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
-                                <h3 className="font-semibold text-lg">{location.name}</h3>
-                                <p className="text-gray-600 text-sm">{location.address}</p>
-                                {location.phone && (
-                                  <p className="text-gray-500 text-sm">Phone: {location.phone}</p>
+                                <h3 className="font-semibold text-lg">{department.name}</h3>
+                                <p className="text-gray-600 text-sm">{department.description}</p>
+                                {department.manager && (
+                                  <p className="text-gray-500 text-sm">Manager: {department.manager}</p>
                                 )}
-                                {location.manager && (
-                                  <p className="text-gray-500 text-sm">Manager: {location.manager}</p>
-                                )}
-                                <div className="mt-2">
+                                <div className="mt-2 flex space-x-2">
                                   <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                    {location.departments?.length || 0} departments
+                                    {location?.name || 'Unknown Location'}
+                                  </span>
+                                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                    {department.employees?.length || 0} employees
                                   </span>
                                 </div>
                               </div>
@@ -1025,7 +1212,7 @@ export default function CompanySetup() {
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  onClick={() => deleteLocation(location.id)}
+                                  onClick={() => deleteDepartment(department.id)}
                                   className="text-red-600 hover:text-red-700"
                                 >
                                   <Delete className="w-4 h-4" />
@@ -1034,238 +1221,188 @@ export default function CompanySetup() {
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                      )
+                    })}
+                  </div>
+                )}
 
-              {/* Add Location Modal */}
-              {showAddLocation && (
-                <Card className="border-blue-200 bg-blue-50">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Add New Location</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="locationName">Location Name</Label>
-                        <Input
-                          id="locationName"
-                          value={newLocation.name}
-                          onChange={(e) => setNewLocation({ ...newLocation, name: e.target.value })}
-                          placeholder="e.g., New York Office"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="locationManager">Manager</Label>
-                        <Input
-                          id="locationManager"
-                          value={newLocation.manager}
-                          onChange={(e) => setNewLocation({ ...newLocation, manager: e.target.value })}
-                          placeholder="Location manager name"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="locationAddress">Address</Label>
-                      <Input
-                        id="locationAddress"
-                        value={newLocation.address}
-                        onChange={(e) => setNewLocation({ ...newLocation, address: e.target.value })}
-                        placeholder="Full address"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="locationPhone">Phone (Optional)</Label>
-                      <Input
-                        id="locationPhone"
-                        value={newLocation.phone}
-                        onChange={(e) => setNewLocation({ ...newLocation, phone: e.target.value })}
-                        placeholder="+1 (555) 123-4567"
-                      />
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button onClick={addLocation} className="flex items-center">
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Add Location
-                      </Button>
-                      <Button variant="outline" onClick={() => setShowAddLocation(false)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          ) : (
-            <Card>
-              <CardContent className="p-8">
-                <div className="text-center text-gray-500">
-                  <LocationOn className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg">Select a company to manage locations</p>
-                  <p className="text-sm">Go to the Companies tab to select or create a company</p>
+                <div className="flex space-x-2">
+                  <Button onClick={() => setShowAddDepartment(true)} className="flex items-center">
+                    <Add className="w-4 h-4 mr-2" />
+                    Add Department
+                  </Button>
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Add Department Modal in Manage Tab */}
+          {showAddDepartment && selectedCompany && showDepartmentSection && (
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader>
+                <CardTitle className="text-lg">Add New Department</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="departmentName">Department Name</Label>
+                    <Input
+                      id="departmentName"
+                      value={newDepartment.name}
+                      onChange={(e) => setNewDepartment({ ...newDepartment, name: e.target.value })}
+                      placeholder="e.g., Human Resources"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="departmentLocation">Location</Label>
+                    <select
+                      className="w-full px-3 py-2 border border-input rounded-md focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      value={newDepartment.locationId}
+                      onChange={(e) => setNewDepartment({ ...newDepartment, locationId: e.target.value })}
+                    >
+                      <option value="">Select a location</option>
+                      {getAvailableLocations().map(location => (
+                        <option key={location.id} value={location.id}>
+                          {location.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="departmentDescription">Description</Label>
+                  <textarea
+                    id="departmentDescription"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    value={newDepartment.description}
+                    onChange={(e) => setNewDepartment({ ...newDepartment, description: e.target.value })}
+                    placeholder="Department description"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="departmentManager">Manager</Label>
+                  <Input
+                    id="departmentManager"
+                    value={newDepartment.manager}
+                    onChange={(e) => setNewDepartment({ ...newDepartment, manager: e.target.value })}
+                    placeholder="Department manager name"
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button onClick={addDepartment} className="flex items-center">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Add Department
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddDepartment(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Delete Company Confirmation Modal */}
+          {showDeleteConfirm && companyToDelete && (
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+              onClick={cancelDeleteCompany}
+            >
+              <Card 
+                className="border-red-200 bg-white max-w-md w-full mx-4 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <CardHeader>
+                  <CardTitle className="flex items-center text-red-800">
+                    <Delete className="w-6 h-6 mr-2" />
+                    Delete Company
+                  </CardTitle>
+                  <p className="text-sm text-red-700">
+                    Are you sure you want to delete "<strong>{companyToDelete.name}</strong>"? This action cannot be undone.
+                  </p>
+                  <p className="text-xs text-red-600">
+                    This will also delete all associated locations, departments, and employees.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="companyNameInput" className="text-sm font-medium text-red-800">
+                        To confirm deletion, please type the company name: <span className="font-bold">{companyToDelete.name}</span>
+                      </Label>
+                      <Input
+                        id="companyNameInput"
+                        type="text"
+                        value={companyNameConfirmation}
+                        onChange={(e) => setCompanyNameConfirmation(e.target.value)}
+                        placeholder={`Type "${companyToDelete.name}" here`}
+                        className="border-red-200 focus:border-red-400 focus:ring-red-200"
+                      />
+                    </div>
+                    <div className="flex space-x-3">
+                      <Button 
+                        onClick={deleteCompany}
+                        disabled={companyNameConfirmation !== companyToDelete.name}
+                        className="flex items-center bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Delete className="w-4 h-4 mr-2" />
+                        Yes, Delete Company
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={cancelDeleteCompany}
+                        className="border-gray-300"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           )}
         </TabsContent>
 
-        {/* Departments Tab */}
-        <TabsContent value="departments" className="space-y-6">
-          {selectedCompany ? (
-            <>
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <CardTitle className="flex items-center">
-                        <Business className="mr-2" />
-                        Departments
-                      </CardTitle>
-                      <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-md">
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <span className="text-sm text-gray-600">
-                          {getCompanyDepartments().length} Total
-                        </span>
-                      </div>
-                    </div>
-                    <Button onClick={() => setShowAddDepartment(true)} className="flex items-center">
-                      <Add className="w-4 h-4 mr-2" />
-                      Add Department
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {getCompanyDepartments().length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Business className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                      <p>No departments added yet for {getSelectedCompanyDetail().name}</p>
-                      <p className="text-sm">Add locations first, then create departments</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {getCompanyDepartments().map((department) => {
-                        const location = getCompanyLocations().find(loc => loc.id === department.locationId)
-                        return (
-                          <Card key={department.id} className="border border-gray-200">
-                            <CardContent className="p-4">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <h3 className="font-semibold text-lg">{department.name}</h3>
-                                  <p className="text-gray-600 text-sm">{department.description}</p>
-                                  {department.manager && (
-                                    <p className="text-gray-500 text-sm">Manager: {department.manager}</p>
-                                  )}
-                                  <div className="mt-2 flex space-x-2">
-                                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                      {location?.name || 'Unknown Location'}
-                                    </span>
-                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                                      {department.employees?.length || 0} employees
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex space-x-2">
-                                  <Button variant="outline" size="sm">
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => deleteDepartment(department.id)}
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <Delete className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+        {/* Locations Tab - Read Only */}
+        <TabsContent value="locations" className="space-y-6">
+          <Card>
+            <CardContent className="p-8">
+              <div className="text-center text-gray-500">
+                <LocationOn className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg">Location Management Moved</p>
+                <p className="text-sm mb-4">All location management features are now in the "Manage Companies" tab</p>
+                <Button 
+                  onClick={() => setActiveTab('manage')} 
+                  variant="outline"
+                  className="flex items-center"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Go to Manage Companies
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              {/* Add Department Modal */}
-              {showAddDepartment && (
-                <Card className="border-blue-200 bg-blue-50">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Add New Department</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="departmentName">Department Name</Label>
-                        <Input
-                          id="departmentName"
-                          value={newDepartment.name}
-                          onChange={(e) => setNewDepartment({ ...newDepartment, name: e.target.value })}
-                          placeholder="e.g., Human Resources"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="departmentLocation">Location</Label>
-                        <select
-                          className="w-full px-3 py-2 border border-input rounded-md focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                          value={newDepartment.locationId}
-                          onChange={(e) => setNewDepartment({ ...newDepartment, locationId: e.target.value })}
-                        >
-                          <option value="">Select a location</option>
-                          {getAvailableLocations().map(location => (
-                            <option key={location.id} value={location.id}>
-                              {location.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="departmentDescription">Description</Label>
-                      <textarea
-                        id="departmentDescription"
-                        className="w-full px-3 py-2 border border-input rounded-md focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                        value={newDepartment.description}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, description: e.target.value })}
-                        placeholder="Department description"
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="departmentManager">Manager</Label>
-                      <Input
-                        id="departmentManager"
-                        value={newDepartment.manager}
-                        onChange={(e) => setNewDepartment({ ...newDepartment, manager: e.target.value })}
-                        placeholder="Department manager name"
-                      />
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button onClick={addDepartment} className="flex items-center">
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Add Department
-                      </Button>
-                      <Button variant="outline" onClick={() => setShowAddDepartment(false)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          ) : (
-            <Card>
-              <CardContent className="p-8">
-                <div className="text-center text-gray-500">
-                  <Business className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg">Select a company to manage departments</p>
-                  <p className="text-sm">Go to the Companies tab to select or create a company</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        {/* Departments Tab - Read Only */}
+        <TabsContent value="departments" className="space-y-6">
+          <Card>
+            <CardContent className="p-8">
+              <div className="text-center text-gray-500">
+                <Business className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg">Department Management Moved</p>
+                <p className="text-sm mb-4">All department management features are now in the "Manage Companies" tab</p>
+                <Button 
+                  onClick={() => setActiveTab('manage')} 
+                  variant="outline"
+                  className="flex items-center"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Go to Manage Companies
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Employees Tab */}
