@@ -42,10 +42,8 @@ export default function PaycycleSetupPage() {
   const [paycycleConfig, setPaycycleConfig] = useState({
     name: '',
     frequency: 'monthly',
-    payDay: 'last',
     endDate: '',
     secondEndDate: '',
-    processingDays: 3,
     type: 'regular'
   })
 
@@ -101,10 +99,8 @@ export default function PaycycleSetupPage() {
     setPaycycleConfig({
       name: '',
       frequency: 'monthly',
-      payDay: 'last',
       endDate: '',
       secondEndDate: '',
-      processingDays: 3,
       type: 'regular'
     })
     alert('Paycycle configuration saved successfully!')
@@ -116,11 +112,22 @@ export default function PaycycleSetupPage() {
     const currentCompany = companies.find(c => c.id === selectedCompany.id)
     if (!currentCompany) return
 
-    const updatedPaycycles = currentCompany.paycycles.filter(pc => pc.id !== paycycleId)
-    updateCompany(selectedCompany.id, { paycycles: updatedPaycycles })
-    setSelectedPaycycle(null)
-    setIsEditingPaycycle(false)
-    alert('Paycycle deleted successfully!')
+    // Find the paycycle to get its name for the confirmation
+    const paycycleToDelete = currentCompany.paycycles.find(pc => pc.id === paycycleId)
+    if (!paycycleToDelete) return
+
+    // Show confirmation alert
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the paycycle "${paycycleToDelete.name}"?\n\nThis action cannot be undone.`
+    )
+
+    if (confirmed) {
+      const updatedPaycycles = currentCompany.paycycles.filter(pc => pc.id !== paycycleId)
+      updateCompany(selectedCompany.id, { paycycles: updatedPaycycles })
+      setSelectedPaycycle(null)
+      setIsEditingPaycycle(false)
+      alert('Paycycle deleted successfully!')
+    }
   }
 
   const getPaycycleStatus = (paycycle) => {
@@ -166,6 +173,22 @@ export default function PaycycleSetupPage() {
     const day = String(date.getDate()).padStart(2, '0')
     const year = date.getFullYear()
     return `${month}-${day}-${year}`
+  }
+
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const year = date.getFullYear()
+    return `${month}-${day}-${year}`
+  }
+
+  const parseDateFromInput = (inputValue) => {
+    if (!inputValue) return ''
+    // Convert mm-dd-yyyy to yyyy-mm-dd for storage
+    const [month, day, year] = inputValue.split('-')
+    return `${year}-${month}-${day}`
   }
 
   // Filter companies based on search term
@@ -238,11 +261,31 @@ export default function PaycycleSetupPage() {
             {/* Companies Table */}
                    <Card>
                      <CardHeader>
-                       <CardTitle className="flex items-center">
-                         <Business className="w-5 h-5 mr-2" />
-                         Companies ({companies.length})
-                       </CardTitle>
-                       <CardDescription>Select a company to view and manage its paycycles</CardDescription>
+                       <div className="flex items-center justify-between">
+                         <div>
+                           <CardTitle className="flex items-center">
+                             <Business className="w-5 h-5 mr-2" />
+                             Companies
+                           </CardTitle>
+                           <CardDescription>Select a company to view and manage its paycycles</CardDescription>
+                         </div>
+                         <div className="flex items-center gap-4">
+                           <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-md">
+                             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                             <span className="text-sm text-gray-600">
+                               {searchTerm ? `${filteredCompanies.length}/` : ''}{companies.length} Total
+                             </span>
+                           </div>
+                           {companies.length > 0 && (
+                             <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-md">
+                               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                               <span className="text-sm text-gray-600">
+                                 {(searchTerm ? filteredCompanies : companies).filter(c => (c.paycycles?.length || 0) > 0).length} with Paycycles
+                               </span>
+                             </div>
+                           )}
+                         </div>
+                       </div>
                      </CardHeader>
                      <CardContent>
                        {/* Search Input */}
@@ -357,7 +400,7 @@ export default function PaycycleSetupPage() {
                        Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(endIndex, filteredCompanies.length)}</span> of <span className="font-medium">{filteredCompanies.length}</span> companies
                        {searchTerm && (
                          <span className="ml-2 text-blue-600">
-                           (filtered from {companies.length} total)
+                           filtered from {companies.length} total
                          </span>
                        )}
                      </div>
@@ -481,10 +524,8 @@ export default function PaycycleSetupPage() {
                                         setPaycycleConfig({
                                           name: paycycle.name || '',
                                           frequency: paycycle.frequency || 'monthly',
-                                          payDay: paycycle.payDay || 'last',
                                           endDate: paycycle.endDate || '',
                                           secondEndDate: paycycle.secondEndDate || '',
-                                          processingDays: paycycle.processingDays || 3,
                                           type: paycycle.type || 'regular'
                                         })
                                       }}
@@ -536,10 +577,8 @@ export default function PaycycleSetupPage() {
                             setPaycycleConfig({
                               name: '',
                               frequency: 'monthly',
-                              payDay: 'last',
                               endDate: '',
                               secondEndDate: '',
-                              processingDays: 3,
                               type: 'regular'
                             })
                           }}
@@ -608,32 +647,6 @@ export default function PaycycleSetupPage() {
                                    </select>
                                  </div>
 
-                          <div>
-                            <Label htmlFor="payDay">Pay Day</Label>
-                            <select
-                              id="payDay"
-                              value={paycycleConfig.payDay}
-                              onChange={(e) => handlePaycycleChange('payDay', e.target.value)}
-                              className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                              <option value="last">Last day of period</option>
-                              <option value="first">First day of next period</option>
-                              <option value="specific">Specific day</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <Label htmlFor="processingDays">Processing Days</Label>
-                            <Input
-                              id="processingDays"
-                              type="number"
-                              value={paycycleConfig.processingDays || 3}
-                              onChange={(e) => handlePaycycleChange('processingDays', parseInt(e.target.value))}
-                              placeholder="Number of days before pay day"
-                              min="1"
-                              max="10"
-                            />
-                          </div>
                         </div>
 
                         <div className="space-y-4">
@@ -641,9 +654,10 @@ export default function PaycycleSetupPage() {
                                    <Label htmlFor="endDate">Period End Date</Label>
                                    <Input
                                      id="endDate"
-                                     type="date"
-                                     value={paycycleConfig.endDate || ''}
-                                     onChange={(e) => handlePaycycleChange('endDate', e.target.value)}
+                                     type="text"
+                                     value={formatDateForInput(paycycleConfig.endDate)}
+                                     onChange={(e) => handlePaycycleChange('endDate', parseDateFromInput(e.target.value))}
+                                     placeholder="mm-dd-yyyy"
                                    />
                                  </div>
 
@@ -652,10 +666,10 @@ export default function PaycycleSetupPage() {
                                      <Label htmlFor="secondEndDate">Second Period End Date</Label>
                                        <Input
                                          id="secondEndDate"
-                                         type="date"
-                                         value={paycycleConfig.secondEndDate || ''}
-                                         onChange={(e) => handlePaycycleChange('secondEndDate', e.target.value)}
-                                         placeholder="End date for second period (15th of month)"
+                                         type="text"
+                                         value={formatDateForInput(paycycleConfig.secondEndDate)}
+                                         onChange={(e) => handlePaycycleChange('secondEndDate', parseDateFromInput(e.target.value))}
+                                         placeholder="mm-dd-yyyy (e.g., 01-31-2024)"
                                        />
                                    </div>
                                  )}
@@ -671,10 +685,8 @@ export default function PaycycleSetupPage() {
                             setPaycycleConfig({
                               name: '',
                               frequency: 'monthly',
-                              payDay: 'last',
                               endDate: '',
                               secondEndDate: '',
-                              processingDays: 3,
                               type: 'regular'
                             })
                           }}

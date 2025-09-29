@@ -33,9 +33,7 @@ export function CompaniesProvider({ children }) {
           id: 'pc1',
           name: 'Monthly Salaried',
           frequency: 'monthly',
-          payDay: 'last',
           endDate: '2024-01-31',
-          processingDays: 3,
           lastProcessed: '2024-01-31',
           nextProcessing: '2024-02-29',
           type: 'regular'
@@ -44,9 +42,7 @@ export function CompaniesProvider({ children }) {
           id: 'pc2',
           name: 'Weekly Hourly',
           frequency: 'weekly',
-          payDay: 'last',
           endDate: '2024-01-28',
-          processingDays: 1,
           lastProcessed: '2024-01-28',
           nextProcessing: '2024-02-04',
           type: 'labor'
@@ -97,9 +93,7 @@ export function CompaniesProvider({ children }) {
           id: 'pc3',
           name: 'Bi-weekly Engineering',
           frequency: 'bi-weekly',
-          payDay: 'last',
           endDate: '2024-01-28',
-          processingDays: 2,
           lastProcessed: '2024-01-28',
           nextProcessing: '2024-02-11',
           type: 'regular'
@@ -265,9 +259,7 @@ export function CompaniesProvider({ children }) {
           id: 'pc4',
           name: 'Weekly Operations',
           frequency: 'weekly',
-          payDay: 'last',
           endDate: '2024-01-28',
-          processingDays: 1,
           lastProcessed: '2024-01-28',
           nextProcessing: '2024-02-04',
           type: 'labor'
@@ -276,9 +268,7 @@ export function CompaniesProvider({ children }) {
           id: 'pc5',
           name: 'Bi-weekly Management',
           frequency: 'bi-weekly',
-          payDay: 'last',
           endDate: '2024-01-28',
-          processingDays: 2,
           lastProcessed: '2024-01-28',
           nextProcessing: '2024-02-11',
           type: 'regular'
@@ -287,10 +277,8 @@ export function CompaniesProvider({ children }) {
           id: 'pc6',
           name: 'Semi-monthly Projects',
           frequency: 'semi-monthly',
-          payDay: 'last',
           endDate: '2024-01-15',
           secondEndDate: '2024-01-31',
-          processingDays: 2,
           lastProcessed: '2024-01-15',
           nextProcessing: '2024-02-01',
           type: 'job-cost'
@@ -299,9 +287,7 @@ export function CompaniesProvider({ children }) {
           id: 'pc7',
           name: 'Monthly Executive',
           frequency: 'monthly',
-          payDay: 'last',
           endDate: '2024-01-31',
-          processingDays: 3,
           lastProcessed: '2024-01-31',
           nextProcessing: '2024-02-29',
           type: 'certified'
