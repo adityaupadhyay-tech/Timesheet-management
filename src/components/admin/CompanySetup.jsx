@@ -21,6 +21,8 @@ import Search from '@mui/icons-material/Search'
 import Clear from '@mui/icons-material/Clear'
 import Close from '@mui/icons-material/Close'
 import Settings from '@mui/icons-material/Settings'
+import FilterList from '@mui/icons-material/FilterList'
+import FilterListOff from '@mui/icons-material/FilterListOff'
 
 export default function CompanySetup() {
   // Initial companies data with first company auto-selected
@@ -300,6 +302,19 @@ export default function CompanySetup() {
   const [companyFilter, setCompanyFilter] = useState('')
   const [jobRoleFilter, setJobRoleFilter] = useState('')
   const [departmentFilter, setDepartmentFilter] = useState('')
+  
+  // Location and Department deletion states
+  const [showLocationDeleteConfirm, setShowLocationDeleteConfirm] = useState(false)
+  const [locationToDelete, setLocationToDelete] = useState(null)
+  const [showDepartmentDeleteConfirm, setShowDepartmentDeleteConfirm] = useState(false)
+  const [departmentToDelete, setDepartmentToDelete] = useState(null)
+  
+  // Employee deletion states
+  const [showEmployeeDeleteConfirm, setShowEmployeeDeleteConfirm] = useState(false)
+  const [employeeToDelete, setEmployeeToDelete] = useState(null)
+  
+  // Employee filters visibility state
+  const [showEmployeeFilters, setShowEmployeeFilters] = useState(true)
 
   // Auto-select first company when companies change
   useEffect(() => {
@@ -491,33 +506,81 @@ export default function CompanySetup() {
     }
   }
 
-  const deleteLocation = (locationId) => {
-    setCompanies(companies.map(company => ({
-      ...company,
-      locations: company.locations.filter(loc => loc.id !== locationId)
-    })))
+  // Location deletion functions
+  const confirmDeleteLocation = (locationId) => {
+    const location = getCompanyLocations().find(loc => loc.id === locationId)
+    setLocationToDelete({ id: locationId, name: location?.name })
+    setShowLocationDeleteConfirm(true)
   }
 
-  const deleteDepartment = (departmentId) => {
-    setCompanies(companies.map(company => ({
-      ...company,
-      departments: company.departments.filter(dept => dept.id !== departmentId),
-      locations: company.locations.map(location => ({
-        ...location,
-        departments: location.departments?.filter(deptId => deptId !== departmentId) || []
-      }))
-    })))
+  const deleteLocation = () => {
+    if (locationToDelete) {
+      setCompanies(companies.map(company => ({
+        ...company,
+        locations: company.locations.filter(loc => loc.id !== locationToDelete.id)
+      })))
+      setShowLocationDeleteConfirm(false)
+      setLocationToDelete(null)
+    }
   }
 
-  const deleteEmployee = (employeeId) => {
-    setCompanies(companies.map(company => ({
-      ...company,
-      employees: company.employees.filter(emp => emp.id !== employeeId),
-      departments: company.departments.map(department => ({
-        ...department,
-        employees: department.employees?.filter(empId => empId !== employeeId) || []
-      }))
-    })))
+  const cancelDeleteLocation = () => {
+    setShowLocationDeleteConfirm(false)
+    setLocationToDelete(null)
+  }
+
+  // Department deletion functions
+  const confirmDeleteDepartment = (departmentId) => {
+    const department = getCompanyDepartments().find(dept => dept.id === departmentId)
+    setDepartmentToDelete({ id: departmentId, name: department?.name })
+    setShowDepartmentDeleteConfirm(true)
+  }
+
+  const deleteDepartment = () => {
+    if (departmentToDelete) {
+      setCompanies(companies.map(company => ({
+        ...company,
+        departments: company.departments.filter(dept => dept.id !== departmentToDelete.id),
+        locations: company.locations.map(location => ({
+          ...location,
+          departments: location.departments?.filter(deptId => deptId !== departmentToDelete.id) || []
+        }))
+      })))
+      setShowDepartmentDeleteConfirm(false)
+      setDepartmentToDelete(null)
+    }
+  }
+
+  const cancelDeleteDepartment = () => {
+    setShowDepartmentDeleteConfirm(false)
+    setDepartmentToDelete(null)
+  }
+
+  // Employee deletion functions
+  const confirmDeleteEmployee = (employeeId) => {
+    const employee = getAllEmployees().find(emp => emp.id === employeeId)
+    setEmployeeToDelete(employee)
+    setShowEmployeeDeleteConfirm(true)
+  }
+
+  const deleteEmployee = () => {
+    if (employeeToDelete) {
+      setCompanies(companies.map(company => ({
+        ...company,
+        employees: company.employees.filter(emp => emp.id !== employeeToDelete.id),
+        departments: company.departments.map(department => ({
+          ...department,
+          employees: department.employees?.filter(empId => empId !== employeeToDelete.id) || []
+        }))
+      })))
+      setShowEmployeeDeleteConfirm(false)
+      setEmployeeToDelete(null)
+    }
+  }
+
+  const cancelDeleteEmployee = () => {
+    setShowEmployeeDeleteConfirm(false)
+    setEmployeeToDelete(null)
   }
 
   // Get filtered data for selected company
@@ -1206,14 +1269,14 @@ export default function CompanySetup() {
                               <Button variant="outline" size="sm">
                                 <Edit className="w-4 h-4" />
                               </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => deleteLocation(location.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Delete className="w-4 h-4" />
-                              </Button>
+                               <Button 
+                                 variant="outline" 
+                                 size="sm" 
+                                 onClick={() => confirmDeleteLocation(location.id)}
+                                 className="text-red-600 hover:text-red-700"
+                               >
+                                 <Delete className="w-4 h-4" />
+                               </Button>
                             </div>
                           </div>
                         </CardContent>
@@ -1384,14 +1447,14 @@ export default function CompanySetup() {
                                 <Button variant="outline" size="sm">
                                   <Edit className="w-4 h-4" />
                                 </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  onClick={() => deleteDepartment(department.id)}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Delete className="w-4 h-4" />
-                                </Button>
+                                 <Button 
+                                   variant="outline" 
+                                   size="sm" 
+                                   onClick={() => confirmDeleteDepartment(department.id)}
+                                   className="text-red-600 hover:text-red-700"
+                                 >
+                                   <Delete className="w-4 h-4" />
+                                 </Button>
                               </div>
                             </div>
                           </CardContent>
@@ -1543,22 +1606,40 @@ export default function CompanySetup() {
         {/* Employees Tab */}
         <TabsContent value="employees" className="space-y-6">
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <CardTitle className="flex items-center">
-                    <People className="mr-2" />
-                    All Employees
-                  </CardTitle>
-                  <div className="flex items-center gap-2 bg-purple-50 px-3 py-2 rounded-md">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600">
-                      {getAllEmployees().length} Total
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
+             <CardHeader>
+               <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-4">
+                   <CardTitle className="flex items-center">
+                     <People className="mr-2" />
+                     All Employees
+                   </CardTitle>
+                   <div className="flex items-center gap-2 bg-purple-50 px-3 py-2 rounded-md">
+                     <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                     <span className="text-sm text-gray-600">
+                       {getAllEmployees().length} Total
+                     </span>
+                   </div>
+                 </div>
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={() => setShowEmployeeFilters(!showEmployeeFilters)}
+                   className="flex items-center"
+                 >
+                   {showEmployeeFilters ? (
+                     <>
+                       <FilterListOff className="w-4 h-4 mr-1" />
+                       Hide Filters
+                     </>
+                   ) : (
+                     <>
+                       <FilterList className="w-4 h-4 mr-1" />
+                       Show Filters
+                     </>
+                   )}
+                 </Button>
+               </div>
+             </CardHeader>
             <CardContent>
               {getAllEmployees().length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
@@ -1566,105 +1647,107 @@ export default function CompanySetup() {
                   <p>No employees found</p>
                   <p className="text-sm">Go to the Manage Companies tab to add employees to companies</p>
                 </div>
-              ) : (
-                <>
-                  {/* Filter Controls */}
-                  <div className="space-y-4 mb-6">
-                    <div className="flex items-center justify-between relative leading-8">
-                      <h3 className="text-sm font-medium text-gray-900">Filter Employees</h3>
-                      <div className="h-8 w-32 flex items-center justify-end">
-                        {(companyFilter || jobRoleFilter || departmentFilter) ? (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => {
-                              setCompanyFilter('')
-                              setJobRoleFilter('')
-                              setDepartmentFilter('')
-                            }}
-                            className="flex items-center text-xs w-24 transition opacity-1"
-                          >
-                            Clear Filters
-                          </Button>
-                        ) : (
-                          <div className="opacity-0 flex items-center text-xs w-24 h-6 transition">
-                            Clear Filters
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-h-[136px]">
-                      <div>
-                        <Label htmlFor="companyFilterInput" className="text-sm font-medium text-gray-700 mb-2 block">
-                          Filter by Company
-                        </Label>
-                        <select
-                          id="companyFilterInput"
-                          value={companyFilter}
-                          onChange={(e) => setCompanyFilter(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                          <option value="">All Companies</option>
-                          {getEmployeeCompanyOptions().map(company => (
-                            <option key={company.id} value={company.name}>
-                              {company.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="jobRoleFilterInput" className="text-sm font-medium text-gray-700 mb-2 block">
-                          Filter by Job Role
-                        </Label>
-                        <select
-                          id="jobRoleFilterInput"
-                          value={jobRoleFilter}
-                          onChange={(e) => setJobRoleFilter(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                          <option value="">All Job Roles</option>
-                          {getEmployeeJobRoleOptions().map(role => (
-                            <option key={role} value={role}>
-                              {role}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="departmentFilterInput" className="text-sm font-medium text-gray-700 mb-2 block">
-                          Filter by Department
-                        </Label>
-                        <select
-                          id="departmentFilterInput"
-                          value={departmentFilter}
-                          onChange={(e) => setDepartmentFilter(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                          <option value="">All Departments</option>
-                          {getEmployeeDepartmentOptions().map(dept => (
-                            <option key={dept} value={dept}>
-                              {dept}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
+               ) : (
+                 <>
+                   {/* Filter Controls */}
+                   {showEmployeeFilters && (
+                     <div className="space-y-4 mb-6">
+                       <div className="flex items-center justify-between relative leading-8">
+                         <h3 className="text-sm font-medium text-gray-900">Filter Employees</h3>
+                         <div className="h-8 w-32 flex items-center justify-end">
+                           {(companyFilter || jobRoleFilter || departmentFilter) ? (
+                             <Button 
+                               variant="outline" 
+                               size="sm" 
+                               onClick={() => {
+                                 setCompanyFilter('')
+                                 setJobRoleFilter('')
+                                 setDepartmentFilter('')
+                               }}
+                               className="flex items-center text-xs w-24 transition opacity-1"
+                             >
+                               Clear Filters
+                             </Button>
+                           ) : (
+                             <div className="opacity-0 flex items-center text-xs w-24 h-6 transition">
+                               Clear Filters
+                             </div>
+                           )}
+                         </div>
+                       </div>
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-h-[136px]">
+                         <div>
+                           <Label htmlFor="companyFilterInput" className="text-sm font-medium text-gray-700 mb-2 block">
+                             Filter by Company
+                           </Label>
+                           <select
+                             id="companyFilterInput"
+                             value={companyFilter}
+                             onChange={(e) => setCompanyFilter(e.target.value)}
+                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           >
+                             <option value="">All Companies</option>
+                             {getEmployeeCompanyOptions().map(company => (
+                               <option key={company.id} value={company.name}>
+                                 {company.name}
+                               </option>
+                             ))}
+                           </select>
+                         </div>
+                         
+                         <div>
+                           <Label htmlFor="jobRoleFilterInput" className="text-sm font-medium text-gray-700 mb-2 block">
+                             Filter by Job Role
+                           </Label>
+                           <select
+                             id="jobRoleFilterInput"
+                             value={jobRoleFilter}
+                             onChange={(e) => setJobRoleFilter(e.target.value)}
+                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           >
+                             <option value="">All Job Roles</option>
+                             {getEmployeeJobRoleOptions().map(role => (
+                               <option key={role} value={role}>
+                                 {role}
+                               </option>
+                             ))}
+                           </select>
+                         </div>
+                         
+                         <div>
+                           <Label htmlFor="departmentFilterInput" className="text-sm font-medium text-gray-700 mb-2 block">
+                             Filter by Department
+                           </Label>
+                           <select
+                             id="departmentFilterInput"
+                             value={departmentFilter}
+                             onChange={(e) => setDepartmentFilter(e.target.value)}
+                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           >
+                             <option value="">All Departments</option>
+                             {getEmployeeDepartmentOptions().map(dept => (
+                               <option key={dept} value={dept}>
+                                 {dept}
+                               </option>
+                             ))}
+                           </select>
+                         </div>
+                       </div>
+                     </div>
+                   )}
 
                   {/* Employee Table */}
-                  <div className="overflow-x-auto block">
-                    <table className="w-full table-fixed">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[800px]">
                       <thead>
                         <tr className="border-b bg-gray-50/50">
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Name</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Email</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Job Role</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Company</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Department</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Location</th>
-                          <th className="text-center py-3 px-4 font-medium text-gray-900">Actions</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900 w-[15%]">Name</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900 w-[20%]">Email</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900 w-[15%]">Job Role</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900 w-[15%]">Company</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900 w-[15%]">Department</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900 w-[15%]">Location</th>
+                          <th className="text-center py-3 px-4 font-medium text-gray-900 w-[5%]">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1682,35 +1765,47 @@ export default function CompanySetup() {
                           return (
                             <tr key={`${employee.companyId}-${employee.id}`} className="border-b hover:bg-gray-50 min-h-[60px]">
                               <td className="py-3 px-4">
-                                <div className="font-medium text-gray-900">{employee.name}</div>
+                                <div className="font-medium text-gray-900 truncate" title={employee.name}>
+                                  {employee.name}
+                                </div>
                               </td>
                               <td className="py-3 px-4">
-                                <div className="text-gray-600 text-sm">{employee.email}</div>
+                                <div className="text-gray-600 text-sm truncate" title={employee.email}>
+                                  {employee.email}
+                                </div>
                               </td>
                               <td className="py-3 px-4">
-                                <div className="text-gray-700 text-sm">{employee.position}</div>
+                                <div className="text-gray-700 text-sm truncate" title={employee.position}>
+                                  {employee.position}
+                                </div>
                               </td>
                               <td className="py-3 px-4">
-                                <span className="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
-                                  🏢 {employee.companyName || 'Unknown Company'}
-                                </span>
+                                <div className="truncate">
+                                  <span className="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium max-w-full">
+                                    <span className="truncate">🏢 {employee.companyName || 'Unknown Company'}</span>
+                                  </span>
+                                </div>
                               </td>
                               <td className="py-3 px-4">
-                                <div className="text-gray-700 text-sm">{department?.name || 'No Department'}</div>
+                                <div className="text-gray-700 text-sm truncate" title={department?.name || 'No Department'}>
+                                  {department?.name || 'No Department'}
+                                </div>
                               </td>
                               <td className="py-3 px-4">
-                                <div className="text-gray-700 text-sm">{location?.name || 'No Location'}</div>
+                                <div className="text-gray-700 text-sm truncate" title={location?.name || 'No Location'}>
+                                  {location?.name || 'No Location'}
+                                </div>
                               </td>
                               <td className="py-3 px-4">
-                                <div className="flex items-center justify-center gap-2">
-                                  <Button variant="outline" size="sm">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Button variant="outline" size="sm" className="p-1">
                                     <Edit className="w-4 h-4" />
                                   </Button>
                                   <Button 
                                     variant="outline" 
                                     size="sm" 
-                                    onClick={() => deleteEmployee(employee.id)}
-                                    className="text-red-600 hover:text-red-700"
+                                    onClick={() => confirmDeleteEmployee(employee.id)}
+                                    className="text-red-600 hover:text-red-700 p-1"
                                   >
                                     <Delete className="w-4 h-4" />
                                   </Button>
@@ -1935,8 +2030,140 @@ export default function CompanySetup() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      )}
-    </div>
-  )
-}
+         </div>
+       )}
+
+       {/* Location Delete Confirmation Modal */}
+       {showLocationDeleteConfirm && locationToDelete && (
+         <div 
+           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+           onClick={cancelDeleteLocation}
+         >
+           <Card 
+             className="border-red-200 bg-white max-w-md w-full mx-4 shadow-2xl"
+             onClick={(e) => e.stopPropagation()}
+           >
+             <CardHeader>
+               <CardTitle className="flex items-center text-red-800">
+                 <Delete className="w-6 h-6 mr-2" />
+                 Delete Location
+               </CardTitle>
+               <p className="text-sm text-red-700">
+                 Are you sure you want to delete "<strong>{locationToDelete.name}</strong>"? This action cannot be undone.
+               </p>
+               <p className="text-xs text-red-600">
+                 This will also remove any departments associated with this location.
+               </p>
+             </CardHeader>
+             <CardContent>
+               <div className="flex space-x-3">
+                 <Button 
+                   onClick={deleteLocation}
+                   className="flex items-center bg-red-600 hover:bg-red-700 text-white"
+                 >
+                   <Delete className="w-4 h-4 mr-2" />
+                   Yes, Delete Location
+                 </Button>
+                 <Button 
+                   variant="outline" 
+                   onClick={cancelDeleteLocation}
+                   className="border-gray-300"
+                 >
+                   Cancel
+                 </Button>
+               </div>
+             </CardContent>
+           </Card>
+         </div>
+       )}
+
+       {/* Department Delete Confirmation Modal */}
+       {showDepartmentDeleteConfirm && departmentToDelete && (
+         <div 
+           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+           onClick={cancelDeleteDepartment}
+         >
+           <Card 
+             className="border-red-200 bg-white max-w-md w-full mx-4 shadow-2xl"
+             onClick={(e) => e.stopPropagation()}
+           >
+             <CardHeader>
+               <CardTitle className="flex items-center text-red-800">
+                 <Delete className="w-6 h-6 mr-2" />
+                 Delete Department
+               </CardTitle>
+               <p className="text-sm text-red-700">
+                 Are you sure you want to delete "<strong>{departmentToDelete.name}</strong>"? This action cannot be undone.
+               </p>
+               <p className="text-xs text-red-600">
+                 This will also remove any employees associated with this department.
+               </p>
+             </CardHeader>
+             <CardContent>
+               <div className="flex space-x-3">
+                 <Button 
+                   onClick={deleteDepartment}
+                   className="flex items-center bg-red-600 hover:bg-red-700 text-white"
+                 >
+                   <Delete className="w-4 h-4 mr-2" />
+                   Yes, Delete Department
+                 </Button>
+                 <Button 
+                   variant="outline" 
+                   onClick={cancelDeleteDepartment}
+                   className="border-gray-300"
+                 >
+                   Cancel
+                 </Button>
+               </div>
+             </CardContent>
+           </Card>
+         </div>
+       )}
+
+       {/* Employee Delete Confirmation Modal */}
+       {showEmployeeDeleteConfirm && employeeToDelete && (
+         <div 
+           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+           onClick={cancelDeleteEmployee}
+         >
+           <Card 
+             className="border-red-200 bg-white max-w-md w-full mx-4 shadow-2xl"
+             onClick={(e) => e.stopPropagation()}
+           >
+             <CardHeader>
+               <CardTitle className="flex items-center text-red-800">
+                 <Delete className="w-6 h-6 mr-2" />
+                 Delete Employee
+               </CardTitle>
+               <p className="text-sm text-red-700">
+                 Are you sure you want to delete "<strong>{employeeToDelete.name}</strong>"? This action cannot be undone.
+               </p>
+               <p className="text-xs text-red-600">
+                 This will permanently remove the employee from the system.
+               </p>
+             </CardHeader>
+             <CardContent>
+               <div className="flex space-x-3">
+                 <Button 
+                   onClick={deleteEmployee}
+                   className="flex items-center bg-red-600 hover:bg-red-700 text-white"
+                 >
+                   <Delete className="w-4 h-4 mr-2" />
+                   Yes, Delete Employee
+                 </Button>
+                 <Button 
+                   variant="outline" 
+                   onClick={cancelDeleteEmployee}
+                   className="border-gray-300"
+                 >
+                   Cancel
+                 </Button>
+               </div>
+             </CardContent>
+           </Card>
+         </div>
+       )}
+     </div>
+   )
+ }
