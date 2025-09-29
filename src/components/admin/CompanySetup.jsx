@@ -300,10 +300,6 @@ export default function CompanySetup() {
   const [companyFilter, setCompanyFilter] = useState('')
   const [jobRoleFilter, setJobRoleFilter] = useState('')
   const [departmentFilter, setDepartmentFilter] = useState('')
-  
-  // Employee deletion states
-  const [showEmployeeDeleteConfirm, setShowEmployeeDeleteConfirm] = useState(false)
-  const [employeeToDelete, setEmployeeToDelete] = useState(null)
 
   // Auto-select first company when companies change
   useEffect(() => {
@@ -513,17 +509,7 @@ export default function CompanySetup() {
     })))
   }
 
-  // Trigger employee deletion modal
-  const triggerDeleteEmployee = (employeeId) => {
-    setEmployeeToDelete(companies.find(comp => 
-      comp.employees.find(emp => emp.id === employeeId)
-    )?.employees.find(emp => emp.id === employeeId))
-    setShowEmployeeDeleteConfirm(true)
-  }
-
-  // Actual employee deletion
-  const deleteEmployee = () => {
-    const employeeId = employeeToDelete.id
+  const deleteEmployee = (employeeId) => {
     setCompanies(companies.map(company => ({
       ...company,
       employees: company.employees.filter(emp => emp.id !== employeeId),
@@ -532,14 +518,6 @@ export default function CompanySetup() {
         employees: department.employees?.filter(empId => empId !== employeeId) || []
       }))
     })))
-    setShowEmployeeDeleteConfirm(false)
-    setEmployeeToDelete(null)
-  }
-
-  // Cancel employee deletion
-  const cancelDeleteEmployee = () => {
-    setShowEmployeeDeleteConfirm(false)
-    setEmployeeToDelete(null)
   }
 
   // Get filtered data for selected company
@@ -1003,48 +981,43 @@ export default function CompanySetup() {
                           </td>
                           <td className="py-4 px-4">
                             <div className="flex items-center justify-center gap-2">
-                              <Button 
-                                variant={activeEditCompany === company.id ? "default" : "outline"}
-                                size="sm" 
-                                onClick={() => {
-                                  setSelectedCompany(company.id)
-                                  setActiveTab('manage')
-                                  
-                                  // If already editing this company, close the sections
-                                  if (activeEditCompany === company.id) {
-                                    setShowLocationSection(false)
-                                    setShowDepartmentSection(false)
-                                    setShowLocationDepartmentManagement(false)
-                                    setActiveEditCompany(null)
-                                  } else {
-                                    // Open the sections and scroll to location
-                                    setShowLocationSection(true)
-                                    setShowDepartmentSection(true)
-                                    setShowLocationDepartmentManagement(true)
-                                    setActiveEditCompany(company.id)
-                                    // Auto scroll to location section
-                                    setTimeout(() => {
-                                      const locationSection = document.querySelector('[data-location-section]')
-                                      if (locationSection) {
-                                        locationSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                                      }
-                                    }, 100)
-                                  }
-                                }}
-                                className={`flex items-center ${activeEditCompany === company.id ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : ''}`}
-                              >
-                                <Edit className="w-4 h-4 mr-1" />
-                                Edit
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => editCompany(company)}
-                                className="flex items-center"
-                              >
-                                <Settings className="w-4 h-4 mr-1" />
-                                Settings
-                              </Button>
+                               <Button 
+                                 variant={activeEditCompany === company.id ? "default" : "outline"}
+                                 size="sm" 
+                                 onClick={() => {
+                                   setSelectedCompany(company.id)
+                                   setActiveTab('manage')
+                                   
+                                   // If already editing this company, close the sections
+                                   if (activeEditCompany === company.id) {
+                                     setShowLocationSection(false)
+                                     setShowDepartmentSection(false)
+                                     setShowLocationDepartmentManagement(false)
+                                     setActiveEditCompany(null)
+                                     // Also close the company details editing modal
+                                     setShowEditCompany(false)
+                                     setEditingCompany(null)
+                                   } else {
+                                     // Open both company details editing AND location/department management
+                                     editCompany(company) // Open company details editing modal
+                                     setShowLocationSection(true)
+                                     setShowDepartmentSection(true)
+                                     setShowLocationDepartmentManagement(true)
+                                     setActiveEditCompany(company.id)
+                                     // Auto scroll to location section
+                                     setTimeout(() => {
+                                       const locationSection = document.querySelector('[data-location-section]')
+                                       if (locationSection) {
+                                         locationSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                       }
+                                     }, 100)
+                                   }
+                                 }}
+                                 className={`flex items-center ${activeEditCompany === company.id ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : ''}`}
+                               >
+                                 <Edit className="w-4 h-4 mr-1" />
+                                 Edit
+                               </Button>
                               <Button 
                                 variant="outline" 
                                 size="sm" 
@@ -1736,7 +1709,7 @@ export default function CompanySetup() {
                                   <Button 
                                     variant="outline" 
                                     size="sm" 
-                                    onClick={() => triggerDeleteEmployee(employee.id)}
+                                    onClick={() => deleteEmployee(employee.id)}
                                     className="text-red-600 hover:text-red-700"
                                   >
                                     <Delete className="w-4 h-4" />
@@ -1959,61 +1932,6 @@ export default function CompanySetup() {
                 ) : (
                   <p className="text-gray-500 text-sm">No employees added for this company</p>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Employee Delete Confirmation Modal */}
-      {showEmployeeDeleteConfirm && employeeToDelete && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={cancelDeleteEmployee}
-        >
-          <Card 
-            className="max-w-md w-full mx-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center text-xl text-red-600">
-                <Delete className="w-6 h-6 mr-2" />
-                Delete Employee
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-gray-600 mb-2">
-                  Are you sure you want to delete <strong>{employeeToDelete.name}</strong>?
-                </p>
-                <p className="text-sm text-gray-500 mb-4">
-                  This action cannot be undone. The employee will be permanently removed from the system.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-md">
-                <People className="w-5 h-5 text-gray-400" />
-                <div className="flex-1">
-                  <p className="text-sm text-gray-600 mb-1">Employee Details</p>
-                  <p className="font-medium text-900">{employeeToDelete.name}</p>
-                  <p className="text-sm text-gray-500">{employeeToDelete.email}</p>
-                  <p className="text-xs text-gray-500">{employeeToDelete.position}</p>
-                </div>
-              </div>
-              <div className="flex space-x-3">
-                <Button 
-                  onClick={deleteEmployee}
-                  className="flex items-center bg-red-600 hover:bg-red-700 text-white"
-                >
-                  <Delete className="w-4 h-4 mr-2" />
-                  Yes, Delete Employee
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={cancelDeleteEmployee}
-                  className="border-gray-300"
-                >
-                  Cancel
-                </Button>
               </div>
             </CardContent>
           </Card>
