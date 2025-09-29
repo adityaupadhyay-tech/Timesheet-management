@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect } from 'react'
+import { useCompanies } from './CompaniesContext'
 
 /**
  * @typedef {Object} TimesheetContextType
@@ -24,30 +25,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 
 const TimesheetContext = createContext(undefined)
 
-// Mock data for development
-const mockCompanies = [
-  {
-    id: '1',
-    name: 'TechCorp Solutions',
-    color: '#3B82F6',
-    isActive: true,
-    timesheetCycle: 'weekly' // Default weekly timesheet
-  },
-  {
-    id: '2',
-    name: 'Design Studio Inc',
-    color: '#10B981',
-    isActive: true,
-    timesheetCycle: 'bi-weekly' // Bi-weekly timesheet
-  },
-  {
-    id: '3',
-    name: 'Consulting Partners',
-    color: '#F59E0B',
-    isActive: true,
-    timesheetCycle: 'monthly' // Monthly timesheet
-  }
-]
+// Mock data for development - companies will come from CompaniesContext
 
 const mockProjects = [
   {
@@ -116,13 +94,20 @@ const mockEntries = []
 export function TimesheetProvider({ children }) {
   const [allEntries, setAllEntries] = useState(mockEntries)
   const [allProjects] = useState(mockProjects)
-  const [companies] = useState(mockCompanies)
-  const [selectedCompany, setSelectedCompany] = useState(mockCompanies[0])
+  const { companies } = useCompanies()
+  const [selectedCompany, setSelectedCompany] = useState(companies[0] || null)
   const [trackingState, setTrackingState] = useState({
     isTracking: false,
     elapsedTime: 0
   })
   const [currentTimesheet, setCurrentTimesheet] = useState(null)
+
+  // Update selected company when companies change
+  useEffect(() => {
+    if (companies.length > 0 && !selectedCompany) {
+      setSelectedCompany(companies[0])
+    }
+  }, [companies, selectedCompany])
 
   // Filter entries and projects based on selected company (company is required)
   const entries = selectedCompany 

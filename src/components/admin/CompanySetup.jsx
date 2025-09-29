@@ -1097,7 +1097,7 @@ export default function CompanySetup() {
                            </td>
                            <td className="py-4 px-4 text-center">
                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(company.status || 'active')}`}>
-                               {getStatusIcon(company.status || 'active')} {company.status || 'active'}
+                               {company.status || 'active'}
                              </span>
                            </td>
                            <td className="py-4 px-4 text-center">
