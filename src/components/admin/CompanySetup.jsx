@@ -314,7 +314,7 @@ export default function CompanySetup() {
   const [employeeToDelete, setEmployeeToDelete] = useState(null)
   
   // Employee filters visibility state
-  const [showEmployeeFilters, setShowEmployeeFilters] = useState(true)
+  const [showEmployeeFilters, setShowEmployeeFilters] = useState(false)
 
   // Auto-select first company when companies change
   useEffect(() => {
