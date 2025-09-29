@@ -39,6 +39,8 @@ export default function PaycycleSetupPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(20)
   const [searchTerm, setSearchTerm] = useState('')
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [paycycleToDelete, setPaycycleToDelete] = useState(null)
   const [paycycleConfig, setPaycycleConfig] = useState({
     name: '',
     frequency: 'monthly',
@@ -112,22 +114,33 @@ export default function PaycycleSetupPage() {
     const currentCompany = companies.find(c => c.id === selectedCompany.id)
     if (!currentCompany) return
 
-    // Find the paycycle to get its name for the confirmation
-    const paycycleToDelete = currentCompany.paycycles.find(pc => pc.id === paycycleId)
-    if (!paycycleToDelete) return
+    // Find the paycycle to get its details for the confirmation
+    const paycycle = currentCompany.paycycles.find(pc => pc.id === paycycleId)
+    if (!paycycle) return
 
-    // Show confirmation alert
-    const confirmed = window.confirm(
-      `Are you sure you want to delete the paycycle "${paycycleToDelete.name}"?\n\nThis action cannot be undone.`
-    )
+    // Set the paycycle to delete and show modal
+    setPaycycleToDelete(paycycle)
+    setShowDeleteModal(true)
+  }
 
-    if (confirmed) {
-      const updatedPaycycles = currentCompany.paycycles.filter(pc => pc.id !== paycycleId)
-      updateCompany(selectedCompany.id, { paycycles: updatedPaycycles })
-      setSelectedPaycycle(null)
-      setIsEditingPaycycle(false)
-      alert('Paycycle deleted successfully!')
-    }
+  const confirmDelete = () => {
+    if (!selectedCompany || !paycycleToDelete) return
+
+    const currentCompany = companies.find(c => c.id === selectedCompany.id)
+    if (!currentCompany) return
+
+    const updatedPaycycles = currentCompany.paycycles.filter(pc => pc.id !== paycycleToDelete.id)
+    updateCompany(selectedCompany.id, { paycycles: updatedPaycycles })
+    setSelectedPaycycle(null)
+    setIsEditingPaycycle(false)
+    setShowDeleteModal(false)
+    setPaycycleToDelete(null)
+    alert('Paycycle deleted successfully!')
+  }
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false)
+    setPaycycleToDelete(null)
   }
 
   const getPaycycleStatus = (paycycle) => {
@@ -538,9 +551,7 @@ export default function PaycycleSetupPage() {
                                       className="h-6 px-2 text-red-600 hover:text-red-700"
                                       onClick={(e) => {
                                         e.stopPropagation()
-                                        if (confirm('Are you sure you want to delete this paycycle?')) {
-                                          deletePaycycle(paycycle.id)
-                                        }
+                                        deletePaycycle(paycycle.id)
                                       }}
                                     >
                                       <Delete className="w-3 h-3" />
@@ -796,9 +807,58 @@ export default function PaycycleSetupPage() {
           <p className="text-gray-600">Configure and manage payroll cycles for your companies</p>
         </div>
 
-        {/* Content */}
-        {renderContent()}
-      </div>
-    </Layout>
-  )
-}
+               {/* Content */}
+               {renderContent()}
+
+               {/* Delete Confirmation Modal */}
+               {showDeleteModal && (
+                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                   <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                     <div className="p-6">
+                       <div className="flex items-center mb-4">
+                         <div className="flex-shrink-0">
+                           <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                             <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+                             </svg>
+                           </div>
+                         </div>
+                         <div className="ml-4">
+                           <h3 className="text-lg font-medium text-gray-900">Delete Paycycle</h3>
+                           <p className="text-sm text-gray-500">This action cannot be undone</p>
+                         </div>
+                       </div>
+                       
+                       <div className="mb-6">
+                         <p className="text-sm text-gray-700">
+                           Are you sure you want to delete the paycycle <span className="font-semibold text-gray-900">"{paycycleToDelete?.name}"</span>?
+                         </p>
+                         <p className="text-sm text-gray-500 mt-2">
+                           This will permanently remove the paycycle and all its associated data.
+                         </p>
+                       </div>
+
+                       <div className="flex justify-end space-x-3">
+                         <Button
+                           variant="outline"
+                           onClick={cancelDelete}
+                           className="px-4 py-2"
+                         >
+                           Cancel
+                         </Button>
+                         <Button
+                           variant="destructive"
+                           onClick={confirmDelete}
+                           className="px-4 py-2 bg-red-600 hover:bg-red-700"
+                         >
+                           Delete Paycycle
+                         </Button>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               )}
+             </div>
+           </Layout>
+         )
+       }
