@@ -27,11 +27,12 @@ import FilterListOff from '@mui/icons-material/FilterListOff'
 export default function CompanySetup() {
   // Initial companies data with first company auto-selected
   const initialCompanies = [
-    {
-      id: '1',
-      name: 'Acme Corporation',
-      description: 'A software development company specializing in enterprise solutions and cloud architecture',
-      logo: '',
+     {
+       id: '1',
+       name: 'Acme Corporation',
+       description: 'A software development company specializing in enterprise solutions and cloud architecture',
+       logo: '',
+       status: 'active',
       locations: [
         {
           id: 'loc1',
@@ -48,11 +49,12 @@ export default function CompanySetup() {
       departments: [],
       employees: []
     },
-    {
-      id: '2',
-      name: 'TechFlow Systems',
-      description: 'Leading provider of fintech solutions and payment processing systems',
-      logo: '',
+     {
+       id: '2',
+       name: 'TechFlow Systems',
+       description: 'Leading provider of fintech solutions and payment processing systems',
+       logo: '',
+       status: 'active',
       locations: [
         {
           id: 'loc2',
@@ -87,11 +89,12 @@ export default function CompanySetup() {
         }
       ]
     },
-    {
-      id: '3',
-      name: 'Global Logistics Inc',
-      description: 'International shipping and freight forwarding services worldwide',
-      logo: '',
+     {
+       id: '3',
+       name: 'Global Logistics Inc',
+       description: 'International shipping and freight forwarding services worldwide',
+       logo: '',
+       status: 'active',
       locations: [
         {
           id: 'loc3',
@@ -153,11 +156,12 @@ export default function CompanySetup() {
         }
       ]
     },
-    {
-      id: '4',
-      name: 'HealthTech Partners',
-      description: 'Medical technology innovations and healthcare management systems',
-      logo: '',
+     {
+       id: '4',
+       name: 'HealthTech Partners',
+       description: 'Medical technology innovations and healthcare management systems',
+       logo: '',
+       status: 'on-hold',
       locations: [
         {
           id: 'loc5',
@@ -216,11 +220,12 @@ export default function CompanySetup() {
         }
       ]
     },
-    {
-      id: '5',
-      name: 'Retail Dynamics',
-      description: 'E-commerce platform and retail analytics for small and medium businesses',
-      logo: '',
+     {
+       id: '5',
+       name: 'Retail Dynamics',
+       description: 'E-commerce platform and retail analytics for small and medium businesses',
+       logo: '',
+       status: 'inactive',
       locations: [],
       departments: [
         {
@@ -243,11 +248,12 @@ export default function CompanySetup() {
         }
       ]
     },
-    {
-      id: '6',
-      name: 'EcoEnergy Solutions',
-      description: 'Renewable energy infrastructure and sustainable development projects',
-      logo: '',
+     {
+       id: '6',
+       name: 'EcoEnergy Solutions',
+       description: 'Renewable energy infrastructure and sustainable development projects',
+       logo: '',
+       status: 'active',
       locations: [
         {
           id: 'loc6',
@@ -314,7 +320,13 @@ export default function CompanySetup() {
   const [employeeToDelete, setEmployeeToDelete] = useState(null)
   
   // Employee filters visibility state
-  const [showEmployeeFilters, setShowEmployeeFilters] = useState(true)
+  const [showEmployeeFilters, setShowEmployeeFilters] = useState(false)
+  
+  // Company status management
+  const [showStatusModal, setShowStatusModal] = useState(false)
+  const [companyForStatusChange, setCompanyForStatusChange] = useState(null)
+  const [newStatus, setNewStatus] = useState('')
+  const [statusCompanyNameConfirmation, setStatusCompanyNameConfirmation] = useState('')
 
   // Auto-select first company when companies change
   useEffect(() => {
@@ -581,6 +593,61 @@ export default function CompanySetup() {
   const cancelDeleteEmployee = () => {
     setShowEmployeeDeleteConfirm(false)
     setEmployeeToDelete(null)
+  }
+
+  // Company status management functions
+  const openStatusModal = (company, status) => {
+    setCompanyForStatusChange(company)
+    setNewStatus(status)
+    setStatusCompanyNameConfirmation('')
+    setShowStatusModal(true)
+  }
+
+  const updateCompanyStatus = () => {
+    if (companyForStatusChange && statusCompanyNameConfirmation === companyForStatusChange.name) {
+      setCompanies(companies.map(company => 
+        company.id === companyForStatusChange.id 
+          ? { ...company, status: newStatus }
+          : company
+      ))
+      setShowStatusModal(false)
+      setCompanyForStatusChange(null)
+      setNewStatus('')
+      setStatusCompanyNameConfirmation('')
+    }
+  }
+
+  const cancelStatusChange = () => {
+    setShowStatusModal(false)
+    setCompanyForStatusChange(null)
+    setNewStatus('')
+    setStatusCompanyNameConfirmation('')
+  }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800'
+      case 'on-hold':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'inactive':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'active':
+        return '🟢'
+      case 'on-hold':
+        return '🟡'
+      case 'inactive':
+        return '🔴'
+      default:
+        return '⚪'
+    }
   }
 
   // Get filtered data for selected company
@@ -998,40 +1065,46 @@ export default function CompanySetup() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead>
-                      <tr className="border-b bg-gray-50/50">
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Company Name</th>
-                        <th className="text-center py-3 px-4 font-medium text-gray-900">
-                          <LocationOn className="w-4 h-4 mx-auto mb-1" />
-                          <span className="text-xs">Locations</span>
-                        </th>
-                        <th className="text-center py-3 px-4 font-medium text-gray-900">
-                          <Business className="w-4 h-4 mx-auto mb-1" />
-                          <span className="text-xs">Departments</span>
-                        </th>
-                        <th className="text-center py-3 px-4 font-medium text-gray-900">
-                          <People className="w-4 h-4 mx-auto mb-1" />
-                          <span className="text-xs">Employees</span>
-                        </th>
-                        <th className="text-center py-3 px-4 font-medium text-gray-900">Actions</th>
-                      </tr>
-                    </thead>
+                     <thead>
+                       <tr className="border-b bg-gray-50/50">
+                         <th className="text-left py-3 px-4 font-medium text-gray-900">Company Name</th>
+                         <th className="text-center py-3 px-4 font-medium text-gray-900">Status</th>
+                         <th className="text-center py-3 px-4 font-medium text-gray-900">
+                           <LocationOn className="w-4 h-4 mx-auto mb-1" />
+                           <span className="text-xs">Locations</span>
+                         </th>
+                         <th className="text-center py-3 px-4 font-medium text-gray-900">
+                           <Business className="w-4 h-4 mx-auto mb-1" />
+                           <span className="text-xs">Departments</span>
+                         </th>
+                         <th className="text-center py-3 px-4 font-medium text-gray-900">
+                           <People className="w-4 h-4 mx-auto mb-1" />
+                           <span className="text-xs">Employees</span>
+                         </th>
+                         <th className="text-center py-3 px-4 font-medium text-gray-900">Actions</th>
+                       </tr>
+                     </thead>
                     <tbody>
                       {companies.map((company) => (
                         <tr 
                           key={company.id}
                           className="border-b hover:bg-gray-50 transition-colors"
                         >
-                          <td className="py-4 px-4">
-                            <div>
-                              <h3 className="font-semibold text-gray-900">{company.name}</h3>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 text-center">
-                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-medium text-sm">
-                              {company.locations?.length || 0}
-                            </span>
-                          </td>
+                           <td className="py-4 px-4">
+                             <div>
+                               <h3 className="font-semibold text-gray-900">{company.name}</h3>
+                             </div>
+                           </td>
+                           <td className="py-4 px-4 text-center">
+                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(company.status || 'active')}`}>
+                               {getStatusIcon(company.status || 'active')} {company.status || 'active'}
+                             </span>
+                           </td>
+                           <td className="py-4 px-4 text-center">
+                             <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-medium text-sm">
+                               {company.locations?.length || 0}
+                             </span>
+                           </td>
                           <td className="py-4 px-4 text-center">
                             <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-800 font-medium text-sm">
                               {company.departments?.length || 0}
@@ -1042,8 +1115,8 @@ export default function CompanySetup() {
                               {company.employees?.length || 0}
                             </span>
                           </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center justify-center gap-2">
+                           <td className="py-4 px-4">
+                             <div className="flex items-center justify-center gap-1">
                                <Button 
                                  variant={activeEditCompany === company.id ? "default" : "outline"}
                                  size="sm" 
@@ -1067,11 +1140,11 @@ export default function CompanySetup() {
                                      setShowDepartmentSection(true)
                                      setShowLocationDepartmentManagement(true)
                                      setActiveEditCompany(company.id)
-                                     // Auto scroll to location section
+                                     // Auto scroll to edit company modal
                                      setTimeout(() => {
-                                       const locationSection = document.querySelector('[data-location-section]')
-                                       if (locationSection) {
-                                         locationSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                       const editCompanyModal = document.querySelector('[data-edit-company-modal]')
+                                       if (editCompanyModal) {
+                                         editCompanyModal.scrollIntoView({ behavior: 'smooth', block: 'start' })
                                        }
                                      }, 100)
                                    }
@@ -1081,6 +1154,16 @@ export default function CompanySetup() {
                                  <Edit className="w-4 h-4 mr-1" />
                                  Edit
                                </Button>
+                               <select
+                                 value={company.status || 'active'}
+                                 onChange={(e) => openStatusModal(company, e.target.value)}
+                                 className="px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                 title="Change Company Status"
+                               >
+                                 <option value="active">Active</option>
+                                 <option value="on-hold">On-Hold</option>
+                                 <option value="inactive">Inactive</option>
+                               </select>
                               <Button 
                                 variant="outline" 
                                 size="sm" 
@@ -1090,8 +1173,8 @@ export default function CompanySetup() {
                                 <Delete className="w-4 h-4 mr-1" />
                                 Delete
                               </Button>
-                            </div>
-                          </td>
+                             </div>
+                           </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1143,9 +1226,9 @@ export default function CompanySetup() {
             </Card>
           )}
 
-          {/* Edit Company Modal */}
-          {showEditCompany && editingCompany && (
-            <Card className="border-blue-200 bg-blue-50">
+           {/* Edit Company Modal */}
+           {showEditCompany && editingCompany && (
+             <Card className="border-blue-200 bg-blue-50" data-edit-company-modal>
               <CardHeader>
                 <CardTitle className="text-lg">Edit Company</CardTitle>
               </CardHeader>
@@ -2159,6 +2242,66 @@ export default function CompanySetup() {
                  >
                    Cancel
                  </Button>
+               </div>
+             </CardContent>
+           </Card>
+         </div>
+       )}
+
+       {/* Company Status Change Modal */}
+       {showStatusModal && companyForStatusChange && (
+         <div 
+           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+           onClick={cancelStatusChange}
+         >
+           <Card 
+             className="border-blue-200 bg-white max-w-md w-full mx-4 shadow-2xl"
+             onClick={(e) => e.stopPropagation()}
+           >
+             <CardHeader>
+               <CardTitle className="flex items-center text-blue-800">
+                 <Settings className="w-6 h-6 mr-2" />
+                 Change Company Status
+               </CardTitle>
+               <p className="text-sm text-gray-700">
+                 You are changing the status of "<strong>{companyForStatusChange.name}</strong>" to "<strong>{newStatus}</strong>"
+               </p>
+               <p className="text-xs text-gray-600">
+                 This action requires confirmation by typing the company name.
+               </p>
+             </CardHeader>
+             <CardContent>
+               <div className="space-y-4">
+                 <div>
+                   <Label htmlFor="companyNameInput" className="text-sm font-medium text-gray-700">
+                     To confirm this status change, please type the company name: <span className="font-bold">{companyForStatusChange.name}</span>
+                   </Label>
+                   <Input
+                     id="companyNameInput"
+                     type="text"
+                     value={statusCompanyNameConfirmation}
+                     onChange={(e) => setStatusCompanyNameConfirmation(e.target.value)}
+                     placeholder={`Type "${companyForStatusChange.name}" here`}
+                     className="mt-2"
+                   />
+                 </div>
+                 <div className="flex space-x-3">
+                   <Button 
+                     onClick={updateCompanyStatus}
+                     disabled={statusCompanyNameConfirmation !== companyForStatusChange.name}
+                     className="flex items-center bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                   >
+                     <Settings className="w-4 h-4 mr-2" />
+                     Change Status to {newStatus}
+                   </Button>
+                   <Button 
+                     variant="outline" 
+                     onClick={cancelStatusChange}
+                     className="border-gray-300"
+                   >
+                     Cancel
+                   </Button>
+                 </div>
                </div>
              </CardContent>
            </Card>
