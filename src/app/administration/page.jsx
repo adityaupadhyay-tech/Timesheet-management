@@ -8,22 +8,14 @@ import Building from '@mui/icons-material/Business'
 import Users from '@mui/icons-material/People'
 import Settings from '@mui/icons-material/Settings'
 import BarChart from '@mui/icons-material/BarChart'
-import AdminDashboard from '@/components/admin/AdminDashboard'
-import { useSupabase } from '@/contexts/SupabaseContext'
+import CompanySetup from '@/components/admin/CompanySetup'
 
 export default function AdministrationPage() {
-  const { user, loading } = useSupabase()
-  
-  // Fallback user data if not authenticated
-  const currentUser = user ? {
-    name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin User',
+  const [currentUser] = useState({
+    name: 'John Doe',
     role: 'admin',
-    email: user.email
-  } : {
-    name: 'Admin User',
-    role: 'admin', 
-    email: 'admin@company.com'
-  }
+    email: 'john.doe@company.com'
+  })
 
   const [activeSection, setActiveSection] = useState('overview')
   const [showNavigation, setShowNavigation] = useState(false)
@@ -135,7 +127,7 @@ export default function AdministrationPage() {
                 ← Back to Administration
               </Button>
             </div>
-            <AdminDashboard />
+            <CompanySetup />
           </>
         )
       case 'users':
