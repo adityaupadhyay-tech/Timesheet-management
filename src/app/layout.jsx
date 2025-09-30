@@ -3,6 +3,7 @@ import './globals.css'
 import { SidebarProvider } from '@/contexts/SidebarContext'
 import { UserProvider } from '@/contexts/UserContext'
 import { CompaniesProvider } from '@/contexts/CompaniesContext'
+import { SupabaseProvider } from '@/contexts/SupabaseContext'
 
 const poppins = Poppins({ 
   subsets: ['latin'],
@@ -25,13 +26,15 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${poppins.variable} font-sans`}>
         <div className="min-h-screen bg-background">
-          <UserProvider>
-            <CompaniesProvider>
-              <SidebarProvider>
-                {children}
-              </SidebarProvider>
-            </CompaniesProvider>
-          </UserProvider>
+          <SupabaseProvider>
+            <UserProvider>
+              <CompaniesProvider>
+                <SidebarProvider>
+                  {children}
+                </SidebarProvider>
+              </CompaniesProvider>
+            </UserProvider>
+          </SupabaseProvider>
         </div>
       </body>
     </html>
