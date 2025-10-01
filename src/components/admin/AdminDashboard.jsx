@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSupabase } from "@/contexts/SupabaseContext";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import CompanyDetailView from "./CompanyDetailView";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,11 +14,21 @@ import People from "@mui/icons-material/People";
 import Edit from "@mui/icons-material/Edit";
 import Search from "@mui/icons-material/Search";
 import Clear from "@mui/icons-material/Clear";
-import { ListFilter, ListX, ChevronLeft, ChevronRight, Plus, X, Trash2 } from "lucide-react";
+import {
+  ListFilter,
+  ListX,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  X,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import {
   getCompaniesWithStats,
   getCompaniesForDashboard,
-  getAllEmployeesDetailed,
+  getAllEmployeesWithAssignments,
   createCompany,
   updateCompany,
   deleteCompany,
@@ -120,6 +132,34 @@ export default function AdminDashboard() {
   const [jobRoleFilter, setJobRoleFilter] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [showEmployeeFilters, setShowEmployeeFilters] = useState(false);
+  const [expandedRows, setExpandedRows] = useState({});
+  const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
+  const [selectedCompanyData, setSelectedCompanyData] = useState(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+  const toggleExpand = (employeeId) => {
+    setExpandedRows((prev) => ({ ...prev, [employeeId]: !prev[employeeId] }));
+  };
+
+  // Company detail view handler
+  const handleCompanyClick = async (companyId) => {
+    setIsLoadingDetails(true);
+    setIsDetailViewOpen(true); // Open the modal immediately to show a loading state
+
+    const { data, error } = await supabase.rpc("get_company_details_view", {
+      p_company_id: companyId,
+    });
+
+    if (error) {
+      console.error("Error fetching company details:", error);
+      // Optionally, handle the error in the UI
+      setIsDetailViewOpen(false);
+    } else {
+      setSelectedCompanyData(data);
+    }
+
+    setIsLoadingDetails(false);
+  };
 
   // Employee form state
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
@@ -131,13 +171,13 @@ export default function AdminDashboard() {
     phone: "",
   });
   const [employeeFormErrors, setEmployeeFormErrors] = useState({});
-  
+
   // New structured assignments state
   const [assignments, setAssignments] = useState([
-    { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] }
+    { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
   ]);
   const MAX_ASSIGNMENTS = 5;
-  
+
   // Dropdown data for employee form
   const [allCompaniesData, setAllCompaniesData] = useState([]);
   const [allJobRolesData, setAllJobRolesData] = useState([]);
@@ -160,7 +200,7 @@ export default function AdminDashboard() {
         await Promise.all([
           getCompaniesWithStats(),
           getCompaniesForDashboard(),
-          getAllEmployeesDetailed(),
+          getAllEmployeesWithAssignments(),
         ]);
 
       if (companiesResult.error) {
@@ -743,7 +783,9 @@ export default function AdminDashboard() {
       email: "",
       phone: "",
     });
-    setAssignments([{ companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] }]);
+    setAssignments([
+      { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
+    ]);
     setAssignmentDropdownData({});
     setEmployeeFormErrors({});
     setShowEmployeeForm(true);
@@ -755,17 +797,19 @@ export default function AdminDashboard() {
       setEditingEmployee(employee);
       setShowEmployeeForm(true);
       setLoadingDropdowns(true);
-      
+
       // 1. Call the new function to get all employee data
-      const { data: employeeDetails, error } = await getEmployeeDetailsForEdit(employee.id);
-      
+      const { data: employeeDetails, error } = await getEmployeeDetailsForEdit(
+        employee.id
+      );
+
       if (error) {
-        console.error('Error fetching employee details:', error);
-        setError('Failed to load employee details');
+        console.error("Error fetching employee details:", error);
+        setError("Failed to load employee details");
         setShowEmployeeForm(false);
         return;
       }
-      
+
       // 2. Use the data to set the state for the form
       setEmployeeFormData({
         firstName: employeeDetails.first_name || "",
@@ -773,16 +817,18 @@ export default function AdminDashboard() {
         email: employeeDetails.email || "",
         phone: employeeDetails.phone || "",
       });
-      
+
       // 3. Set the state for the structured assignments
       const assignments = employeeDetails.assignments || [];
-      
+
       // If no assignments, provide one empty assignment block
       if (assignments.length === 0) {
-        setAssignments([{ companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] }]);
+        setAssignments([
+          { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
+        ]);
       } else {
         setAssignments(assignments);
-        
+
         // Load dropdown data for each assignment that has a company
         for (let i = 0; i < assignments.length; i++) {
           if (assignments[i].companyId) {
@@ -790,14 +836,14 @@ export default function AdminDashboard() {
           }
         }
       }
-      
+
       setEmployeeFormErrors({});
-      
+
       // Load initial dropdown data (companies and job roles)
       await loadInitialDropdownData();
     } catch (err) {
-      console.error('Error opening edit form:', err);
-      setError('Failed to open employee form');
+      console.error("Error opening edit form:", err);
+      setError("Failed to open employee form");
       setShowEmployeeForm(false);
     } finally {
       setLoadingDropdowns(false);
@@ -807,16 +853,16 @@ export default function AdminDashboard() {
   const loadInitialDropdownData = async () => {
     try {
       setLoadingDropdowns(true);
-      
+
       const [companiesResult, jobRolesResult] = await Promise.all([
         getAllCompanies(),
         getAllJobRoles(),
       ]);
-      
+
       if (companiesResult.data) {
         setAllCompaniesData(companiesResult.data);
       }
-      
+
       if (jobRolesResult.data) {
         setAllJobRolesData(jobRolesResult.data);
       }
@@ -830,9 +876,9 @@ export default function AdminDashboard() {
   const loadCompanySpecificData = async (assignmentIndex, companyId) => {
     if (!companyId) {
       // Clear data for this assignment
-      setAssignmentDropdownData(prev => ({
+      setAssignmentDropdownData((prev) => ({
         ...prev,
-        [assignmentIndex]: { departments: [], locations: [] }
+        [assignmentIndex]: { departments: [], locations: [] },
       }));
       return;
     }
@@ -842,13 +888,13 @@ export default function AdminDashboard() {
         getDepartmentsByCompany(companyId),
         getLocationsByCompany(companyId),
       ]);
-      
-      setAssignmentDropdownData(prev => ({
+
+      setAssignmentDropdownData((prev) => ({
         ...prev,
         [assignmentIndex]: {
           departments: departmentsResult.data || [],
-          locations: locationsResult.data || []
-        }
+          locations: locationsResult.data || [],
+        },
       }));
     } catch (err) {
       console.error("Error loading company-specific data:", err);
@@ -861,10 +907,10 @@ export default function AdminDashboard() {
       companyId,
       jobRoleId: "",
       locationId: "",
-      departmentIds: [""]
+      departmentIds: [""],
     };
     setAssignments(newAssignments);
-    
+
     await loadCompanySpecificData(assignmentIndex, companyId);
   };
 
@@ -880,7 +926,11 @@ export default function AdminDashboard() {
     setAssignments(newAssignments);
   };
 
-  const handleAssignmentDepartmentChange = (assignmentIndex, deptIndex, departmentId) => {
+  const handleAssignmentDepartmentChange = (
+    assignmentIndex,
+    deptIndex,
+    departmentId
+  ) => {
     const newAssignments = [...assignments];
     newAssignments[assignmentIndex].departmentIds[deptIndex] = departmentId;
     setAssignments(newAssignments);
@@ -904,18 +954,28 @@ export default function AdminDashboard() {
 
   const addNewAssignment = () => {
     if (assignments.length < MAX_ASSIGNMENTS) {
-      setAssignments([...assignments, { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] }]);
+      setAssignments([
+        ...assignments,
+        { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
+      ]);
     }
   };
 
   const removeAssignment = (assignmentIndex) => {
-    const newAssignments = assignments.filter((_, idx) => idx !== assignmentIndex);
+    const newAssignments = assignments.filter(
+      (_, idx) => idx !== assignmentIndex
+    );
     // Ensure at least one assignment exists
     if (newAssignments.length === 0) {
-      newAssignments.push({ companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] });
+      newAssignments.push({
+        companyId: "",
+        jobRoleId: "",
+        locationId: "",
+        departmentIds: [""],
+      });
     }
     setAssignments(newAssignments);
-    
+
     // Clean up dropdown data
     const newDropdownData = { ...assignmentDropdownData };
     delete newDropdownData[assignmentIndex];
@@ -924,27 +984,27 @@ export default function AdminDashboard() {
 
   const validateEmployeeForm = () => {
     const errors = {};
-    
+
     if (!employeeFormData.firstName?.trim()) {
       errors.firstName = "First name is required";
     }
-    
+
     if (!employeeFormData.lastName?.trim()) {
       errors.lastName = "Last name is required";
     }
-    
+
     if (!employeeFormData.email?.trim()) {
       errors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employeeFormData.email)) {
       errors.email = "Please enter a valid email address";
     }
-    
+
     // Validate at least one assignment has a company
-    const hasValidAssignment = assignments.some(a => a.companyId);
+    const hasValidAssignment = assignments.some((a) => a.companyId);
     if (!hasValidAssignment) {
       errors.assignments = "At least one company assignment is required";
     }
-    
+
     return errors;
   };
 
@@ -952,14 +1012,14 @@ export default function AdminDashboard() {
     // Validate form
     const errors = validateEmployeeForm();
     setEmployeeFormErrors(errors);
-    
+
     if (Object.keys(errors).length > 0) {
       return;
     }
-    
+
     try {
       setIsSubmitting(true);
-      
+
       let result;
       if (editingEmployee) {
         result = await updateEmployeeWithStructuredAssignments(
@@ -973,7 +1033,7 @@ export default function AdminDashboard() {
           assignments
         );
       }
-      
+
       if (result.error) {
         setError(result.error);
       } else {
@@ -985,7 +1045,9 @@ export default function AdminDashboard() {
           email: "",
           phone: "",
         });
-        setAssignments([{ companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] }]);
+        setAssignments([
+          { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
+        ]);
         setAssignmentDropdownData({});
         setEmployeeFormErrors({});
         await loadData();
@@ -1006,7 +1068,9 @@ export default function AdminDashboard() {
       email: "",
       phone: "",
     });
-    setAssignments([{ companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] }]);
+    setAssignments([
+      { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
+    ]);
     setAssignmentDropdownData({});
     setEmployeeFormErrors({});
   };
@@ -1145,7 +1209,8 @@ export default function AdminDashboard() {
                       {filteredCompanies.map((company) => (
                         <tr
                           key={company.id}
-                          className="border-b hover:bg-gray-50"
+                          className="border-b hover:bg-gray-50 cursor-pointer"
+                          onClick={() => handleCompanyClick(company.id)}
                         >
                           <td className="p-3">
                             <div className="font-medium">
@@ -1345,6 +1410,7 @@ export default function AdminDashboard() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b">
+                          <th className="text-left p-3 w-10"></th>
                           <th className="text-left p-3">Name</th>
                           <th className="text-left p-3">Email</th>
                           <th className="text-left p-3">Job Title</th>
@@ -1356,41 +1422,83 @@ export default function AdminDashboard() {
                       </thead>
                       <tbody>
                         {getPaginatedEmployees().map((employee) => (
-                          <tr
-                            key={employee.id}
-                            className="border-b hover:bg-gray-50"
-                          >
-                            <td className="p-3">
-                              <div className="font-medium">
-                                {employee.first_name} {employee.last_name}
-                              </div>
-                            </td>
-                            <td className="p-3 text-sm text-gray-600">
-                              {employee.email}
-                            </td>
-                            <td className="p-3 text-sm">
-                              {employee.job_title || "N/A"}
-                            </td>
-                            <td className="p-3 text-sm">
-                              {employee.company_name || "N/A"}
-                            </td>
-                            <td className="p-3 text-sm">
-                              {employee.department_name || "N/A"}
-                            </td>
-                            <td className="p-3 text-sm">
-                              {employee.location_name || "N/A"}
-                            </td>
-                            <td className="p-3">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditEmployeeForm(employee)}
-                              >
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit
-                              </Button>
-                            </td>
-                          </tr>
+                          <React.Fragment key={employee.id}>
+                            <tr className="border-b hover:bg-gray-50">
+                              <td className="p-3 align-top">
+                                <button
+                                  onClick={() => toggleExpand(employee.id)}
+                                  className="p-2"
+                                >
+                                  {expandedRows[employee.id] ? "🔼" : "🔽"}
+                                </button>
+                              </td>
+                              <td className="p-3">
+                                <div className="font-medium">
+                                  {employee.first_name} {employee.last_name}
+                                </div>
+                              </td>
+                              <td className="p-3 text-sm text-gray-600">
+                                {employee.email}
+                              </td>
+                              <td className="p-3 text-sm">
+                                {employee.company_assignments?.[0]?.job_title ||
+                                  "N/A"}
+                                {employee.company_assignments?.length > 1 &&
+                                  ` +${
+                                    employee.company_assignments.length - 1
+                                  }`}
+                              </td>
+                              <td className="p-3 text-sm">
+                                {employee.company_assignments?.[0]
+                                  ?.company_name || "N/A"}
+                              </td>
+                              <td className="p-3 text-sm">
+                                {employee.department_assignments?.[0]
+                                  ?.department_name || "N/A"}
+                              </td>
+                              <td className="p-3 text-sm">
+                                {employee.location_assignments?.[0]
+                                  ?.location_name || "N/A"}
+                              </td>
+                              <td className="p-3">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openEditEmployeeForm(employee)}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </Button>
+                              </td>
+                            </tr>
+
+                            {expandedRows[employee.id] &&
+                              (
+                                employee.company_assignments?.slice(1) || []
+                              ).map((assignment, index) => (
+                                <tr key={index} className="border-b bg-gray-50">
+                                  {/* Empty cells to align with columns: Expander, Name, Email */}
+                                  <td></td>
+                                  <td></td>
+                                  <td></td>
+                                  {/* Assignment data aligned under correct columns */}
+                                  <td className="p-3 text-sm">
+                                    {assignment.job_title || "N/A"}
+                                  </td>
+                                  <td className="p-3 text-sm">
+                                    {assignment.company_name || "N/A"}
+                                  </td>
+                                  <td className="p-3 text-sm">
+                                    {/* Optional: department name if available */}
+                                  </td>
+                                  <td className="p-3 text-sm">
+                                    {/* Optional: location name if available */}
+                                  </td>
+                                  {/* Actions column empty for expanded rows */}
+                                  <td></td>
+                                </tr>
+                              ))}
+                          </React.Fragment>
                         ))}
                       </tbody>
                     </table>
@@ -2877,7 +2985,9 @@ export default function AdminDashboard() {
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => removeAssignment(assignmentIndex)}
+                                onClick={() =>
+                                  removeAssignment(assignmentIndex)
+                                }
                               >
                                 <Trash2 className="w-4 h-4 text-red-600" />
                               </Button>
@@ -2911,7 +3021,7 @@ export default function AdminDashboard() {
                             <div>
                               <Label>Job Role *</Label>
                               <select
-                                value={assignment.jobRoleId || ''}
+                                value={assignment.jobRoleId || ""}
                                 onChange={(e) =>
                                   handleAssignmentJobRoleChange(
                                     assignmentIndex,
@@ -2939,7 +3049,7 @@ export default function AdminDashboard() {
                             <div>
                               <Label>Location</Label>
                               <select
-                                value={assignment.locationId || ''}
+                                value={assignment.locationId || ""}
                                 onChange={(e) =>
                                   handleAssignmentLocationChange(
                                     assignmentIndex,
@@ -2949,14 +3059,16 @@ export default function AdminDashboard() {
                                 className="w-full border rounded px-3 py-2"
                                 disabled={!assignment.companyId}
                               >
-                                <option value="">Select a location (optional)</option>
-                                {assignmentDropdownData[assignmentIndex]?.locations?.map(
-                                  (loc) => (
-                                    <option key={loc.id} value={loc.id}>
-                                      {loc.name}
-                                    </option>
-                                  )
-                                )}
+                                <option value="">
+                                  Select a location (optional)
+                                </option>
+                                {assignmentDropdownData[
+                                  assignmentIndex
+                                ]?.locations?.map((loc) => (
+                                  <option key={loc.id} value={loc.id}>
+                                    {loc.name}
+                                  </option>
+                                ))}
                               </select>
                               {!assignment.companyId && (
                                 <p className="text-gray-500 text-xs mt-1">
@@ -2984,51 +3096,53 @@ export default function AdminDashboard() {
                                 )}
                               </div>
 
-                              {assignment.departmentIds.map((deptId, deptIndex) => (
-                                <div
-                                  key={deptIndex}
-                                  className="flex items-center gap-2 mb-2"
-                                >
-                                  <select
-                                    value={deptId}
-                                    onChange={(e) =>
-                                      handleAssignmentDepartmentChange(
-                                        assignmentIndex,
-                                        deptIndex,
-                                        e.target.value
-                                      )
-                                    }
-                                    className="flex-1 border rounded px-3 py-2"
-                                    disabled={!assignment.companyId}
+                              {assignment.departmentIds.map(
+                                (deptId, deptIndex) => (
+                                  <div
+                                    key={deptIndex}
+                                    className="flex items-center gap-2 mb-2"
                                   >
-                                    <option value="">
-                                      Select a department (optional)
-                                    </option>
-                                    {assignmentDropdownData[
-                                      assignmentIndex
-                                    ]?.departments?.map((dept) => (
-                                      <option key={dept.id} value={dept.id}>
-                                        {dept.name}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  {assignment.departmentIds.length > 1 && (
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() =>
-                                        removeDepartmentFromAssignment(
+                                    <select
+                                      value={deptId}
+                                      onChange={(e) =>
+                                        handleAssignmentDepartmentChange(
                                           assignmentIndex,
-                                          deptIndex
+                                          deptIndex,
+                                          e.target.value
                                         )
                                       }
+                                      className="flex-1 border rounded px-3 py-2"
+                                      disabled={!assignment.companyId}
                                     >
-                                      <Trash2 className="w-4 h-4 text-red-600" />
-                                    </Button>
-                                  )}
-                                </div>
-                              ))}
+                                      <option value="">
+                                        Select a department (optional)
+                                      </option>
+                                      {assignmentDropdownData[
+                                        assignmentIndex
+                                      ]?.departments?.map((dept) => (
+                                        <option key={dept.id} value={dept.id}>
+                                          {dept.name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    {assignment.departmentIds.length > 1 && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                          removeDepartmentFromAssignment(
+                                            assignmentIndex,
+                                            deptIndex
+                                          )
+                                        }
+                                      >
+                                        <Trash2 className="w-4 h-4 text-red-600" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                )
+                              )}
 
                               {!assignment.companyId && (
                                 <p className="text-gray-500 text-xs mt-1">
@@ -3042,8 +3156,9 @@ export default function AdminDashboard() {
                     </div>
 
                     <p className="text-xs text-gray-500 mt-3">
-                      You can add up to {MAX_ASSIGNMENTS} company assignments. Each
-                      assignment can have one location and multiple departments.
+                      You can add up to {MAX_ASSIGNMENTS} company assignments.
+                      Each assignment can have one location and multiple
+                      departments.
                     </p>
                   </div>
 
@@ -3072,6 +3187,15 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Company Detail View Modal */}
+      {isDetailViewOpen && (
+        <CompanyDetailView
+          data={selectedCompanyData}
+          loading={isLoadingDetails}
+          onClose={() => setIsDetailViewOpen(false)}
+        />
       )}
     </div>
   );

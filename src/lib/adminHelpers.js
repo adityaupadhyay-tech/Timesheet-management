@@ -62,6 +62,18 @@ export const getAllEmployeesDetailed = async () => {
   }
 }
 
+// New: employees with nested assignments (companies, departments, locations)
+export const getAllEmployeesWithAssignments = async () => {
+  try {
+    const { data, error } = await supabase.rpc('get_all_employees_with_assignments')
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching employees with assignments:', error)
+    return { data: null, error: error.message }
+  }
+}
+
 export const createCompany = async (companyData) => {
   try {
     const { data, error } = await supabase
