@@ -701,3 +701,196 @@ export const getDashboardStats = async () => {
     return { data: null, error: error.message }
   }
 }
+
+// Employee RPC functions for add/edit with structured assignments
+export const createEmployeeWithStructuredAssignments = async (employeeData, assignments) => {
+  try {
+    // 1. Get the raw state from the form
+    const rawAssignments = assignments;
+    
+    // 2. Filter and clean the data
+    const cleanedAssignments = rawAssignments
+      // A) Remove any entire assignment block where a company wasn't selected
+      .filter(assignment => assignment.companyId)
+      .map(assignment => ({
+        companyId: assignment.companyId,
+        jobRoleId: assignment.jobRoleId || null, // Include job role in assignment
+        // B) Convert an empty locationId to null, which the DB accepts
+        locationId: assignment.locationId || null,
+        // C) Remove any empty strings from the list of department IDs
+        departmentIds: assignment.departmentIds.filter(id => id)
+      }));
+    
+    // 3. Send the CLEANED data to the database
+    const { data, error } = await supabase.rpc('create_employee_with_structured_assignments', {
+      p_first_name: employeeData.firstName,
+      p_last_name: employeeData.lastName,
+      p_email: employeeData.email,
+      p_phone: employeeData.phone || null,
+      p_assignments: cleanedAssignments
+    })
+    
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error creating employee with structured assignments:', error)
+    return { data: null, error: error.message }
+  }
+}
+
+export const updateEmployeeWithStructuredAssignments = async (employeeId, employeeData, assignments) => {
+  try {
+    // 1. Get the raw state from the form
+    const rawAssignments = assignments;
+    
+    // 2. Filter and clean the data
+    const cleanedAssignments = rawAssignments
+      // A) Remove any entire assignment block where a company wasn't selected
+      .filter(assignment => assignment.companyId)
+      .map(assignment => ({
+        companyId: assignment.companyId,
+        jobRoleId: assignment.jobRoleId || null, // Include job role in assignment
+        // B) Convert an empty locationId to null, which the DB accepts
+        locationId: assignment.locationId || null,
+        // C) Remove any empty strings from the list of department IDs
+        departmentIds: assignment.departmentIds.filter(id => id)
+      }));
+    
+    // 3. Send the CLEANED data to the database
+    const { data, error } = await supabase.rpc('update_employee_with_structured_assignments', {
+      p_employee_id: employeeId,
+      p_first_name: employeeData.firstName,
+      p_last_name: employeeData.lastName,
+      p_email: employeeData.email,
+      p_phone: employeeData.phone || null,
+      p_assignments: cleanedAssignments
+    })
+    
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error updating employee with structured assignments:', error)
+    return { data: null, error: error.message }
+  }
+}
+
+// Fetch dropdown data for employee form
+export const getAllCompanies = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('companies')
+      .select('id, name')
+      .eq('status', 'active')
+      .order('name')
+    
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching companies:', error)
+    return { data: [], error: error.message }
+  }
+}
+
+export const getAllJobRoles = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('job_roles')
+      .select('id, title')
+      .order('title')
+    
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching job roles:', error)
+    return { data: [], error: error.message }
+  }
+}
+
+export const getDepartmentsByCompany = async (companyId) => {
+  try {
+    if (!companyId) {
+      return { data: [], error: null }
+    }
+    
+    const { data, error } = await supabase
+      .from('departments')
+      .select('id, name')
+      .eq('company_id', companyId)
+      .order('name')
+    
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching departments:', error)
+    return { data: [], error: error.message }
+  }
+}
+
+export const getAllDepartments = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('departments')
+      .select('id, name, company_id, companies(name)')
+      .order('name')
+    
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching all departments:', error)
+    return { data: [], error: error.message }
+  }
+}
+
+export const getDepartmentsByCompanies = async (companyIds) => {
+  try {
+    if (!companyIds || companyIds.length === 0) {
+      return { data: [], error: null }
+    }
+    
+    const { data, error } = await supabase
+      .from('departments')
+      .select('id, name, company_id, companies(name)')
+      .in('company_id', companyIds)
+      .order('name')
+    
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching departments by companies:', error)
+    return { data: [], error: error.message }
+  }
+}
+
+export const getLocationsByCompany = async (companyId) => {
+  try {
+    if (!companyId) {
+      return { data: [], error: null }
+    }
+    
+    const { data, error } = await supabase
+      .from('locations')
+      .select('id, name')
+      .eq('company_id', companyId)
+      .order('name')
+    
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching locations:', error)
+    return { data: [], error: error.message }
+  }
+}
+
+// Get employee details for editing with structured assignments
+export const getEmployeeDetailsForEdit = async (employeeId) => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_employee_details_for_edit', { p_employee_id: employeeId })
+    
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching employee details for edit:', error)
+    return { data: null, error: error.message }
+  }
+}

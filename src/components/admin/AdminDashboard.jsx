@@ -1,18 +1,18 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useSupabase } from '@/contexts/SupabaseContext'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import Building from '@mui/icons-material/Business'
-import People from '@mui/icons-material/People'
-import Edit from '@mui/icons-material/Edit'
-import Search from '@mui/icons-material/Search'
-import Clear from '@mui/icons-material/Clear'
-import { ListFilter, ListX } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { useSupabase } from "@/contexts/SupabaseContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Building from "@mui/icons-material/Business";
+import People from "@mui/icons-material/People";
+import Edit from "@mui/icons-material/Edit";
+import Search from "@mui/icons-material/Search";
+import Clear from "@mui/icons-material/Clear";
+import { ListFilter, ListX, ChevronLeft, ChevronRight, Plus, X, Trash2 } from "lucide-react";
 import {
   getCompaniesWithStats,
   getCompaniesForDashboard,
@@ -32,641 +32,984 @@ import {
   getManagersForDepartment,
   addManagerToDepartment,
   removeManagerFromDepartment,
-  addManagersToDepartment
-} from '../../lib/adminHelpers'
+  addManagersToDepartment,
+  createEmployeeWithStructuredAssignments,
+  updateEmployeeWithStructuredAssignments,
+  getAllCompanies,
+  getAllJobRoles,
+  getDepartmentsByCompany,
+  getLocationsByCompany,
+  getEmployeeDetailsForEdit,
+} from "../../lib/adminHelpers";
 
 export default function AdminDashboard() {
-  const { user, loading: authLoading } = useSupabase()
-  
+  const { user, loading: authLoading } = useSupabase();
+
   // State management
-  const [companies, setCompanies] = useState([])
-  const [dashboardCompanies, setDashboardCompanies] = useState([])
-  const [allEmployees, setAllEmployees] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  
+  const [companies, setCompanies] = useState([]);
+  const [dashboardCompanies, setDashboardCompanies] = useState([]);
+  const [allEmployees, setAllEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   // UI state
-  const [activeTab, setActiveTab] = useState('companies')
-  const [searchTerm, setSearchTerm] = useState('')
-  
+  const [activeTab, setActiveTab] = useState("companies");
+  const [searchTerm, setSearchTerm] = useState("");
+
   // Manage tab state
-  const [showAddCompany, setShowAddCompany] = useState(false)
-  const [showEditCompany, setShowEditCompany] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [editingCompany, setEditingCompany] = useState(null)
-  const [deletingCompany, setDeletingCompany] = useState(null)
-  const [newCompany, setNewCompany] = useState({ name: '', description: '', status: 'active' })
-  const [companyNameConfirmation, setCompanyNameConfirmation] = useState('')
-  
+  const [showAddCompany, setShowAddCompany] = useState(false);
+  const [showEditCompany, setShowEditCompany] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editingCompany, setEditingCompany] = useState(null);
+  const [deletingCompany, setDeletingCompany] = useState(null);
+  const [newCompany, setNewCompany] = useState({
+    name: "",
+    description: "",
+    status: "active",
+  });
+  const [companyNameConfirmation, setCompanyNameConfirmation] = useState("");
+
   // Edit Company Tabs
-  const [editCompanyActiveTab, setEditCompanyActiveTab] = useState('info')
-  
+  const [editCompanyActiveTab, setEditCompanyActiveTab] = useState("info");
+
   // Add Company Wizard
-  const [wizardStep, setWizardStep] = useState(1)
-  const [wizardCompanyId, setWizardCompanyId] = useState(null)
-  
+  const [wizardStep, setWizardStep] = useState(1);
+  const [wizardCompanyId, setWizardCompanyId] = useState(null);
+
   // Form validation
-  const [formErrors, setFormErrors] = useState({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  
+  const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Company details state (for edit view)
   const [companyDetails, setCompanyDetails] = useState({
     company: null,
     locations: [],
     departments: [],
-    employees: []
-  })
-  const [detailsLoading, setDetailsLoading] = useState(false)
-  
+    employees: [],
+  });
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
   // Location management state
-  const [showAddLocation, setShowAddLocation] = useState(false)
-  const [showEditLocation, setShowEditLocation] = useState(false)
-  const [editingLocation, setEditingLocation] = useState(null)
+  const [showAddLocation, setShowAddLocation] = useState(false);
+  const [showEditLocation, setShowEditLocation] = useState(false);
+  const [editingLocation, setEditingLocation] = useState(null);
   const [newLocation, setNewLocation] = useState({
-    name: '',
-    address: '',
-    city: '',
-    state: '',
-    postal_code: '',
-    manager_ids: []
-  })
-  
+    name: "",
+    address: "",
+    city: "",
+    state: "",
+    postal_code: "",
+    manager_ids: [],
+  });
+
   // Department management state
-  const [showAddDepartment, setShowAddDepartment] = useState(false)
-  const [showEditDepartment, setShowEditDepartment] = useState(false)
-  const [editingDepartment, setEditingDepartment] = useState(null)
+  const [showAddDepartment, setShowAddDepartment] = useState(false);
+  const [showEditDepartment, setShowEditDepartment] = useState(false);
+  const [editingDepartment, setEditingDepartment] = useState(null);
   const [newDepartment, setNewDepartment] = useState({
-    name: '',
-    description: '',
-    location_id: '',
-    manager_ids: []
-  })
-  
+    name: "",
+    description: "",
+    location_id: "",
+    manager_ids: [],
+  });
+
   // Employee pagination and filters
-  const [currentEmployeePage, setCurrentEmployeePage] = useState(1)
-  const EMPLOYEES_PER_PAGE = 25
-  const [companyFilter, setCompanyFilter] = useState('')
-  const [jobRoleFilter, setJobRoleFilter] = useState('')
-  const [departmentFilter, setDepartmentFilter] = useState('')
-  const [showEmployeeFilters, setShowEmployeeFilters] = useState(false)
+  const [currentEmployeePage, setCurrentEmployeePage] = useState(1);
+  const EMPLOYEES_PER_PAGE = 25;
+  const [companyFilter, setCompanyFilter] = useState("");
+  const [jobRoleFilter, setJobRoleFilter] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
+  const [showEmployeeFilters, setShowEmployeeFilters] = useState(false);
+
+  // Employee form state
+  const [showEmployeeForm, setShowEmployeeForm] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
+  const [employeeFormData, setEmployeeFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+  });
+  const [employeeFormErrors, setEmployeeFormErrors] = useState({});
+  
+  // New structured assignments state
+  const [assignments, setAssignments] = useState([
+    { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] }
+  ]);
+  const MAX_ASSIGNMENTS = 5;
+  
+  // Dropdown data for employee form
+  const [allCompaniesData, setAllCompaniesData] = useState([]);
+  const [allJobRolesData, setAllJobRolesData] = useState([]);
+  // Store departments and locations per assignment
+  const [assignmentDropdownData, setAssignmentDropdownData] = useState({});
+  const [loadingDropdowns, setLoadingDropdowns] = useState(false);
 
   // Load initial data
   useEffect(() => {
-    loadData()
-  }, [])
+    loadData();
+  }, []);
 
   const loadData = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      
+      setLoading(true);
+      setError(null);
+
       // Load both types of company data and employees in parallel
-      const [companiesResult, dashboardResult, employeesResult] = await Promise.all([
-        getCompaniesWithStats(),
-        getCompaniesForDashboard(),
-        getAllEmployeesDetailed()
-      ])
-      
+      const [companiesResult, dashboardResult, employeesResult] =
+        await Promise.all([
+          getCompaniesWithStats(),
+          getCompaniesForDashboard(),
+          getAllEmployeesDetailed(),
+        ]);
+
       if (companiesResult.error) {
-        console.error('Error loading companies:', companiesResult.error)
+        console.error("Error loading companies:", companiesResult.error);
       } else {
-        setCompanies(companiesResult.data || [])
+        setCompanies(companiesResult.data || []);
       }
-      
+
       if (dashboardResult.error) {
-        console.error('Error loading dashboard companies:', dashboardResult.error)
+        console.error(
+          "Error loading dashboard companies:",
+          dashboardResult.error
+        );
         if (!companiesResult.error) {
-          setError(dashboardResult.error)
+          setError(dashboardResult.error);
         }
       } else {
-        console.log('Dashboard Companies Data:', dashboardResult.data) // Debug log
-        setDashboardCompanies(dashboardResult.data || [])
+        console.log("Dashboard Companies Data:", dashboardResult.data); // Debug log
+        setDashboardCompanies(dashboardResult.data || []);
       }
-      
+
       if (employeesResult.error) {
-        console.error('Error loading employees:', employeesResult.error)
+        console.error("Error loading employees:", employeesResult.error);
         if (!companiesResult.error && !dashboardResult.error) {
-          setError(employeesResult.error)
+          setError(employeesResult.error);
         }
       } else {
-        setAllEmployees(employeesResult.data || [])
+        setAllEmployees(employeesResult.data || []);
       }
-      
     } catch (err) {
-      setError('Failed to load administration data')
-      console.error('Error loading data:', err)
+      setError("Failed to load administration data");
+      console.error("Error loading data:", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Load data on component mount
   useEffect(() => {
-    loadData()
-  }, [])
+    loadData();
+  }, []);
 
   // Filter companies based on search term
-  const filteredCompanies = dashboardCompanies.filter(company =>
-    (company.company_name || company.name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.state?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredCompanies = dashboardCompanies.filter(
+    (company) =>
+      (company.company_name || company.name)
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      company.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.state?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Filter and paginate employees
   const getFilteredEmployees = () => {
-    return allEmployees.filter(employee => {
-      if (companyFilter && !employee.company_name?.toLowerCase().includes(companyFilter.toLowerCase())) {
-        return false
+    return allEmployees.filter((employee) => {
+      if (
+        companyFilter &&
+        !employee.company_name
+          ?.toLowerCase()
+          .includes(companyFilter.toLowerCase())
+      ) {
+        return false;
       }
-      if (jobRoleFilter && !employee.job_title?.toLowerCase().includes(jobRoleFilter.toLowerCase())) {
-        return false
+      if (
+        jobRoleFilter &&
+        !employee.job_title?.toLowerCase().includes(jobRoleFilter.toLowerCase())
+      ) {
+        return false;
       }
-      if (departmentFilter && !employee.department_name?.toLowerCase().includes(departmentFilter.toLowerCase())) {
-        return false
+      if (
+        departmentFilter &&
+        !employee.department_name
+          ?.toLowerCase()
+          .includes(departmentFilter.toLowerCase())
+      ) {
+        return false;
       }
-      return true
-    })
-  }
+      return true;
+    });
+  };
 
   const getPaginatedEmployees = () => {
-    const filtered = getFilteredEmployees()
-    const startIndex = (currentEmployeePage - 1) * EMPLOYEES_PER_PAGE
-    const endIndex = startIndex + EMPLOYEES_PER_PAGE
-    return filtered.slice(startIndex, endIndex)
-  }
+    const filtered = getFilteredEmployees();
+    const startIndex = (currentEmployeePage - 1) * EMPLOYEES_PER_PAGE;
+    const endIndex = startIndex + EMPLOYEES_PER_PAGE;
+    return filtered.slice(startIndex, endIndex);
+  };
 
   const getTotalEmployeePages = () => {
-    const totalEmployees = getFilteredEmployees().length
-    return Math.ceil(totalEmployees / EMPLOYEES_PER_PAGE)
-  }
+    const totalEmployees = getFilteredEmployees().length;
+    return Math.ceil(totalEmployees / EMPLOYEES_PER_PAGE);
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800'
-      case 'on-hold':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'inactive':
-        return 'bg-red-100 text-red-800'
+      case "active":
+        return "bg-green-100 text-green-800";
+      case "on-hold":
+        return "bg-yellow-100 text-yellow-800";
+      case "inactive":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800'
+        return "bg-gray-100 text-gray-800";
     }
-  }
+  };
 
   const clearSearch = () => {
-    setSearchTerm('')
-  }
+    setSearchTerm("");
+  };
 
   const clearFilters = () => {
-    setCompanyFilter('')
-    setJobRoleFilter('')
-    setDepartmentFilter('')
-    setCurrentEmployeePage(1)
-  }
+    setCompanyFilter("");
+    setJobRoleFilter("");
+    setDepartmentFilter("");
+    setCurrentEmployeePage(1);
+  };
 
   // CRUD operations for manage tab
   const handleAddCompany = async () => {
-    if (!newCompany.name.trim()) return
-    
+    if (!newCompany.name.trim()) return;
+
     try {
-      setLoading(true)
-      const result = await createCompany(newCompany)
-      
+      setLoading(true);
+      const result = await createCompany(newCompany);
+
       if (result.error) {
-        setError(result.error)
+        setError(result.error);
       } else {
-        setShowAddCompany(false)
-        setNewCompany({ name: '', description: '', status: 'active' })
-        await loadData() // Refresh data
+        setShowAddCompany(false);
+        setNewCompany({ name: "", description: "", status: "active" });
+        await loadData(); // Refresh data
       }
     } catch (err) {
-      setError('Failed to add company')
+      setError("Failed to add company");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleEditCompany = async () => {
-    if (!editingCompany) return
-    
+    if (!editingCompany) return;
+
     // Validate form
-    const errors = validateCompanyForm(newCompany)
-    setFormErrors(errors)
-    
+    const errors = validateCompanyForm(newCompany);
+    setFormErrors(errors);
+
     if (Object.keys(errors).length > 0) {
-      return
+      return;
     }
-    
+
     try {
-      setIsSubmitting(true)
-      const result = await updateCompany(editingCompany.id, newCompany)
-      
+      setIsSubmitting(true);
+      const result = await updateCompany(editingCompany.id, newCompany);
+
       if (result.error) {
-        setError(result.error)
+        setError(result.error);
       } else {
-        setShowEditCompany(false)
-        setEditingCompany(null)
-        setNewCompany({ name: '', description: '', status: 'active' })
-        setFormErrors({})
-        await loadData() // Refresh data
+        setShowEditCompany(false);
+        setEditingCompany(null);
+        setNewCompany({ name: "", description: "", status: "active" });
+        setFormErrors({});
+        await loadData(); // Refresh data
       }
     } catch (err) {
-      setError('Failed to update company')
+      setError("Failed to update company");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleDeleteCompany = async () => {
-    if (!deletingCompany || companyNameConfirmation !== deletingCompany.name) return
-    
+    if (!deletingCompany || companyNameConfirmation !== deletingCompany.name)
+      return;
+
     try {
-      setLoading(true)
-      const result = await deleteCompany(deletingCompany.id)
-      
+      setLoading(true);
+      const result = await deleteCompany(deletingCompany.id);
+
       if (result.error) {
-        setError(result.error)
+        setError(result.error);
       } else {
-        setShowDeleteConfirm(false)
-        setDeletingCompany(null)
-        setCompanyNameConfirmation('')
-        await loadData() // Refresh data
+        setShowDeleteConfirm(false);
+        setDeletingCompany(null);
+        setCompanyNameConfirmation("");
+        await loadData(); // Refresh data
       }
     } catch (err) {
-      setError('Failed to delete company')
+      setError("Failed to delete company");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Validation functions
   const validateCompanyForm = (company) => {
-    const errors = {}
-    
+    const errors = {};
+
     if (!company.name?.trim()) {
-      errors.name = 'Company name is required'
+      errors.name = "Company name is required";
     } else if (company.name.trim().length < 2) {
-      errors.name = 'Company name must be at least 2 characters'
+      errors.name = "Company name must be at least 2 characters";
     } else if (company.name.trim().length > 100) {
-      errors.name = 'Company name must be less than 100 characters'
+      errors.name = "Company name must be less than 100 characters";
     }
-    
+
     if (company.description && company.description.length > 500) {
-      errors.description = 'Description must be less than 500 characters'
+      errors.description = "Description must be less than 500 characters";
     }
-    
-    return errors
-  }
-  
+
+    return errors;
+  };
+
   const validateLocationForm = (location) => {
-    const errors = {}
-    
+    const errors = {};
+
     if (!location.name?.trim()) {
-      errors.name = 'Location name is required'
+      errors.name = "Location name is required";
     } else if (location.name.trim().length < 2) {
-      errors.name = 'Location name must be at least 2 characters'
+      errors.name = "Location name must be at least 2 characters";
     }
-    
-    if (location.postal_code && !/^\d{5}(-\d{4})?$/.test(location.postal_code)) {
-      errors.postal_code = 'Please enter a valid postal code (e.g., 12345 or 12345-6789)'
+
+    if (
+      location.postal_code &&
+      !/^\d{5}(-\d{4})?$/.test(location.postal_code)
+    ) {
+      errors.postal_code =
+        "Please enter a valid postal code (e.g., 12345 or 12345-6789)";
     }
-    
-    return errors
-  }
-  
+
+    return errors;
+  };
+
   const validateDepartmentForm = (department) => {
-    const errors = {}
-    
+    const errors = {};
+
     if (!department.name?.trim()) {
-      errors.name = 'Department name is required'
+      errors.name = "Department name is required";
     } else if (department.name.trim().length < 2) {
-      errors.name = 'Department name must be at least 2 characters'
+      errors.name = "Department name must be at least 2 characters";
     }
-    
+
     if (!department.location_id) {
-      errors.location_id = 'Please select a location for this department'
+      errors.location_id = "Please select a location for this department";
     }
-    
+
     if (department.description && department.description.length > 300) {
-      errors.description = 'Description must be less than 300 characters'
+      errors.description = "Description must be less than 300 characters";
     }
-    
-    return errors
-  }
+
+    return errors;
+  };
 
   const openEditModal = async (company) => {
-    setEditingCompany(company)
+    setEditingCompany(company);
     setNewCompany({
       name: company.name,
-      description: company.description || '',
-      status: company.status
-    })
-    setShowEditCompany(true)
-    setEditCompanyActiveTab('info') // Reset to first tab
-    setFormErrors({}) // Clear any previous errors
-    
+      description: company.description || "",
+      status: company.status,
+    });
+    setShowEditCompany(true);
+    setEditCompanyActiveTab("info"); // Reset to first tab
+    setFormErrors({}); // Clear any previous errors
+
     // Initialize with empty data first
     setCompanyDetails({
       company: company,
       locations: [],
       departments: [],
-      employees: []
-    })
-    
+      employees: [],
+    });
+
     // Fetch company details with locations, departments, and employees
-    await fetchCompanyDetailsData(company.id)
-  }
+    await fetchCompanyDetailsData(company.id);
+  };
 
   const openDeleteModal = (company) => {
-    setDeletingCompany(company)
-    setCompanyNameConfirmation('')
-    setShowDeleteConfirm(true)
-  }
+    setDeletingCompany(company);
+    setCompanyNameConfirmation("");
+    setShowDeleteConfirm(true);
+  };
 
   const fetchCompanyDetailsData = async (companyId) => {
     try {
-      setDetailsLoading(true)
-      console.log('Fetching details for company ID:', companyId)
-      
-      const result = await fetchCompanyWithDetails(companyId)
-      console.log('Fetch result:', result)
-      
+      setDetailsLoading(true);
+      console.log("Fetching details for company ID:", companyId);
+
+      const result = await fetchCompanyWithDetails(companyId);
+      console.log("Fetch result:", result);
+
       if (result.success && result.data) {
-        setCompanyDetails(result.data)
-        setError(null) // Clear any previous errors
+        setCompanyDetails(result.data);
+        setError(null); // Clear any previous errors
       } else {
-        console.error('Error in result:', result.error)
-        setError(result.error || 'Failed to load company details')
+        console.error("Error in result:", result.error);
+        setError(result.error || "Failed to load company details");
       }
     } catch (err) {
-      console.error('Exception in fetchCompanyDetailsData:', err)
-      setError('Failed to load company details')
+      console.error("Exception in fetchCompanyDetailsData:", err);
+      setError("Failed to load company details");
     } finally {
-      setDetailsLoading(false)
+      setDetailsLoading(false);
     }
-  }
+  };
 
   // Wizard functions
   const startAddCompanyWizard = () => {
-    setShowAddCompany(true)
-    setWizardStep(1)
-    setWizardCompanyId(null)
-    setNewCompany({ name: '', description: '', status: 'active' })
+    setShowAddCompany(true);
+    setWizardStep(1);
+    setWizardCompanyId(null);
+    setNewCompany({ name: "", description: "", status: "active" });
     setNewLocation({
-      name: '',
-      address: '',
-      city: '',
-      state: '',
-      postal_code: '',
-      manager_ids: []
-    })
+      name: "",
+      address: "",
+      city: "",
+      state: "",
+      postal_code: "",
+      manager_ids: [],
+    });
     setNewDepartment({
-      name: '',
-      description: '',
-      location_id: '',
-      manager_ids: []
-    })
-    setFormErrors({})
-  }
+      name: "",
+      description: "",
+      location_id: "",
+      manager_ids: [],
+    });
+    setFormErrors({});
+  };
 
   const handleWizardNext = async () => {
     if (wizardStep === 1) {
       // Validate and create company
-      const errors = validateCompanyForm(newCompany)
-      setFormErrors(errors)
-      
+      const errors = validateCompanyForm(newCompany);
+      setFormErrors(errors);
+
       if (Object.keys(errors).length > 0) {
-        return
+        return;
       }
-      
+
       try {
-        setIsSubmitting(true)
-        const result = await createCompany(newCompany)
-        
+        setIsSubmitting(true);
+        const result = await createCompany(newCompany);
+
         if (result.error) {
-          setError(result.error)
-          return
+          setError(result.error);
+          return;
         }
-        
-        setWizardCompanyId(result.data[0].id)
-        setWizardStep(2)
-        setFormErrors({})
-        
+
+        setWizardCompanyId(result.data[0].id);
+        setWizardStep(2);
+        setFormErrors({});
+
         // Fetch company details for the new company
-        await fetchCompanyDetailsData(result.data[0].id)
+        await fetchCompanyDetailsData(result.data[0].id);
       } catch (err) {
-        setError('Failed to create company')
+        setError("Failed to create company");
       } finally {
-        setIsSubmitting(false)
+        setIsSubmitting(false);
       }
     } else if (wizardStep === 2) {
       // Move to departments step
-      setWizardStep(3)
+      setWizardStep(3);
     }
-  }
+  };
 
   const handleWizardBack = () => {
     if (wizardStep > 1) {
-      setWizardStep(wizardStep - 1)
+      setWizardStep(wizardStep - 1);
     }
-  }
+  };
 
   const handleWizardFinish = async () => {
-    setShowAddCompany(false)
-    setWizardStep(1)
-    setWizardCompanyId(null)
-    setFormErrors({})
-    await loadData() // Refresh data
-  }
+    setShowAddCompany(false);
+    setWizardStep(1);
+    setWizardCompanyId(null);
+    setFormErrors({});
+    await loadData(); // Refresh data
+  };
 
   const handleAddLocation = async () => {
-    const companyId = editingCompany?.id || wizardCompanyId
-    if (!companyId) return
-    
+    const companyId = editingCompany?.id || wizardCompanyId;
+    if (!companyId) return;
+
     // Validate form
-    const errors = validateLocationForm(newLocation)
-    setFormErrors(prev => ({ ...prev, location: errors }))
-    
+    const errors = validateLocationForm(newLocation);
+    setFormErrors((prev) => ({ ...prev, location: errors }));
+
     if (Object.keys(errors).length > 0) {
-      return
+      return;
     }
-    
+
     try {
-      setDetailsLoading(true)
-      const result = await addLocationForCompany(newLocation, companyId)
-      
+      setDetailsLoading(true);
+      const result = await addLocationForCompany(newLocation, companyId);
+
       if (result.data && !result.error) {
-        setShowAddLocation(false)
+        setShowAddLocation(false);
         setNewLocation({
-          name: '',
-          address: '',
-          city: '',
-          state: '',
-          postal_code: '',
-          manager_ids: []
-        })
-        setFormErrors(prev => ({ ...prev, location: {} }))
+          name: "",
+          address: "",
+          city: "",
+          state: "",
+          postal_code: "",
+          manager_ids: [],
+        });
+        setFormErrors((prev) => ({ ...prev, location: {} }));
         // Refresh company details
-        await fetchCompanyDetailsData(companyId)
+        await fetchCompanyDetailsData(companyId);
       } else {
-        setError(result.error || 'Failed to add location')
+        setError(result.error || "Failed to add location");
       }
     } catch (err) {
-      setError('Failed to add location')
+      setError("Failed to add location");
     } finally {
-      setDetailsLoading(false)
+      setDetailsLoading(false);
     }
-  }
+  };
 
   const handleAddDepartment = async () => {
-    const companyId = editingCompany?.id || wizardCompanyId
-    if (!companyId) return
-    
+    const companyId = editingCompany?.id || wizardCompanyId;
+    if (!companyId) return;
+
     // Validate form
-    const errors = validateDepartmentForm(newDepartment)
-    setFormErrors(prev => ({ ...prev, department: errors }))
-    
+    const errors = validateDepartmentForm(newDepartment);
+    setFormErrors((prev) => ({ ...prev, department: errors }));
+
     if (Object.keys(errors).length > 0) {
-      return
+      return;
     }
-    
+
     try {
-      setDetailsLoading(true)
-      const result = await addDepartmentForCompany(newDepartment, companyId)
-      
+      setDetailsLoading(true);
+      const result = await addDepartmentForCompany(newDepartment, companyId);
+
       if (result.data && !result.error) {
-        setShowAddDepartment(false)
+        setShowAddDepartment(false);
         setNewDepartment({
-          name: '',
-          description: '',
-          location_id: '',
-          manager_ids: []
-        })
-        setFormErrors(prev => ({ ...prev, department: {} }))
+          name: "",
+          description: "",
+          location_id: "",
+          manager_ids: [],
+        });
+        setFormErrors((prev) => ({ ...prev, department: {} }));
         // Refresh company details
-        await fetchCompanyDetailsData(companyId)
+        await fetchCompanyDetailsData(companyId);
       } else {
-        setError(result.error || 'Failed to add department')
+        setError(result.error || "Failed to add department");
       }
     } catch (err) {
-      setError('Failed to add department')
+      setError("Failed to add department");
     } finally {
-      setDetailsLoading(false)
+      setDetailsLoading(false);
     }
-  }
+  };
 
   // Edit handlers
   const handleEditLocation = async (location) => {
     // Fetch current managers for this location
-    const managersResult = await getManagersForLocation(location.id)
-    const currentManagerIds = managersResult.data ? managersResult.data.map(manager => manager.id) : []
-    
-    setEditingLocation(location)
+    const managersResult = await getManagersForLocation(location.id);
+    const currentManagerIds = managersResult.data
+      ? managersResult.data.map((manager) => manager.id)
+      : [];
+
+    setEditingLocation(location);
     setNewLocation({
       name: location.name,
-      address: location.address || '',
-      city: location.city || '',
-      state: location.state || '',
-      postal_code: location.postal_code || '',
-      manager_ids: currentManagerIds
-    })
-    setShowEditLocation(true)
-    setFormErrors({})
-  }
+      address: location.address || "",
+      city: location.city || "",
+      state: location.state || "",
+      postal_code: location.postal_code || "",
+      manager_ids: currentManagerIds,
+    });
+    setShowEditLocation(true);
+    setFormErrors({});
+  };
 
   const handleUpdateLocation = async () => {
-    if (!editingLocation) return
-    
+    if (!editingLocation) return;
+
     // Validate form
-    const errors = validateLocationForm(newLocation)
-    setFormErrors(prev => ({ ...prev, location: errors }))
-    
+    const errors = validateLocationForm(newLocation);
+    setFormErrors((prev) => ({ ...prev, location: errors }));
+
     if (Object.keys(errors).length > 0) {
-      return
+      return;
     }
-    
+
     try {
-      setDetailsLoading(true)
-      const result = await updateLocation(editingLocation.id, newLocation)
-      
+      setDetailsLoading(true);
+      const result = await updateLocation(editingLocation.id, newLocation);
+
       if (result.data && !result.error) {
-        setShowEditLocation(false)
-        setEditingLocation(null)
+        setShowEditLocation(false);
+        setEditingLocation(null);
         setNewLocation({
-          name: '',
-          address: '',
-          city: '',
-          state: '',
-          postal_code: '',
-          manager_ids: []
-        })
-        setFormErrors(prev => ({ ...prev, location: {} }))
+          name: "",
+          address: "",
+          city: "",
+          state: "",
+          postal_code: "",
+          manager_ids: [],
+        });
+        setFormErrors((prev) => ({ ...prev, location: {} }));
         // Refresh company details
-        const companyId = editingCompany?.id || wizardCompanyId
-        await fetchCompanyDetailsData(companyId)
+        const companyId = editingCompany?.id || wizardCompanyId;
+        await fetchCompanyDetailsData(companyId);
       } else {
-        setError(result.error || 'Failed to update location')
+        setError(result.error || "Failed to update location");
       }
     } catch (err) {
-      setError('Failed to update location')
+      setError("Failed to update location");
     } finally {
-      setDetailsLoading(false)
+      setDetailsLoading(false);
     }
-  }
+  };
 
   const handleEditDepartment = async (department) => {
     // Fetch current managers for this department
-    const managersResult = await getManagersForDepartment(department.id)
-    const currentManagerIds = managersResult.data ? managersResult.data.map(manager => manager.id) : []
-    
-    setEditingDepartment(department)
+    const managersResult = await getManagersForDepartment(department.id);
+    const currentManagerIds = managersResult.data
+      ? managersResult.data.map((manager) => manager.id)
+      : [];
+
+    setEditingDepartment(department);
     setNewDepartment({
       name: department.name,
-      description: department.description || '',
-      location_id: department.location_id || '',
-      manager_ids: currentManagerIds
-    })
-    setShowEditDepartment(true)
-    setFormErrors({})
-  }
+      description: department.description || "",
+      location_id: department.location_id || "",
+      manager_ids: currentManagerIds,
+    });
+    setShowEditDepartment(true);
+    setFormErrors({});
+  };
 
   const handleUpdateDepartment = async () => {
-    if (!editingDepartment) return
-    
+    if (!editingDepartment) return;
+
     // Validate form
-    const errors = validateDepartmentForm(newDepartment)
-    setFormErrors(prev => ({ ...prev, department: errors }))
+    const errors = validateDepartmentForm(newDepartment);
+    setFormErrors((prev) => ({ ...prev, department: errors }));
+
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
+    try {
+      setDetailsLoading(true);
+      const result = await updateDepartment(
+        editingDepartment.id,
+        newDepartment
+      );
+
+      if (result.data && !result.error) {
+        setShowEditDepartment(false);
+        setEditingDepartment(null);
+        setNewDepartment({
+          name: "",
+          description: "",
+          location_id: "",
+          manager_ids: [],
+        });
+        setFormErrors((prev) => ({ ...prev, department: {} }));
+        // Refresh company details
+        const companyId = editingCompany?.id || wizardCompanyId;
+        await fetchCompanyDetailsData(companyId);
+      } else {
+        setError(result.error || "Failed to update department");
+      }
+    } catch (err) {
+      setError("Failed to update department");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  // Employee form functions
+  const openAddEmployeeForm = async () => {
+    setEditingEmployee(null);
+    setEmployeeFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+    });
+    setAssignments([{ companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] }]);
+    setAssignmentDropdownData({});
+    setEmployeeFormErrors({});
+    setShowEmployeeForm(true);
+    await loadInitialDropdownData();
+  };
+
+  const openEditEmployeeForm = async (employee) => {
+    try {
+      setEditingEmployee(employee);
+      setShowEmployeeForm(true);
+      setLoadingDropdowns(true);
+      
+      // 1. Call the new function to get all employee data
+      const { data: employeeDetails, error } = await getEmployeeDetailsForEdit(employee.id);
+      
+      if (error) {
+        console.error('Error fetching employee details:', error);
+        setError('Failed to load employee details');
+        setShowEmployeeForm(false);
+        return;
+      }
+      
+      // 2. Use the data to set the state for the form
+      setEmployeeFormData({
+        firstName: employeeDetails.first_name || "",
+        lastName: employeeDetails.last_name || "",
+        email: employeeDetails.email || "",
+        phone: employeeDetails.phone || "",
+      });
+      
+      // 3. Set the state for the structured assignments
+      const assignments = employeeDetails.assignments || [];
+      
+      // If no assignments, provide one empty assignment block
+      if (assignments.length === 0) {
+        setAssignments([{ companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] }]);
+      } else {
+        setAssignments(assignments);
+        
+        // Load dropdown data for each assignment that has a company
+        for (let i = 0; i < assignments.length; i++) {
+          if (assignments[i].companyId) {
+            await loadCompanySpecificData(i, assignments[i].companyId);
+          }
+        }
+      }
+      
+      setEmployeeFormErrors({});
+      
+      // Load initial dropdown data (companies and job roles)
+      await loadInitialDropdownData();
+    } catch (err) {
+      console.error('Error opening edit form:', err);
+      setError('Failed to open employee form');
+      setShowEmployeeForm(false);
+    } finally {
+      setLoadingDropdowns(false);
+    }
+  };
+
+  const loadInitialDropdownData = async () => {
+    try {
+      setLoadingDropdowns(true);
+      
+      const [companiesResult, jobRolesResult] = await Promise.all([
+        getAllCompanies(),
+        getAllJobRoles(),
+      ]);
+      
+      if (companiesResult.data) {
+        setAllCompaniesData(companiesResult.data);
+      }
+      
+      if (jobRolesResult.data) {
+        setAllJobRolesData(jobRolesResult.data);
+      }
+    } catch (err) {
+      console.error("Error loading dropdown data:", err);
+    } finally {
+      setLoadingDropdowns(false);
+    }
+  };
+
+  const loadCompanySpecificData = async (assignmentIndex, companyId) => {
+    if (!companyId) {
+      // Clear data for this assignment
+      setAssignmentDropdownData(prev => ({
+        ...prev,
+        [assignmentIndex]: { departments: [], locations: [] }
+      }));
+      return;
+    }
+
+    try {
+      const [departmentsResult, locationsResult] = await Promise.all([
+        getDepartmentsByCompany(companyId),
+        getLocationsByCompany(companyId),
+      ]);
+      
+      setAssignmentDropdownData(prev => ({
+        ...prev,
+        [assignmentIndex]: {
+          departments: departmentsResult.data || [],
+          locations: locationsResult.data || []
+        }
+      }));
+    } catch (err) {
+      console.error("Error loading company-specific data:", err);
+    }
+  };
+
+  const handleAssignmentCompanyChange = async (assignmentIndex, companyId) => {
+    const newAssignments = [...assignments];
+    newAssignments[assignmentIndex] = {
+      companyId,
+      jobRoleId: "",
+      locationId: "",
+      departmentIds: [""]
+    };
+    setAssignments(newAssignments);
+    
+    await loadCompanySpecificData(assignmentIndex, companyId);
+  };
+
+  const handleAssignmentJobRoleChange = (assignmentIndex, jobRoleId) => {
+    const newAssignments = [...assignments];
+    newAssignments[assignmentIndex].jobRoleId = jobRoleId;
+    setAssignments(newAssignments);
+  };
+
+  const handleAssignmentLocationChange = (assignmentIndex, locationId) => {
+    const newAssignments = [...assignments];
+    newAssignments[assignmentIndex].locationId = locationId;
+    setAssignments(newAssignments);
+  };
+
+  const handleAssignmentDepartmentChange = (assignmentIndex, deptIndex, departmentId) => {
+    const newAssignments = [...assignments];
+    newAssignments[assignmentIndex].departmentIds[deptIndex] = departmentId;
+    setAssignments(newAssignments);
+  };
+
+  const addDepartmentToAssignment = (assignmentIndex) => {
+    const newAssignments = [...assignments];
+    newAssignments[assignmentIndex].departmentIds.push("");
+    setAssignments(newAssignments);
+  };
+
+  const removeDepartmentFromAssignment = (assignmentIndex, deptIndex) => {
+    const newAssignments = [...assignments];
+    newAssignments[assignmentIndex].departmentIds.splice(deptIndex, 1);
+    // Ensure at least one department dropdown exists
+    if (newAssignments[assignmentIndex].departmentIds.length === 0) {
+      newAssignments[assignmentIndex].departmentIds = [""];
+    }
+    setAssignments(newAssignments);
+  };
+
+  const addNewAssignment = () => {
+    if (assignments.length < MAX_ASSIGNMENTS) {
+      setAssignments([...assignments, { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] }]);
+    }
+  };
+
+  const removeAssignment = (assignmentIndex) => {
+    const newAssignments = assignments.filter((_, idx) => idx !== assignmentIndex);
+    // Ensure at least one assignment exists
+    if (newAssignments.length === 0) {
+      newAssignments.push({ companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] });
+    }
+    setAssignments(newAssignments);
+    
+    // Clean up dropdown data
+    const newDropdownData = { ...assignmentDropdownData };
+    delete newDropdownData[assignmentIndex];
+    setAssignmentDropdownData(newDropdownData);
+  };
+
+  const validateEmployeeForm = () => {
+    const errors = {};
+    
+    if (!employeeFormData.firstName?.trim()) {
+      errors.firstName = "First name is required";
+    }
+    
+    if (!employeeFormData.lastName?.trim()) {
+      errors.lastName = "Last name is required";
+    }
+    
+    if (!employeeFormData.email?.trim()) {
+      errors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employeeFormData.email)) {
+      errors.email = "Please enter a valid email address";
+    }
+    
+    // Validate at least one assignment has a company
+    const hasValidAssignment = assignments.some(a => a.companyId);
+    if (!hasValidAssignment) {
+      errors.assignments = "At least one company assignment is required";
+    }
+    
+    return errors;
+  };
+
+  const handleSaveEmployee = async () => {
+    // Validate form
+    const errors = validateEmployeeForm();
+    setEmployeeFormErrors(errors);
     
     if (Object.keys(errors).length > 0) {
-      return
+      return;
     }
     
     try {
-      setDetailsLoading(true)
-      const result = await updateDepartment(editingDepartment.id, newDepartment)
+      setIsSubmitting(true);
       
-      if (result.data && !result.error) {
-        setShowEditDepartment(false)
-        setEditingDepartment(null)
-        setNewDepartment({
-          name: '',
-          description: '',
-          location_id: '',
-          manager_ids: []
-        })
-        setFormErrors(prev => ({ ...prev, department: {} }))
-        // Refresh company details
-        const companyId = editingCompany?.id || wizardCompanyId
-        await fetchCompanyDetailsData(companyId)
+      let result;
+      if (editingEmployee) {
+        result = await updateEmployeeWithStructuredAssignments(
+          editingEmployee.id,
+          employeeFormData,
+          assignments
+        );
       } else {
-        setError(result.error || 'Failed to update department')
+        result = await createEmployeeWithStructuredAssignments(
+          employeeFormData,
+          assignments
+        );
+      }
+      
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setShowEmployeeForm(false);
+        setEditingEmployee(null);
+        setEmployeeFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+        });
+        setAssignments([{ companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] }]);
+        setAssignmentDropdownData({});
+        setEmployeeFormErrors({});
+        await loadData();
       }
     } catch (err) {
-      setError('Failed to update department')
+      setError("Failed to save employee");
     } finally {
-      setDetailsLoading(false)
+      setIsSubmitting(false);
     }
-  }
+  };
+
+  const closeEmployeeForm = () => {
+    setShowEmployeeForm(false);
+    setEditingEmployee(null);
+    setEmployeeFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+    });
+    setAssignments([{ companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] }]);
+    setAssignmentDropdownData({});
+    setEmployeeFormErrors({});
+  };
 
   if (authLoading || loading) {
     return (
@@ -676,7 +1019,7 @@ export default function AdminDashboard() {
           <p className="text-gray-600">Loading administration data...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -694,24 +1037,32 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex justify-center">
           <TabsList className="inline-flex bg-muted/50 p-1 rounded-md max-w-4xl">
-            <TabsTrigger value="companies" className="flex items-center justify-center min-w-0 flex-1 mx-1">
+            <TabsTrigger
+              value="companies"
+              className="flex items-center justify-center min-w-0 flex-1 mx-1"
+            >
               <Building className="w-4 h-4 mr-2" />
               Companies
             </TabsTrigger>
-            <TabsTrigger value="manage" className="flex items-center justify-center min-w-0 flex-1 mx-1">
+            <TabsTrigger
+              value="manage"
+              className="flex items-center justify-center min-w-0 flex-1 mx-1"
+            >
               <Edit className="w-4 h-4 mr-2" />
               Manage
             </TabsTrigger>
-            <TabsTrigger value="employees" className="flex items-center justify-center min-w-0 flex-1 mx-1">
+            <TabsTrigger
+              value="employees"
+              className="flex items-center justify-center min-w-0 flex-1 mx-1"
+            >
               <People className="w-4 h-4 mr-2" />
               Employees
             </TabsTrigger>
@@ -731,7 +1082,8 @@ export default function AdminDashboard() {
                   <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-md">
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     <span className="text-sm text-gray-600">
-                      {searchTerm ? `${filteredCompanies.length}/` : ''}{dashboardCompanies.length} Total
+                      {searchTerm ? `${filteredCompanies.length}/` : ""}
+                      {dashboardCompanies.length} Total
                     </span>
                   </div>
                 </div>
@@ -766,12 +1118,14 @@ export default function AdminDashboard() {
                 <div className="text-center py-8 text-gray-500">
                   <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                   <p className="text-lg font-medium mb-2">
-                    {dashboardCompanies.length === 0 ? 'No Companies Found' : 'No Search Results'}
+                    {dashboardCompanies.length === 0
+                      ? "No Companies Found"
+                      : "No Search Results"}
                   </p>
                   <p className="text-sm">
-                    {dashboardCompanies.length === 0 
-                      ? 'Connect your Supabase database to see companies here.' 
-                      : 'Try adjusting your search terms.'}
+                    {dashboardCompanies.length === 0
+                      ? "Connect your Supabase database to see companies here."
+                      : "Try adjusting your search terms."}
                   </p>
                 </div>
               ) : (
@@ -789,15 +1143,30 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody>
                       {filteredCompanies.map((company) => (
-                        <tr key={company.id} className="border-b hover:bg-gray-50">
+                        <tr
+                          key={company.id}
+                          className="border-b hover:bg-gray-50"
+                        >
                           <td className="p-3">
-                            <div className="font-medium">{company.company_name || company.name}</div>
+                            <div className="font-medium">
+                              {company.company_name || company.name}
+                            </div>
                           </td>
-                          <td className="p-3 text-sm text-gray-600">{company.city || 'N/A'}</td>
-                          <td className="p-3 text-sm text-gray-600">{company.state || 'N/A'}</td>
-                          <td className="p-3 text-sm text-gray-600">{company.postal_code || 'N/A'}</td>
-                          <td className="p-3 text-sm">{company.department_count || 0}</td>
-                          <td className="p-3 text-sm">{company.employee_count || 0}</td>
+                          <td className="p-3 text-sm text-gray-600">
+                            {company.city || "N/A"}
+                          </td>
+                          <td className="p-3 text-sm text-gray-600">
+                            {company.state || "N/A"}
+                          </td>
+                          <td className="p-3 text-sm text-gray-600">
+                            {company.postal_code || "N/A"}
+                          </td>
+                          <td className="p-3 text-sm">
+                            {company.department_count || 0}
+                          </td>
+                          <td className="p-3 text-sm">
+                            {company.employee_count || 0}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -817,15 +1186,16 @@ export default function AdminDashboard() {
                   <Edit className="mr-2" />
                   Manage Companies
                 </CardTitle>
-                <Button onClick={startAddCompanyWizard}>
-                  Add Company
-                </Button>
+                <Button onClick={startAddCompanyWizard}>Add Company</Button>
               </div>
             </CardHeader>
             <CardContent>
               {companies.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <p>No companies to manage. Connect your Supabase database to see companies here.</p>
+                  <p>
+                    No companies to manage. Connect your Supabase database to
+                    see companies here.
+                  </p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -842,19 +1212,34 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody>
                       {companies.map((company) => (
-                        <tr key={company.id} className="border-b hover:bg-gray-50">
+                        <tr
+                          key={company.id}
+                          className="border-b hover:bg-gray-50"
+                        >
                           <td className="p-3">
                             <div className="font-medium">{company.name}</div>
-                            <div className="text-sm text-gray-500">{company.description}</div>
+                            <div className="text-sm text-gray-500">
+                              {company.description}
+                            </div>
                           </td>
                           <td className="p-3">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(company.status)}`}>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                                company.status
+                              )}`}
+                            >
                               {company.status}
                             </span>
                           </td>
-                          <td className="p-3 text-sm">{company.location_count || 0}</td>
-                          <td className="p-3 text-sm">{company.department_count || 0}</td>
-                          <td className="p-3 text-sm">{company.employee_count || 0}</td>
+                          <td className="p-3 text-sm">
+                            {company.location_count || 0}
+                          </td>
+                          <td className="p-3 text-sm">
+                            {company.department_count || 0}
+                          </td>
+                          <td className="p-3 text-sm">
+                            {company.employee_count || 0}
+                          </td>
                           <td className="p-3">
                             <Button
                               variant="outline"
@@ -885,12 +1270,20 @@ export default function AdminDashboard() {
                   All Employees ({getFilteredEmployees().length})
                 </CardTitle>
                 <div className="flex gap-2">
+                  <Button onClick={openAddEmployeeForm}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Employee
+                  </Button>
                   <Button
                     variant="outline"
                     onClick={() => setShowEmployeeFilters(!showEmployeeFilters)}
                   >
-                    {showEmployeeFilters ? <ListX className="w-4 h-4 mr-2" /> : <ListFilter className="w-4 h-4 mr-2" />}
-                    {showEmployeeFilters ? 'Hide Filters' : 'Show Filters'}
+                    {showEmployeeFilters ? (
+                      <ListX className="w-4 h-4 mr-2" />
+                    ) : (
+                      <ListFilter className="w-4 h-4 mr-2" />
+                    )}
+                    {showEmployeeFilters ? "Hide Filters" : "Show Filters"}
                   </Button>
                   {(companyFilter || jobRoleFilter || departmentFilter) && (
                     <Button variant="outline" onClick={clearFilters}>
@@ -900,7 +1293,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </CardHeader>
-            
+
             {showEmployeeFilters && (
               <div className="px-6 pb-4">
                 <div className="grid gap-4 md:grid-cols-3">
@@ -941,9 +1334,9 @@ export default function AdminDashboard() {
                   <People className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                   <p className="text-lg font-medium mb-2">No Employees Found</p>
                   <p className="text-sm">
-                    {allEmployees.length === 0 
-                      ? 'Connect your Supabase database to see employees here.'
-                      : 'No employees match your current filters.'}
+                    {allEmployees.length === 0
+                      ? "Connect your Supabase database to see employees here."
+                      : "No employees match your current filters."}
                   </p>
                 </div>
               ) : (
@@ -958,19 +1351,45 @@ export default function AdminDashboard() {
                           <th className="text-left p-3">Company</th>
                           <th className="text-left p-3">Department</th>
                           <th className="text-left p-3">Location</th>
+                          <th className="text-left p-3">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {getPaginatedEmployees().map((employee) => (
-                          <tr key={employee.id} className="border-b hover:bg-gray-50">
+                          <tr
+                            key={employee.id}
+                            className="border-b hover:bg-gray-50"
+                          >
                             <td className="p-3">
-                              <div className="font-medium">{employee.first_name} {employee.last_name}</div>
+                              <div className="font-medium">
+                                {employee.first_name} {employee.last_name}
+                              </div>
                             </td>
-                            <td className="p-3 text-sm text-gray-600">{employee.email}</td>
-                            <td className="p-3 text-sm">{employee.job_title || 'N/A'}</td>
-                            <td className="p-3 text-sm">{employee.company_name || 'N/A'}</td>
-                            <td className="p-3 text-sm">{employee.department_name || 'N/A'}</td>
-                            <td className="p-3 text-sm">{employee.location_name || 'N/A'}</td>
+                            <td className="p-3 text-sm text-gray-600">
+                              {employee.email}
+                            </td>
+                            <td className="p-3 text-sm">
+                              {employee.job_title || "N/A"}
+                            </td>
+                            <td className="p-3 text-sm">
+                              {employee.company_name || "N/A"}
+                            </td>
+                            <td className="p-3 text-sm">
+                              {employee.department_name || "N/A"}
+                            </td>
+                            <td className="p-3 text-sm">
+                              {employee.location_name || "N/A"}
+                            </td>
+                            <td className="p-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditEmployeeForm(employee)}
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit
+                              </Button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -981,25 +1400,45 @@ export default function AdminDashboard() {
                   {getTotalEmployeePages() > 1 && (
                     <div className="flex items-center justify-between mt-6">
                       <div className="text-sm text-gray-600">
-                        Showing {((currentEmployeePage - 1) * EMPLOYEES_PER_PAGE) + 1} to {Math.min(currentEmployeePage * EMPLOYEES_PER_PAGE, getFilteredEmployees().length)} of {getFilteredEmployees().length} employees
+                        Showing{" "}
+                        {(currentEmployeePage - 1) * EMPLOYEES_PER_PAGE + 1} to{" "}
+                        {Math.min(
+                          currentEmployeePage * EMPLOYEES_PER_PAGE,
+                          getFilteredEmployees().length
+                        )}{" "}
+                        of {getFilteredEmployees().length} employees
                       </div>
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setCurrentEmployeePage(Math.max(1, currentEmployeePage - 1))}
+                          onClick={() =>
+                            setCurrentEmployeePage(
+                              Math.max(1, currentEmployeePage - 1)
+                            )
+                          }
                           disabled={currentEmployeePage === 1}
                         >
                           <ChevronLeft className="w-4 h-4" />
                         </Button>
                         <span className="px-3 py-2 text-sm">
-                          Page {currentEmployeePage} of {getTotalEmployeePages()}
+                          Page {currentEmployeePage} of{" "}
+                          {getTotalEmployeePages()}
                         </span>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setCurrentEmployeePage(Math.min(getTotalEmployeePages(), currentEmployeePage + 1))}
-                          disabled={currentEmployeePage === getTotalEmployeePages()}
+                          onClick={() =>
+                            setCurrentEmployeePage(
+                              Math.min(
+                                getTotalEmployeePages(),
+                                currentEmployeePage + 1
+                              )
+                            )
+                          }
+                          disabled={
+                            currentEmployeePage === getTotalEmployeePages()
+                          }
                         >
                           <ChevronRight className="w-4 h-4" />
                         </Button>
@@ -1021,16 +1460,22 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-xl font-semibold">Add New Company</h3>
-                  <p className="text-sm text-gray-600">Step {wizardStep} of 3</p>
+                  <p className="text-sm text-gray-600">
+                    Step {wizardStep} of 3
+                  </p>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => {
-                    setShowAddCompany(false)
-                    setWizardStep(1)
-                    setWizardCompanyId(null)
-                    setNewCompany({ name: '', description: '', status: 'active' })
-                    setFormErrors({})
+                    setShowAddCompany(false);
+                    setWizardStep(1);
+                    setWizardCompanyId(null);
+                    setNewCompany({
+                      name: "",
+                      description: "",
+                      status: "active",
+                    });
+                    setFormErrors({});
                   }}
                 >
                   Cancel
@@ -1040,15 +1485,41 @@ export default function AdminDashboard() {
               {/* Progress Bar */}
               <div className="mb-6">
                 <div className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${wizardStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      wizardStep >= 1
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-600"
+                    }`}
+                  >
                     1
                   </div>
-                  <div className={`flex-1 h-1 mx-2 ${wizardStep >= 2 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${wizardStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                  <div
+                    className={`flex-1 h-1 mx-2 ${
+                      wizardStep >= 2 ? "bg-blue-600" : "bg-gray-200"
+                    }`}
+                  ></div>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      wizardStep >= 2
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-600"
+                    }`}
+                  >
                     2
                   </div>
-                  <div className={`flex-1 h-1 mx-2 ${wizardStep >= 3 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${wizardStep >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                  <div
+                    className={`flex-1 h-1 mx-2 ${
+                      wizardStep >= 3 ? "bg-blue-600" : "bg-gray-200"
+                    }`}
+                  ></div>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      wizardStep >= 3
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-600"
+                    }`}
+                  >
                     3
                   </div>
                 </div>
@@ -1064,33 +1535,52 @@ export default function AdminDashboard() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Company Information</CardTitle>
-                    <p className="text-sm text-gray-600">Enter the basic details for your new company.</p>
+                    <p className="text-sm text-gray-600">
+                      Enter the basic details for your new company.
+                    </p>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="wizard-company-name">Company Name *</Label>
+                      <Label htmlFor="wizard-company-name">
+                        Company Name *
+                      </Label>
                       <Input
                         id="wizard-company-name"
                         value={newCompany.name}
-                        onChange={(e) => setNewCompany({...newCompany, name: e.target.value})}
+                        onChange={(e) =>
+                          setNewCompany({ ...newCompany, name: e.target.value })
+                        }
                         placeholder="Enter company name"
-                        className={formErrors.name ? 'border-red-500' : ''}
+                        className={formErrors.name ? "border-red-500" : ""}
                       />
                       {formErrors.name && (
-                        <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>
+                        <p className="text-red-500 text-sm mt-1">
+                          {formErrors.name}
+                        </p>
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="wizard-company-description">Description</Label>
+                      <Label htmlFor="wizard-company-description">
+                        Description
+                      </Label>
                       <textarea
                         id="wizard-company-description"
                         value={newCompany.description}
-                        onChange={(e) => setNewCompany({...newCompany, description: e.target.value})}
+                        onChange={(e) =>
+                          setNewCompany({
+                            ...newCompany,
+                            description: e.target.value,
+                          })
+                        }
                         placeholder="Enter company description"
-                        className={`w-full border rounded px-3 py-2 min-h-[100px] ${formErrors.description ? 'border-red-500' : ''}`}
+                        className={`w-full border rounded px-3 py-2 min-h-[100px] ${
+                          formErrors.description ? "border-red-500" : ""
+                        }`}
                       />
                       {formErrors.description && (
-                        <p className="text-red-500 text-sm mt-1">{formErrors.description}</p>
+                        <p className="text-red-500 text-sm mt-1">
+                          {formErrors.description}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -1098,7 +1588,12 @@ export default function AdminDashboard() {
                       <select
                         id="wizard-company-status"
                         value={newCompany.status}
-                        onChange={(e) => setNewCompany({...newCompany, status: e.target.value})}
+                        onChange={(e) =>
+                          setNewCompany({
+                            ...newCompany,
+                            status: e.target.value,
+                          })
+                        }
                         className="w-full border rounded px-3 py-2"
                       >
                         <option value="active">Active</option>
@@ -1117,9 +1612,14 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle>Locations</CardTitle>
-                        <p className="text-sm text-gray-600">Add locations for your company (optional).</p>
+                        <p className="text-sm text-gray-600">
+                          Add locations for your company (optional).
+                        </p>
                       </div>
-                      <Button size="sm" onClick={() => setShowAddLocation(true)}>
+                      <Button
+                        size="sm"
+                        onClick={() => setShowAddLocation(true)}
+                      >
                         Add Location
                       </Button>
                     </div>
@@ -1127,7 +1627,10 @@ export default function AdminDashboard() {
                   <CardContent>
                     {companyDetails.locations.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
-                        <p>No locations added yet. You can add locations now or skip this step.</p>
+                        <p>
+                          No locations added yet. You can add locations now or
+                          skip this step.
+                        </p>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -1135,9 +1638,12 @@ export default function AdminDashboard() {
                           <div key={location.id} className="border rounded p-3">
                             <div className="font-medium">{location.name}</div>
                             <div className="text-sm text-gray-600">
-                              {location.city}, {location.state} {location.postal_code}
+                              {location.city}, {location.state}{" "}
+                              {location.postal_code}
                             </div>
-                            <div className="text-xs text-gray-500">{location.address}</div>
+                            <div className="text-xs text-gray-500">
+                              {location.address}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1153,10 +1659,12 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle>Departments</CardTitle>
-                        <p className="text-sm text-gray-600">Add departments for your company (optional).</p>
+                        <p className="text-sm text-gray-600">
+                          Add departments for your company (optional).
+                        </p>
                       </div>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         onClick={() => setShowAddDepartment(true)}
                         disabled={companyDetails.locations.length === 0}
                       >
@@ -1171,16 +1679,27 @@ export default function AdminDashboard() {
                       </div>
                     ) : companyDetails.departments.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
-                        <p>No departments added yet. You can add departments now or finish setup.</p>
+                        <p>
+                          No departments added yet. You can add departments now
+                          or finish setup.
+                        </p>
                       </div>
                     ) : (
                       <div className="space-y-3">
                         {companyDetails.departments.map((department) => (
-                          <div key={department.id} className="border rounded p-3">
+                          <div
+                            key={department.id}
+                            className="border rounded p-3"
+                          >
                             <div className="font-medium">{department.name}</div>
-                            <div className="text-sm text-gray-600">{department.description}</div>
+                            <div className="text-sm text-gray-600">
+                              {department.description}
+                            </div>
                             <div className="text-xs text-gray-500">
-                              Location: {companyDetails.locations.find(l => l.id === department.location_id)?.name || 'Not assigned'}
+                              Location:{" "}
+                              {companyDetails.locations.find(
+                                (l) => l.id === department.location_id
+                              )?.name || "Not assigned"}
                             </div>
                           </div>
                         ))}
@@ -1192,8 +1711,8 @@ export default function AdminDashboard() {
 
               {/* Navigation Buttons */}
               <div className="flex justify-between mt-6">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={handleWizardBack}
                   disabled={wizardStep === 1}
                 >
@@ -1201,16 +1720,15 @@ export default function AdminDashboard() {
                 </Button>
                 <div className="flex gap-2">
                   {wizardStep < 3 ? (
-                    <Button 
-                      onClick={handleWizardNext}
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? 'Creating...' : wizardStep === 1 ? 'Create & Continue' : 'Next'}
+                    <Button onClick={handleWizardNext} disabled={isSubmitting}>
+                      {isSubmitting
+                        ? "Creating..."
+                        : wizardStep === 1
+                        ? "Create & Continue"
+                        : "Next"}
                     </Button>
                   ) : (
-                    <Button onClick={handleWizardFinish}>
-                      Finish Setup
-                    </Button>
+                    <Button onClick={handleWizardFinish}>Finish Setup</Button>
                   )}
                 </div>
               </div>
@@ -1225,217 +1743,298 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold">Edit Company: {editingCompany?.name}</h3>
-                <Button 
-                  variant="outline" 
+                <h3 className="text-xl font-semibold">
+                  Edit Company: {editingCompany?.name}
+                </h3>
+                <Button
+                  variant="outline"
                   onClick={() => {
-                    setShowEditCompany(false)
-                    setEditingCompany(null)
-                    setNewCompany({ name: '', description: '', status: 'active' })
-                    setCompanyDetails({ company: null, locations: [], departments: [], employees: [] })
-                    setFormErrors({})
-                    setEditCompanyActiveTab('info')
+                    setShowEditCompany(false);
+                    setEditingCompany(null);
+                    setNewCompany({
+                      name: "",
+                      description: "",
+                      status: "active",
+                    });
+                    setCompanyDetails({
+                      company: null,
+                      locations: [],
+                      departments: [],
+                      employees: [],
+                    });
+                    setFormErrors({});
+                    setEditCompanyActiveTab("info");
                   }}
                 >
                   Close
                 </Button>
               </div>
 
-              <Tabs value={editCompanyActiveTab} onValueChange={setEditCompanyActiveTab}>
+              <Tabs
+                value={editCompanyActiveTab}
+                onValueChange={setEditCompanyActiveTab}
+              >
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="info">Company Info</TabsTrigger>
                   <TabsTrigger value="locations">Locations</TabsTrigger>
                   <TabsTrigger value="departments">Departments</TabsTrigger>
-                  <TabsTrigger value="danger" className="text-red-600 data-[state=active]:text-red-700">⚠️ Danger Zone</TabsTrigger>
+                  <TabsTrigger
+                    value="danger"
+                    className="text-red-600 data-[state=active]:text-red-700"
+                  >
+                    ⚠️ Danger Zone
+                  </TabsTrigger>
                 </TabsList>
 
                 <div className="min-h-[600px]">
-
-                {/* Company Info Tab */}
-                <TabsContent value="info" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Company Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label htmlFor="edit-company-name">Company Name *</Label>
-                        <Input
-                          id="edit-company-name"
-                          value={newCompany.name}
-                          onChange={(e) => setNewCompany({...newCompany, name: e.target.value})}
-                          placeholder="Enter company name"
-                          className={formErrors.name ? 'border-red-500' : ''}
-                        />
-                        {formErrors.name && (
-                          <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>
-                        )}
-                      </div>
-                      <div>
-                        <Label htmlFor="edit-company-description">Description</Label>
-                        <textarea
-                          id="edit-company-description"
-                          value={newCompany.description}
-                          onChange={(e) => setNewCompany({...newCompany, description: e.target.value})}
-                          placeholder="Enter company description"
-                          className={`w-full border rounded px-3 py-2 min-h-[100px] ${formErrors.description ? 'border-red-500' : ''}`}
-                        />
-                        {formErrors.description && (
-                          <p className="text-red-500 text-sm mt-1">{formErrors.description}</p>
-                        )}
-                      </div>
-                      <div>
-                        <Label htmlFor="edit-company-status">Status</Label>
-                        <select
-                          id="edit-company-status"
-                          value={newCompany.status}
-                          onChange={(e) => setNewCompany({...newCompany, status: e.target.value})}
-                          className="w-full border rounded px-3 py-2"
-                        >
-                          <option value="active">Active</option>
-                          <option value="inactive">Inactive</option>
-                          <option value="on-hold">On Hold</option>
-                        </select>
-                      </div>
-                      <Button 
-                        onClick={handleEditCompany} 
-                        disabled={isSubmitting || !newCompany.name.trim()} 
-                        className="w-full"
-                      >
-                        {isSubmitting ? 'Updating...' : 'Update Company'}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                {/* Locations Tab */}
-                <TabsContent value="locations" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle>Locations ({companyDetails.locations.length})</CardTitle>
-                        <Button size="sm" onClick={() => setShowAddLocation(true)}>
-                          Add Location
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {detailsLoading ? (
-                        <div className="flex items-center justify-center py-4">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
-                          <p>Loading locations...</p>
+                  {/* Company Info Tab */}
+                  <TabsContent value="info" className="space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Company Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label htmlFor="edit-company-name">
+                            Company Name *
+                          </Label>
+                          <Input
+                            id="edit-company-name"
+                            value={newCompany.name}
+                            onChange={(e) =>
+                              setNewCompany({
+                                ...newCompany,
+                                name: e.target.value,
+                              })
+                            }
+                            placeholder="Enter company name"
+                            className={formErrors.name ? "border-red-500" : ""}
+                          />
+                          {formErrors.name && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {formErrors.name}
+                            </p>
+                          )}
                         </div>
-                      ) : companyDetails.locations.length === 0 ? (
-                        <p className="text-gray-500 text-sm">No locations added yet.</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {companyDetails.locations.map((location) => (
-                            <div key={location.id} className="border rounded p-3">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="font-medium">{location.name}</div>
-                                  <div className="text-sm text-gray-600">
-                                    {location.city}, {location.state} {location.postal_code}
-                                  </div>
-                                  <div className="text-xs text-gray-500">{location.address}</div>
-                                  <div className="text-xs text-blue-600 mt-1">
-                                    Managers: Loading...
-                                  </div>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleEditLocation(location)}
-                                  className="ml-2"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
+                        <div>
+                          <Label htmlFor="edit-company-description">
+                            Description
+                          </Label>
+                          <textarea
+                            id="edit-company-description"
+                            value={newCompany.description}
+                            onChange={(e) =>
+                              setNewCompany({
+                                ...newCompany,
+                                description: e.target.value,
+                              })
+                            }
+                            placeholder="Enter company description"
+                            className={`w-full border rounded px-3 py-2 min-h-[100px] ${
+                              formErrors.description ? "border-red-500" : ""
+                            }`}
+                          />
+                          {formErrors.description && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {formErrors.description}
+                            </p>
+                          )}
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                {/* Departments Tab */}
-                <TabsContent value="departments" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle>Departments ({companyDetails.departments.length})</CardTitle>
-                        <Button size="sm" onClick={() => setShowAddDepartment(true)}>
-                          Add Department
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {detailsLoading ? (
-                        <div className="flex items-center justify-center py-4">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
-                          <p>Loading departments...</p>
+                        <div>
+                          <Label htmlFor="edit-company-status">Status</Label>
+                          <select
+                            id="edit-company-status"
+                            value={newCompany.status}
+                            onChange={(e) =>
+                              setNewCompany({
+                                ...newCompany,
+                                status: e.target.value,
+                              })
+                            }
+                            className="w-full border rounded px-3 py-2"
+                          >
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="on-hold">On Hold</option>
+                          </select>
                         </div>
-                      ) : companyDetails.departments.length === 0 ? (
-                        <p className="text-gray-500 text-sm">No departments added yet.</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {companyDetails.departments.map((department) => (
-                            <div key={department.id} className="border rounded p-3">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="font-medium">{department.name}</div>
-                                  <div className="text-sm text-gray-600">{department.description}</div>
-                                  <div className="text-xs text-gray-500">
-                                    Location: {companyDetails.locations.find(l => l.id === department.location_id)?.name || 'Not assigned'}
-                                  </div>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleEditDepartment(department)}
-                                  className="ml-2"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                {/* Danger Zone Tab */}
-                <TabsContent value="danger" className="space-y-4">
-                  <Card className="border-red-200">
-                    <CardHeader className="bg-red-50">
-                      <CardTitle className="text-red-800 flex items-center">
-                        ⚠️ Danger Zone
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6 pt-6">
-                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <h4 className="text-lg font-semibold text-red-800 mb-2">Delete this Company</h4>
-                        <p className="text-red-700 mb-4">
-                          Once you delete a company, there is no going back. This will permanently delete the company 
-                          and all associated data including locations, departments, and employee assignments.
-                        </p>
-                        <p className="text-sm text-red-600 mb-4">
-                          <strong>This action cannot be undone.</strong>
-                        </p>
                         <Button
-                          variant="destructive"
-                          onClick={() => openDeleteModal(editingCompany)}
-                          className="bg-red-600 hover:bg-red-700"
+                          onClick={handleEditCompany}
+                          disabled={isSubmitting || !newCompany.name.trim()}
+                          className="w-full"
                         >
-                          Delete Company
+                          {isSubmitting ? "Updating..." : "Update Company"}
                         </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  {/* Locations Tab */}
+                  <TabsContent value="locations" className="space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle>
+                            Locations ({companyDetails.locations.length})
+                          </CardTitle>
+                          <Button
+                            size="sm"
+                            onClick={() => setShowAddLocation(true)}
+                          >
+                            Add Location
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {detailsLoading ? (
+                          <div className="flex items-center justify-center py-4">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
+                            <p>Loading locations...</p>
+                          </div>
+                        ) : companyDetails.locations.length === 0 ? (
+                          <p className="text-gray-500 text-sm">
+                            No locations added yet.
+                          </p>
+                        ) : (
+                          <div className="space-y-3">
+                            {companyDetails.locations.map((location) => (
+                              <div
+                                key={location.id}
+                                className="border rounded p-3"
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="font-medium">
+                                      {location.name}
+                                    </div>
+                                    <div className="text-sm text-gray-600">
+                                      {location.city}, {location.state}{" "}
+                                      {location.postal_code}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {location.address}
+                                    </div>
+                                    <div className="text-xs text-blue-600 mt-1">
+                                      Managers: Loading...
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleEditLocation(location)}
+                                    className="ml-2"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  {/* Departments Tab */}
+                  <TabsContent value="departments" className="space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle>
+                            Departments ({companyDetails.departments.length})
+                          </CardTitle>
+                          <Button
+                            size="sm"
+                            onClick={() => setShowAddDepartment(true)}
+                          >
+                            Add Department
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {detailsLoading ? (
+                          <div className="flex items-center justify-center py-4">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
+                            <p>Loading departments...</p>
+                          </div>
+                        ) : companyDetails.departments.length === 0 ? (
+                          <p className="text-gray-500 text-sm">
+                            No departments added yet.
+                          </p>
+                        ) : (
+                          <div className="space-y-3">
+                            {companyDetails.departments.map((department) => (
+                              <div
+                                key={department.id}
+                                className="border rounded p-3"
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="font-medium">
+                                      {department.name}
+                                    </div>
+                                    <div className="text-sm text-gray-600">
+                                      {department.description}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      Location:{" "}
+                                      {companyDetails.locations.find(
+                                        (l) => l.id === department.location_id
+                                      )?.name || "Not assigned"}
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      handleEditDepartment(department)
+                                    }
+                                    className="ml-2"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  {/* Danger Zone Tab */}
+                  <TabsContent value="danger" className="space-y-4">
+                    <Card className="border-red-200">
+                      <CardHeader className="bg-red-50">
+                        <CardTitle className="text-red-800 flex items-center">
+                          ⚠️ Danger Zone
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6 pt-6">
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                          <h4 className="text-lg font-semibold text-red-800 mb-2">
+                            Delete this Company
+                          </h4>
+                          <p className="text-red-700 mb-4">
+                            Once you delete a company, there is no going back.
+                            This will permanently delete the company and all
+                            associated data including locations, departments,
+                            and employee assignments.
+                          </p>
+                          <p className="text-sm text-red-600 mb-4">
+                            <strong>This action cannot be undone.</strong>
+                          </p>
+                          <Button
+                            variant="destructive"
+                            onClick={() => openDeleteModal(editingCompany)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete Company
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
                 </div>
               </Tabs>
             </div>
@@ -1447,13 +2046,18 @@ export default function AdminDashboard() {
       {showDeleteConfirm && deletingCompany && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4 text-red-600">Delete Company</h3>
+            <h3 className="text-lg font-semibold mb-4 text-red-600">
+              Delete Company
+            </h3>
             <p className="mb-4">
-              Are you sure you want to delete <strong>{deletingCompany.name}</strong>? 
-              This action cannot be undone and will also delete all associated locations, departments, and employees.
+              Are you sure you want to delete{" "}
+              <strong>{deletingCompany.name}</strong>? This action cannot be
+              undone and will also delete all associated locations, departments,
+              and employees.
             </p>
             <p className="mb-4 text-sm text-gray-600">
-              To confirm, please type the company name: <strong>{deletingCompany.name}</strong>
+              To confirm, please type the company name:{" "}
+              <strong>{deletingCompany.name}</strong>
             </p>
             <Input
               value={companyNameConfirmation}
@@ -1462,19 +2066,19 @@ export default function AdminDashboard() {
               className="mb-4"
             />
             <div className="flex gap-2">
-              <Button 
+              <Button
                 onClick={handleDeleteCompany}
                 disabled={companyNameConfirmation !== deletingCompany.name}
                 className="bg-red-600 hover:bg-red-700"
               >
                 Delete Company
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
-                  setShowDeleteConfirm(false)
-                  setDeletingCompany(null)
-                  setCompanyNameConfirmation('')
+                  setShowDeleteConfirm(false);
+                  setDeletingCompany(null);
+                  setCompanyNameConfirmation("");
                 }}
               >
                 Cancel
@@ -1495,12 +2099,16 @@ export default function AdminDashboard() {
                 <Input
                   id="location-name"
                   value={newLocation.name}
-                  onChange={(e) => setNewLocation({...newLocation, name: e.target.value})}
+                  onChange={(e) =>
+                    setNewLocation({ ...newLocation, name: e.target.value })
+                  }
                   placeholder="Enter location name"
-                  className={formErrors.location?.name ? 'border-red-500' : ''}
+                  className={formErrors.location?.name ? "border-red-500" : ""}
                 />
                 {formErrors.location?.name && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.location.name}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {formErrors.location.name}
+                  </p>
                 )}
               </div>
               <div>
@@ -1508,7 +2116,9 @@ export default function AdminDashboard() {
                 <Input
                   id="location-address"
                   value={newLocation.address}
-                  onChange={(e) => setNewLocation({...newLocation, address: e.target.value})}
+                  onChange={(e) =>
+                    setNewLocation({ ...newLocation, address: e.target.value })
+                  }
                   placeholder="Enter address"
                 />
               </div>
@@ -1518,7 +2128,9 @@ export default function AdminDashboard() {
                   <Input
                     id="location-city"
                     value={newLocation.city}
-                    onChange={(e) => setNewLocation({...newLocation, city: e.target.value})}
+                    onChange={(e) =>
+                      setNewLocation({ ...newLocation, city: e.target.value })
+                    }
                     placeholder="City"
                   />
                 </div>
@@ -1527,7 +2139,9 @@ export default function AdminDashboard() {
                   <Input
                     id="location-state"
                     value={newLocation.state}
-                    onChange={(e) => setNewLocation({...newLocation, state: e.target.value})}
+                    onChange={(e) =>
+                      setNewLocation({ ...newLocation, state: e.target.value })
+                    }
                     placeholder="State"
                   />
                 </div>
@@ -1537,36 +2151,57 @@ export default function AdminDashboard() {
                 <Input
                   id="location-postal"
                   value={newLocation.postal_code}
-                  onChange={(e) => setNewLocation({...newLocation, postal_code: e.target.value})}
+                  onChange={(e) =>
+                    setNewLocation({
+                      ...newLocation,
+                      postal_code: e.target.value,
+                    })
+                  }
                   placeholder="Postal code (e.g., 12345 or 12345-6789)"
-                  className={formErrors.location?.postal_code ? 'border-red-500' : ''}
+                  className={
+                    formErrors.location?.postal_code ? "border-red-500" : ""
+                  }
                 />
                 {formErrors.location?.postal_code && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.location.postal_code}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {formErrors.location.postal_code}
+                  </p>
                 )}
               </div>
               <div>
                 <Label htmlFor="location-managers">Managers</Label>
                 <div className="border rounded p-3 max-h-40 overflow-y-auto">
                   {companyDetails.employees.length === 0 ? (
-                    <p className="text-gray-500 text-sm">No employees available</p>
+                    <p className="text-gray-500 text-sm">
+                      No employees available
+                    </p>
                   ) : (
                     companyDetails.employees.map((employee) => (
-                      <label key={employee.id} className="flex items-center space-x-2 mb-2">
+                      <label
+                        key={employee.id}
+                        className="flex items-center space-x-2 mb-2"
+                      >
                         <input
                           type="checkbox"
-                          checked={newLocation.manager_ids.includes(employee.id)}
+                          checked={newLocation.manager_ids.includes(
+                            employee.id
+                          )}
                           onChange={(e) => {
                             if (e.target.checked) {
                               setNewLocation({
                                 ...newLocation,
-                                manager_ids: [...newLocation.manager_ids, employee.id]
-                              })
+                                manager_ids: [
+                                  ...newLocation.manager_ids,
+                                  employee.id,
+                                ],
+                              });
                             } else {
                               setNewLocation({
                                 ...newLocation,
-                                manager_ids: newLocation.manager_ids.filter(id => id !== employee.id)
-                              })
+                                manager_ids: newLocation.manager_ids.filter(
+                                  (id) => id !== employee.id
+                                ),
+                              });
                             }
                           }}
                           className="rounded"
@@ -1584,24 +2219,24 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex gap-2 mt-6">
-              <Button 
-                onClick={handleAddLocation} 
+              <Button
+                onClick={handleAddLocation}
                 disabled={!newLocation.name.trim() || detailsLoading}
               >
-                {detailsLoading ? 'Adding...' : 'Add Location'}
+                {detailsLoading ? "Adding..." : "Add Location"}
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
-                  setShowAddLocation(false)
+                  setShowAddLocation(false);
                   setNewLocation({
-                    name: '',
-                    address: '',
-                    city: '',
-                    state: '',
-                    postal_code: '',
-                    manager_ids: []
-                  })
+                    name: "",
+                    address: "",
+                    city: "",
+                    state: "",
+                    postal_code: "",
+                    manager_ids: [],
+                  });
                 }}
               >
                 Cancel
@@ -1622,12 +2257,18 @@ export default function AdminDashboard() {
                 <Input
                   id="department-name"
                   value={newDepartment.name}
-                  onChange={(e) => setNewDepartment({...newDepartment, name: e.target.value})}
+                  onChange={(e) =>
+                    setNewDepartment({ ...newDepartment, name: e.target.value })
+                  }
                   placeholder="Enter department name"
-                  className={formErrors.department?.name ? 'border-red-500' : ''}
+                  className={
+                    formErrors.department?.name ? "border-red-500" : ""
+                  }
                 />
                 {formErrors.department?.name && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.department.name}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {formErrors.department.name}
+                  </p>
                 )}
               </div>
               <div>
@@ -1635,21 +2276,37 @@ export default function AdminDashboard() {
                 <textarea
                   id="department-description"
                   value={newDepartment.description}
-                  onChange={(e) => setNewDepartment({...newDepartment, description: e.target.value})}
+                  onChange={(e) =>
+                    setNewDepartment({
+                      ...newDepartment,
+                      description: e.target.value,
+                    })
+                  }
                   placeholder="Enter department description"
-                  className={`w-full border rounded px-3 py-2 min-h-[80px] ${formErrors.department?.description ? 'border-red-500' : ''}`}
+                  className={`w-full border rounded px-3 py-2 min-h-[80px] ${
+                    formErrors.department?.description ? "border-red-500" : ""
+                  }`}
                 />
                 {formErrors.department?.description && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.department.description}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {formErrors.department.description}
+                  </p>
                 )}
               </div>
               <div>
                 <Label htmlFor="department-location">Location *</Label>
                 <select
                   id="department-location"
-                  value={newDepartment.location_id || ''}
-                  onChange={(e) => setNewDepartment({...newDepartment, location_id: e.target.value})}
-                  className={`w-full border rounded px-3 py-2 ${formErrors.department?.location_id ? 'border-red-500' : ''}`}
+                  value={newDepartment.location_id || ""}
+                  onChange={(e) =>
+                    setNewDepartment({
+                      ...newDepartment,
+                      location_id: e.target.value,
+                    })
+                  }
+                  className={`w-full border rounded px-3 py-2 ${
+                    formErrors.department?.location_id ? "border-red-500" : ""
+                  }`}
                 >
                   <option value="">Select a location</option>
                   {companyDetails.locations.length === 0 ? (
@@ -1663,31 +2320,45 @@ export default function AdminDashboard() {
                   )}
                 </select>
                 {formErrors.department?.location_id && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.department.location_id}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {formErrors.department.location_id}
+                  </p>
                 )}
               </div>
               <div>
                 <Label htmlFor="department-managers">Managers</Label>
                 <div className="border rounded p-3 max-h-40 overflow-y-auto">
                   {companyDetails.employees.length === 0 ? (
-                    <p className="text-gray-500 text-sm">No employees available</p>
+                    <p className="text-gray-500 text-sm">
+                      No employees available
+                    </p>
                   ) : (
                     companyDetails.employees.map((employee) => (
-                      <label key={employee.id} className="flex items-center space-x-2 mb-2">
+                      <label
+                        key={employee.id}
+                        className="flex items-center space-x-2 mb-2"
+                      >
                         <input
                           type="checkbox"
-                          checked={newDepartment.manager_ids.includes(employee.id)}
+                          checked={newDepartment.manager_ids.includes(
+                            employee.id
+                          )}
                           onChange={(e) => {
                             if (e.target.checked) {
                               setNewDepartment({
                                 ...newDepartment,
-                                manager_ids: [...newDepartment.manager_ids, employee.id]
-                              })
+                                manager_ids: [
+                                  ...newDepartment.manager_ids,
+                                  employee.id,
+                                ],
+                              });
                             } else {
                               setNewDepartment({
                                 ...newDepartment,
-                                manager_ids: newDepartment.manager_ids.filter(id => id !== employee.id)
-                              })
+                                manager_ids: newDepartment.manager_ids.filter(
+                                  (id) => id !== employee.id
+                                ),
+                              });
                             }
                           }}
                           className="rounded"
@@ -1705,22 +2376,26 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex gap-2 mt-6">
-              <Button 
-                onClick={handleAddDepartment} 
-                disabled={!newDepartment.name.trim() || !newDepartment.location_id || detailsLoading}
+              <Button
+                onClick={handleAddDepartment}
+                disabled={
+                  !newDepartment.name.trim() ||
+                  !newDepartment.location_id ||
+                  detailsLoading
+                }
               >
-                {detailsLoading ? 'Adding...' : 'Add Department'}
+                {detailsLoading ? "Adding..." : "Add Department"}
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
-                  setShowAddDepartment(false)
+                  setShowAddDepartment(false);
                   setNewDepartment({
-                    name: '',
-                    description: '',
-                    location_id: '',
-                    manager_ids: []
-                  })
+                    name: "",
+                    description: "",
+                    location_id: "",
+                    manager_ids: [],
+                  });
                 }}
               >
                 Cancel
@@ -1734,19 +2409,25 @@ export default function AdminDashboard() {
       {showEditLocation && editingLocation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Edit Location: {editingLocation.name}</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              Edit Location: {editingLocation.name}
+            </h3>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="edit-location-name">Location Name *</Label>
                 <Input
                   id="edit-location-name"
                   value={newLocation.name}
-                  onChange={(e) => setNewLocation({...newLocation, name: e.target.value})}
+                  onChange={(e) =>
+                    setNewLocation({ ...newLocation, name: e.target.value })
+                  }
                   placeholder="Enter location name"
-                  className={formErrors.location?.name ? 'border-red-500' : ''}
+                  className={formErrors.location?.name ? "border-red-500" : ""}
                 />
                 {formErrors.location?.name && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.location.name}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {formErrors.location.name}
+                  </p>
                 )}
               </div>
               <div>
@@ -1754,7 +2435,9 @@ export default function AdminDashboard() {
                 <Input
                   id="edit-location-address"
                   value={newLocation.address}
-                  onChange={(e) => setNewLocation({...newLocation, address: e.target.value})}
+                  onChange={(e) =>
+                    setNewLocation({ ...newLocation, address: e.target.value })
+                  }
                   placeholder="Enter address"
                 />
               </div>
@@ -1764,7 +2447,9 @@ export default function AdminDashboard() {
                   <Input
                     id="edit-location-city"
                     value={newLocation.city}
-                    onChange={(e) => setNewLocation({...newLocation, city: e.target.value})}
+                    onChange={(e) =>
+                      setNewLocation({ ...newLocation, city: e.target.value })
+                    }
                     placeholder="City"
                   />
                 </div>
@@ -1773,7 +2458,9 @@ export default function AdminDashboard() {
                   <Input
                     id="edit-location-state"
                     value={newLocation.state}
-                    onChange={(e) => setNewLocation({...newLocation, state: e.target.value})}
+                    onChange={(e) =>
+                      setNewLocation({ ...newLocation, state: e.target.value })
+                    }
                     placeholder="State"
                   />
                 </div>
@@ -1783,36 +2470,57 @@ export default function AdminDashboard() {
                 <Input
                   id="edit-location-postal"
                   value={newLocation.postal_code}
-                  onChange={(e) => setNewLocation({...newLocation, postal_code: e.target.value})}
+                  onChange={(e) =>
+                    setNewLocation({
+                      ...newLocation,
+                      postal_code: e.target.value,
+                    })
+                  }
                   placeholder="Postal code (e.g., 12345 or 12345-6789)"
-                  className={formErrors.location?.postal_code ? 'border-red-500' : ''}
+                  className={
+                    formErrors.location?.postal_code ? "border-red-500" : ""
+                  }
                 />
                 {formErrors.location?.postal_code && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.location.postal_code}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {formErrors.location.postal_code}
+                  </p>
                 )}
               </div>
               <div>
                 <Label htmlFor="edit-location-managers">Managers</Label>
                 <div className="border rounded p-3 max-h-40 overflow-y-auto">
                   {companyDetails.employees.length === 0 ? (
-                    <p className="text-gray-500 text-sm">No employees available</p>
+                    <p className="text-gray-500 text-sm">
+                      No employees available
+                    </p>
                   ) : (
                     companyDetails.employees.map((employee) => (
-                      <label key={employee.id} className="flex items-center space-x-2 mb-2">
+                      <label
+                        key={employee.id}
+                        className="flex items-center space-x-2 mb-2"
+                      >
                         <input
                           type="checkbox"
-                          checked={newLocation.manager_ids.includes(employee.id)}
+                          checked={newLocation.manager_ids.includes(
+                            employee.id
+                          )}
                           onChange={(e) => {
                             if (e.target.checked) {
                               setNewLocation({
                                 ...newLocation,
-                                manager_ids: [...newLocation.manager_ids, employee.id]
-                              })
+                                manager_ids: [
+                                  ...newLocation.manager_ids,
+                                  employee.id,
+                                ],
+                              });
                             } else {
                               setNewLocation({
                                 ...newLocation,
-                                manager_ids: newLocation.manager_ids.filter(id => id !== employee.id)
-                              })
+                                manager_ids: newLocation.manager_ids.filter(
+                                  (id) => id !== employee.id
+                                ),
+                              });
                             }
                           }}
                           className="rounded"
@@ -1830,26 +2538,26 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex gap-2 mt-6">
-              <Button 
-                onClick={handleUpdateLocation} 
+              <Button
+                onClick={handleUpdateLocation}
                 disabled={!newLocation.name.trim() || detailsLoading}
               >
-                {detailsLoading ? 'Updating...' : 'Update Location'}
+                {detailsLoading ? "Updating..." : "Update Location"}
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
-                  setShowEditLocation(false)
-                  setEditingLocation(null)
+                  setShowEditLocation(false);
+                  setEditingLocation(null);
                   setNewLocation({
-                    name: '',
-                    address: '',
-                    city: '',
-                    state: '',
-                    postal_code: '',
-                    manager_ids: []
-                  })
-                  setFormErrors(prev => ({ ...prev, location: {} }))
+                    name: "",
+                    address: "",
+                    city: "",
+                    state: "",
+                    postal_code: "",
+                    manager_ids: [],
+                  });
+                  setFormErrors((prev) => ({ ...prev, location: {} }));
                 }}
               >
                 Cancel
@@ -1863,19 +2571,27 @@ export default function AdminDashboard() {
       {showEditDepartment && editingDepartment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Edit Department: {editingDepartment.name}</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              Edit Department: {editingDepartment.name}
+            </h3>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="edit-department-name">Department Name *</Label>
                 <Input
                   id="edit-department-name"
                   value={newDepartment.name}
-                  onChange={(e) => setNewDepartment({...newDepartment, name: e.target.value})}
+                  onChange={(e) =>
+                    setNewDepartment({ ...newDepartment, name: e.target.value })
+                  }
                   placeholder="Enter department name"
-                  className={formErrors.department?.name ? 'border-red-500' : ''}
+                  className={
+                    formErrors.department?.name ? "border-red-500" : ""
+                  }
                 />
                 {formErrors.department?.name && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.department.name}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {formErrors.department.name}
+                  </p>
                 )}
               </div>
               <div>
@@ -1883,21 +2599,37 @@ export default function AdminDashboard() {
                 <textarea
                   id="edit-department-description"
                   value={newDepartment.description}
-                  onChange={(e) => setNewDepartment({...newDepartment, description: e.target.value})}
+                  onChange={(e) =>
+                    setNewDepartment({
+                      ...newDepartment,
+                      description: e.target.value,
+                    })
+                  }
                   placeholder="Enter department description"
-                  className={`w-full border rounded px-3 py-2 min-h-[80px] ${formErrors.department?.description ? 'border-red-500' : ''}`}
+                  className={`w-full border rounded px-3 py-2 min-h-[80px] ${
+                    formErrors.department?.description ? "border-red-500" : ""
+                  }`}
                 />
                 {formErrors.department?.description && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.department.description}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {formErrors.department.description}
+                  </p>
                 )}
               </div>
               <div>
                 <Label htmlFor="edit-department-location">Location *</Label>
                 <select
                   id="edit-department-location"
-                  value={newDepartment.location_id || ''}
-                  onChange={(e) => setNewDepartment({...newDepartment, location_id: e.target.value})}
-                  className={`w-full border rounded px-3 py-2 ${formErrors.department?.location_id ? 'border-red-500' : ''}`}
+                  value={newDepartment.location_id || ""}
+                  onChange={(e) =>
+                    setNewDepartment({
+                      ...newDepartment,
+                      location_id: e.target.value,
+                    })
+                  }
+                  className={`w-full border rounded px-3 py-2 ${
+                    formErrors.department?.location_id ? "border-red-500" : ""
+                  }`}
                 >
                   <option value="">Select a location</option>
                   {companyDetails.locations.length === 0 ? (
@@ -1911,31 +2643,45 @@ export default function AdminDashboard() {
                   )}
                 </select>
                 {formErrors.department?.location_id && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.department.location_id}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {formErrors.department.location_id}
+                  </p>
                 )}
               </div>
               <div>
                 <Label htmlFor="edit-department-managers">Managers</Label>
                 <div className="border rounded p-3 max-h-40 overflow-y-auto">
                   {companyDetails.employees.length === 0 ? (
-                    <p className="text-gray-500 text-sm">No employees available</p>
+                    <p className="text-gray-500 text-sm">
+                      No employees available
+                    </p>
                   ) : (
                     companyDetails.employees.map((employee) => (
-                      <label key={employee.id} className="flex items-center space-x-2 mb-2">
+                      <label
+                        key={employee.id}
+                        className="flex items-center space-x-2 mb-2"
+                      >
                         <input
                           type="checkbox"
-                          checked={newDepartment.manager_ids.includes(employee.id)}
+                          checked={newDepartment.manager_ids.includes(
+                            employee.id
+                          )}
                           onChange={(e) => {
                             if (e.target.checked) {
                               setNewDepartment({
                                 ...newDepartment,
-                                manager_ids: [...newDepartment.manager_ids, employee.id]
-                              })
+                                manager_ids: [
+                                  ...newDepartment.manager_ids,
+                                  employee.id,
+                                ],
+                              });
                             } else {
                               setNewDepartment({
                                 ...newDepartment,
-                                manager_ids: newDepartment.manager_ids.filter(id => id !== employee.id)
-                              })
+                                manager_ids: newDepartment.manager_ids.filter(
+                                  (id) => id !== employee.id
+                                ),
+                              });
                             }
                           }}
                           className="rounded"
@@ -1953,24 +2699,28 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex gap-2 mt-6">
-              <Button 
-                onClick={handleUpdateDepartment} 
-                disabled={!newDepartment.name.trim() || !newDepartment.location_id || detailsLoading}
+              <Button
+                onClick={handleUpdateDepartment}
+                disabled={
+                  !newDepartment.name.trim() ||
+                  !newDepartment.location_id ||
+                  detailsLoading
+                }
               >
-                {detailsLoading ? 'Updating...' : 'Update Department'}
+                {detailsLoading ? "Updating..." : "Update Department"}
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
-                  setShowEditDepartment(false)
-                  setEditingDepartment(null)
+                  setShowEditDepartment(false);
+                  setEditingDepartment(null);
                   setNewDepartment({
-                    name: '',
-                    description: '',
-                    location_id: '',
-                    manager_ids: []
-                  })
-                  setFormErrors(prev => ({ ...prev, department: {} }))
+                    name: "",
+                    description: "",
+                    location_id: "",
+                    manager_ids: [],
+                  });
+                  setFormErrors((prev) => ({ ...prev, department: {} }));
                 }}
               >
                 Cancel
@@ -1979,6 +2729,350 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Employee Form Modal */}
+      {showEmployeeForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold">
+                  {editingEmployee ? "Edit Employee" : "Add New Employee"}
+                </h3>
+                <Button variant="outline" size="sm" onClick={closeEmployeeForm}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {loadingDropdowns ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Personal Information */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="employee-first-name">First Name *</Label>
+                      <Input
+                        id="employee-first-name"
+                        value={employeeFormData.firstName}
+                        onChange={(e) =>
+                          setEmployeeFormData({
+                            ...employeeFormData,
+                            firstName: e.target.value,
+                          })
+                        }
+                        placeholder="Enter first name"
+                        className={
+                          employeeFormErrors.firstName ? "border-red-500" : ""
+                        }
+                      />
+                      {employeeFormErrors.firstName && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {employeeFormErrors.firstName}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="employee-last-name">Last Name *</Label>
+                      <Input
+                        id="employee-last-name"
+                        value={employeeFormData.lastName}
+                        onChange={(e) =>
+                          setEmployeeFormData({
+                            ...employeeFormData,
+                            lastName: e.target.value,
+                          })
+                        }
+                        placeholder="Enter last name"
+                        className={
+                          employeeFormErrors.lastName ? "border-red-500" : ""
+                        }
+                      />
+                      {employeeFormErrors.lastName && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {employeeFormErrors.lastName}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="employee-email">Email *</Label>
+                    <Input
+                      id="employee-email"
+                      type="email"
+                      value={employeeFormData.email}
+                      onChange={(e) =>
+                        setEmployeeFormData({
+                          ...employeeFormData,
+                          email: e.target.value,
+                        })
+                      }
+                      placeholder="Enter email address"
+                      className={
+                        employeeFormErrors.email ? "border-red-500" : ""
+                      }
+                    />
+                    {employeeFormErrors.email && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {employeeFormErrors.email}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="employee-phone">Phone</Label>
+                    <Input
+                      id="employee-phone"
+                      type="tel"
+                      value={employeeFormData.phone}
+                      onChange={(e) =>
+                        setEmployeeFormData({
+                          ...employeeFormData,
+                          phone: e.target.value,
+                        })
+                      }
+                      placeholder="Enter phone number (optional)"
+                    />
+                  </div>
+
+                  {/* Structured Assignments */}
+                  <div className="border-t pt-4 mt-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium">Company Assignments</h4>
+                      {assignments.length < MAX_ASSIGNMENTS && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={addNewAssignment}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Company
+                        </Button>
+                      )}
+                    </div>
+
+                    {employeeFormErrors.assignments && (
+                      <p className="text-red-500 text-sm mb-4">
+                        {employeeFormErrors.assignments}
+                      </p>
+                    )}
+
+                    <div className="space-y-6">
+                      {assignments.map((assignment, assignmentIndex) => (
+                        <div
+                          key={assignmentIndex}
+                          className="border rounded-lg p-4 bg-gray-50"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="font-medium text-sm">
+                              Assignment {assignmentIndex + 1}
+                            </h5>
+                            {assignments.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeAssignment(assignmentIndex)}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </Button>
+                            )}
+                          </div>
+
+                          <div className="space-y-3">
+                            {/* Company Dropdown */}
+                            <div>
+                              <Label>Company *</Label>
+                              <select
+                                value={assignment.companyId}
+                                onChange={(e) =>
+                                  handleAssignmentCompanyChange(
+                                    assignmentIndex,
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full border rounded px-3 py-2"
+                              >
+                                <option value="">Select a company</option>
+                                {allCompaniesData.map((company) => (
+                                  <option key={company.id} value={company.id}>
+                                    {company.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Job Role Dropdown */}
+                            <div>
+                              <Label>Job Role *</Label>
+                              <select
+                                value={assignment.jobRoleId || ''}
+                                onChange={(e) =>
+                                  handleAssignmentJobRoleChange(
+                                    assignmentIndex,
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full border rounded px-3 py-2"
+                                disabled={!assignment.companyId}
+                              >
+                                <option value="">Select a job role</option>
+                                {allJobRolesData.map((role) => (
+                                  <option key={role.id} value={role.id}>
+                                    {role.title}
+                                  </option>
+                                ))}
+                              </select>
+                              {!assignment.companyId && (
+                                <p className="text-gray-500 text-xs mt-1">
+                                  Select a company first
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Location Dropdown */}
+                            <div>
+                              <Label>Location</Label>
+                              <select
+                                value={assignment.locationId || ''}
+                                onChange={(e) =>
+                                  handleAssignmentLocationChange(
+                                    assignmentIndex,
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full border rounded px-3 py-2"
+                                disabled={!assignment.companyId}
+                              >
+                                <option value="">Select a location (optional)</option>
+                                {assignmentDropdownData[assignmentIndex]?.locations?.map(
+                                  (loc) => (
+                                    <option key={loc.id} value={loc.id}>
+                                      {loc.name}
+                                    </option>
+                                  )
+                                )}
+                              </select>
+                              {!assignment.companyId && (
+                                <p className="text-gray-500 text-xs mt-1">
+                                  Select a company first
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Departments */}
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <Label>Departments</Label>
+                                {assignment.companyId && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      addDepartmentToAssignment(assignmentIndex)
+                                    }
+                                  >
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    Add Department
+                                  </Button>
+                                )}
+                              </div>
+
+                              {assignment.departmentIds.map((deptId, deptIndex) => (
+                                <div
+                                  key={deptIndex}
+                                  className="flex items-center gap-2 mb-2"
+                                >
+                                  <select
+                                    value={deptId}
+                                    onChange={(e) =>
+                                      handleAssignmentDepartmentChange(
+                                        assignmentIndex,
+                                        deptIndex,
+                                        e.target.value
+                                      )
+                                    }
+                                    className="flex-1 border rounded px-3 py-2"
+                                    disabled={!assignment.companyId}
+                                  >
+                                    <option value="">
+                                      Select a department (optional)
+                                    </option>
+                                    {assignmentDropdownData[
+                                      assignmentIndex
+                                    ]?.departments?.map((dept) => (
+                                      <option key={dept.id} value={dept.id}>
+                                        {dept.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  {assignment.departmentIds.length > 1 && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        removeDepartmentFromAssignment(
+                                          assignmentIndex,
+                                          deptIndex
+                                        )
+                                      }
+                                    >
+                                      <Trash2 className="w-4 h-4 text-red-600" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+
+                              {!assignment.companyId && (
+                                <p className="text-gray-500 text-xs mt-1">
+                                  Select a company first
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p className="text-xs text-gray-500 mt-3">
+                      You can add up to {MAX_ASSIGNMENTS} company assignments. Each
+                      assignment can have one location and multiple departments.
+                    </p>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 mt-6 pt-4 border-t">
+                    <Button
+                      onClick={handleSaveEmployee}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting
+                        ? "Saving..."
+                        : editingEmployee
+                        ? "Update Employee"
+                        : "Add Employee"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={closeEmployeeForm}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
