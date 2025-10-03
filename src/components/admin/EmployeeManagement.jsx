@@ -14,6 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Close,
+  ExpandMore,
+  ExpandLess,
 } from "@mui/icons-material";
 import {
   getAllEmployeesWithAssignments,
@@ -523,9 +525,13 @@ export default function EmployeeManagement() {
                           <td className="p-3 align-top">
                             <button
                               onClick={() => toggleExpand(employee.id)}
-                              className="p-2"
+                              className="p-2 hover:bg-gray-100 rounded transition-colors"
                             >
-                              {expandedRows[employee.id] ? "🔼" : "🔽"}
+                              {expandedRows[employee.id] ? (
+                                <ExpandLess className="w-4 h-4" />
+                              ) : (
+                                <ExpandMore className="w-4 h-4" />
+                              )}
                             </button>
                           </td>
                           <td className="p-3">
