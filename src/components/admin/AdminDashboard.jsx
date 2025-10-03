@@ -14,8 +14,6 @@ import People from "@mui/icons-material/People";
 import Edit from "@mui/icons-material/Edit";
 import Search from "@mui/icons-material/Search";
 import Clear from "@mui/icons-material/Clear";
-import ExpandMore from "@mui/icons-material/ExpandMore";
-import ExpandLess from "@mui/icons-material/ExpandLess";
 import {
   ListFilter,
   ListX,
@@ -85,16 +83,6 @@ export default function AdminDashboard() {
 
   // Edit Company Tabs
   const [editCompanyActiveTab, setEditCompanyActiveTab] = useState("info");
-
-  // Employee Assignment state
-  const [showAssignEmployee, setShowAssignEmployee] = useState(false);
-  const [availableEmployees, setAvailableEmployees] = useState([]);
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [employeeAssignment, setEmployeeAssignment] = useState({
-    job_role: '',
-    department_id: '',
-    location_id: ''
-  });
 
   // Add Company Wizard
   const [wizardStep, setWizardStep] = useState(1);
@@ -403,132 +391,6 @@ export default function AdminDashboard() {
       setError("Failed to delete company");
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Employee Assignment Functions
-  const fetchAvailableEmployees = async () => {
-    try {
-      const result = await getAllEmployeesWithAssignments();
-      if (result.error) {
-        console.error("Error fetching employees:", result.error);
-        return [];
-      }
-      
-      const employees = Array.isArray(result.data) ? result.data : (result.data || []);
-      
-      // Filter out employees already assigned to the current company
-      const currentCompanyId = editingCompany?.id;
-      const assignedEmployeeIds = companyDetails.employees?.map(emp => emp.id) || [];
-      
-      return employees.filter(employee => !assignedEmployeeIds.includes(employee.id));
-    } catch (error) {
-      console.error("Error fetching available employees:", error);
-      return [];
-    }
-  };
-
-  const openAssignEmployeeModal = async () => {
-    const employees = await fetchAvailableEmployees();
-    setAvailableEmployees(employees);
-    setSelectedEmployee(null);
-    setEmployeeAssignment({
-      job_role: '',
-      department_id: '',
-      location_id: ''
-    });
-    setShowAssignEmployee(true);
-  };
-
-  const handleAssignEmployee = async () => {
-    if (!selectedEmployee || !editingCompany) {
-      alert("Please select an employee");
-      return;
-    }
-
-    if (!employeeAssignment.job_role.trim()) {
-      alert("Please enter a job role");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      
-      // Create assignment data
-      const assignmentData = {
-        employee_id: selectedEmployee.id,
-        company_id: editingCompany.id,
-        job_role: employeeAssignment.job_role,
-        department_id: employeeAssignment.department_id || null,
-        location_id: employeeAssignment.location_id || null
-      };
-
-      // Insert the assignment
-      const { data, error } = await supabase
-        .from('employee_assignments')
-        .insert([assignmentData]);
-
-      if (error) {
-        throw error;
-      }
-
-      // Refresh company details to show the new assignment
-      await fetchCompanyDetailsData(editingCompany.id);
-      
-      // Close modal and reset form
-      setShowAssignEmployee(false);
-      setSelectedEmployee(null);
-      setEmployeeAssignment({
-        job_role: '',
-        department_id: '',
-        location_id: ''
-      });
-      
-      alert("Employee assigned successfully!");
-    } catch (error) {
-      console.error("Error assigning employee:", error);
-      alert("Error assigning employee. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleRemoveEmployee = async (employee) => {
-    if (!window.confirm(`Are you sure you want to remove ${employee.first_name} ${employee.last_name} from this company?`)) {
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      
-      // Find the assignment to remove
-      const assignment = employee.assignments?.find(ass => ass.company?.id === editingCompany.id);
-      
-      if (!assignment) {
-        alert("Assignment not found");
-        return;
-      }
-
-      // Delete the assignment
-      const { error } = await supabase
-        .from('employee_assignments')
-        .delete()
-        .eq('employee_id', employee.id)
-        .eq('company_id', editingCompany.id);
-
-      if (error) {
-        throw error;
-      }
-
-      // Refresh company details
-      await fetchCompanyDetailsData(editingCompany.id);
-      
-      alert("Employee removed successfully!");
-    } catch (error) {
-      console.error("Error removing employee:", error);
-      alert("Error removing employee. Please try again.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -1261,6 +1123,13 @@ export default function AdminDashboard() {
               <Edit className="w-4 h-4 mr-2" />
               Manage
             </TabsTrigger>
+            <TabsTrigger
+              value="employees"
+              className="flex items-center justify-center min-w-0 flex-1 mx-1"
+            >
+              <People className="w-4 h-4 mr-2" />
+              Employees
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -1558,13 +1427,9 @@ export default function AdminDashboard() {
                               <td className="p-3 align-top">
                                 <button
                                   onClick={() => toggleExpand(employee.id)}
-                                  className="p-2 hover:bg-gray-100 rounded transition-colors"
+                                  className="p-2"
                                 >
-                                  {expandedRows[employee.id] ? (
-                                    <ExpandLess className="w-4 h-4 text-gray-600" />
-                                  ) : (
-                                    <ExpandMore className="w-4 h-4 text-gray-600" />
-                                  )}
+                                  {expandedRows[employee.id] ? "🔼" : "🔽"}
                                 </button>
                               </td>
                               <td className="p-3">
@@ -1828,24 +1693,21 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <Label htmlFor="wizard-company-status">Status</Label>
-                      <div className="relative">
-                        <select
-                          id="wizard-company-status"
-                          value={newCompany.status}
-                          onChange={(e) =>
-                            setNewCompany({
-                              ...newCompany,
-                              status: e.target.value,
-                            })
-                          }
-                          className="w-full border rounded px-3 py-2 pr-10 appearance-none bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                          <option value="active">Active</option>
-                          <option value="inactive">Inactive</option>
-                          <option value="on-hold">On Hold</option>
-                        </select>
-                        <ExpandMore className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                      </div>
+                      <select
+                        id="wizard-company-status"
+                        value={newCompany.status}
+                        onChange={(e) =>
+                          setNewCompany({
+                            ...newCompany,
+                            status: e.target.value,
+                          })
+                        }
+                        className="w-full border rounded px-3 py-2"
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="on-hold">On Hold</option>
+                      </select>
                     </div>
                   </CardContent>
                 </Card>
@@ -2020,11 +1882,10 @@ export default function AdminDashboard() {
                 value={editCompanyActiveTab}
                 onValueChange={setEditCompanyActiveTab}
               >
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="info">Company Info</TabsTrigger>
                   <TabsTrigger value="locations">Locations</TabsTrigger>
                   <TabsTrigger value="departments">Departments</TabsTrigger>
-                  <TabsTrigger value="employees">Employees</TabsTrigger>
                   <TabsTrigger
                     value="danger"
                     className="text-red-600 data-[state=active]:text-red-700"
@@ -2089,24 +1950,21 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <Label htmlFor="edit-company-status">Status</Label>
-                          <div className="relative">
-                            <select
-                              id="edit-company-status"
-                              value={newCompany.status}
-                              onChange={(e) =>
-                                setNewCompany({
-                                  ...newCompany,
-                                  status: e.target.value,
-                                })
-                              }
-                              className="w-full border rounded px-3 py-2 pr-10 appearance-none bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                              <option value="active">Active</option>
-                              <option value="inactive">Inactive</option>
-                              <option value="on-hold">On Hold</option>
-                            </select>
-                            <ExpandMore className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                          </div>
+                          <select
+                            id="edit-company-status"
+                            value={newCompany.status}
+                            onChange={(e) =>
+                              setNewCompany({
+                                ...newCompany,
+                                status: e.target.value,
+                              })
+                            }
+                            className="w-full border rounded px-3 py-2"
+                          >
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="on-hold">On Hold</option>
+                          </select>
                         </div>
                         <Button
                           onClick={handleEditCompany}
@@ -2243,93 +2101,6 @@ export default function AdminDashboard() {
                                   >
                                     <Edit className="w-4 h-4" />
                                   </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  {/* Employees Tab */}
-                  <TabsContent value="employees" className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle>
-                            Employee Assignments ({companyDetails.employees.length})
-                          </CardTitle>
-                          <Button
-                            size="sm"
-                            onClick={openAssignEmployeeModal}
-                          >
-                            Assign Employee
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        {detailsLoading ? (
-                          <div className="flex items-center justify-center py-4">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
-                            <p>Loading employees...</p>
-                          </div>
-                        ) : companyDetails.employees.length === 0 ? (
-                          <div className="text-center py-8 text-gray-500">
-                            <People className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                            <p className="text-lg font-medium mb-2">No Employees Assigned</p>
-                            <p className="text-sm mb-4">This company doesn't have any employees assigned yet.</p>
-                            <Button 
-                              onClick={openAssignEmployeeModal}
-                              variant="outline"
-                            >
-                              Assign First Employee
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {companyDetails.employees.map((employee) => (
-                              <div
-                                key={employee.id}
-                                className="border rounded p-4"
-                              >
-                                <div className="flex justify-between items-start">
-                                  <div className="flex-1">
-                                    <div className="font-medium">
-                                      {employee.first_name} {employee.last_name}
-                                    </div>
-                                    <div className="text-sm text-gray-600">
-                                      {employee.email}
-                                    </div>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      Job Role: {employee.assignments?.[0]?.job_role || "Not assigned"}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      Department: {employee.assignments?.[0]?.department?.name || "Not assigned"}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      Location: {employee.assignments?.[0]?.location?.name || "Not assigned"}
-                                    </div>
-                                  </div>
-                                  <div className="flex gap-2 ml-4">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => alert("Edit assignment functionality coming soon!")}
-                                      className="h-8 px-3 text-xs"
-                                    >
-                                      <Edit className="w-3 h-3 mr-1" />
-                                      Edit
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleRemoveEmployee(employee)}
-                                      className="h-8 px-3 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    >
-                                      Remove
-                                    </Button>
-                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -2632,33 +2403,30 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <Label htmlFor="department-location">Location *</Label>
-                <div className="relative">
-                  <select
-                    id="department-location"
-                    value={newDepartment.location_id || ""}
-                    onChange={(e) =>
-                      setNewDepartment({
-                        ...newDepartment,
-                        location_id: e.target.value,
-                      })
-                    }
-                    className={`w-full border rounded px-3 py-2 pr-10 appearance-none bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      formErrors.department?.location_id ? "border-red-500" : ""
-                    }`}
-                  >
-                    <option value="">Select a location</option>
-                    {companyDetails.locations.length === 0 ? (
-                      <option disabled>Add locations first...</option>
-                    ) : (
-                      companyDetails.locations.map((location) => (
-                        <option key={location.id} value={location.id}>
-                          {location.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                            <ExpandMore className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                </div>
+                <select
+                  id="department-location"
+                  value={newDepartment.location_id || ""}
+                  onChange={(e) =>
+                    setNewDepartment({
+                      ...newDepartment,
+                      location_id: e.target.value,
+                    })
+                  }
+                  className={`w-full border rounded px-3 py-2 ${
+                    formErrors.department?.location_id ? "border-red-500" : ""
+                  }`}
+                >
+                  <option value="">Select a location</option>
+                  {companyDetails.locations.length === 0 ? (
+                    <option disabled>Add locations first...</option>
+                  ) : (
+                    companyDetails.locations.map((location) => (
+                      <option key={location.id} value={location.id}>
+                        {location.name}
+                      </option>
+                    ))
+                  )}
+                </select>
                 {formErrors.department?.location_id && (
                   <p className="text-red-500 text-sm mt-1">
                     {formErrors.department.location_id}
@@ -2958,33 +2726,30 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <Label htmlFor="edit-department-location">Location *</Label>
-                <div className="relative">
-                  <select
-                    id="edit-department-location"
-                    value={newDepartment.location_id || ""}
-                    onChange={(e) =>
-                      setNewDepartment({
-                        ...newDepartment,
-                        location_id: e.target.value,
-                      })
-                    }
-                    className={`w-full border rounded px-3 py-2 pr-10 appearance-none bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      formErrors.department?.location_id ? "border-red-500" : ""
-                    }`}
-                  >
-                    <option value="">Select a location</option>
-                    {companyDetails.locations.length === 0 ? (
-                      <option disabled>Add locations first...</option>
-                    ) : (
-                      companyDetails.locations.map((location) => (
-                        <option key={location.id} value={location.id}>
-                          {location.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                            <ExpandMore className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                </div>
+                <select
+                  id="edit-department-location"
+                  value={newDepartment.location_id || ""}
+                  onChange={(e) =>
+                    setNewDepartment({
+                      ...newDepartment,
+                      location_id: e.target.value,
+                    })
+                  }
+                  className={`w-full border rounded px-3 py-2 ${
+                    formErrors.department?.location_id ? "border-red-500" : ""
+                  }`}
+                >
+                  <option value="">Select a location</option>
+                  {companyDetails.locations.length === 0 ? (
+                    <option disabled>Add locations first...</option>
+                  ) : (
+                    companyDetails.locations.map((location) => (
+                      <option key={location.id} value={location.id}>
+                        {location.name}
+                      </option>
+                    ))
+                  )}
+                </select>
                 {formErrors.department?.location_id && (
                   <p className="text-red-500 text-sm mt-1">
                     {formErrors.department.location_id}
@@ -3233,52 +2998,46 @@ export default function AdminDashboard() {
                             {/* Company Dropdown */}
                             <div>
                               <Label>Company *</Label>
-                              <div className="relative">
-                                <select
-                                  value={assignment.companyId}
-                                  onChange={(e) =>
-                                    handleAssignmentCompanyChange(
-                                      assignmentIndex,
-                                      e.target.value
-                                    )
-                                  }
-                                  className="w-full border rounded px-3 py-2 pr-10 appearance-none bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                  <option value="">Select a company</option>
-                                  {allCompaniesData.map((company) => (
-                                    <option key={company.id} value={company.id}>
-                                      {company.name}
-                                    </option>
-                                  ))}
-                                </select>
-                                <ExpandMore className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                              </div>
+                              <select
+                                value={assignment.companyId}
+                                onChange={(e) =>
+                                  handleAssignmentCompanyChange(
+                                    assignmentIndex,
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full border rounded px-3 py-2"
+                              >
+                                <option value="">Select a company</option>
+                                {allCompaniesData.map((company) => (
+                                  <option key={company.id} value={company.id}>
+                                    {company.name}
+                                  </option>
+                                ))}
+                              </select>
                             </div>
 
                             {/* Job Role Dropdown */}
                             <div>
                               <Label>Job Role *</Label>
-                              <div className="relative">
-                                <select
-                                  value={assignment.jobRoleId || ""}
-                                  onChange={(e) =>
-                                    handleAssignmentJobRoleChange(
-                                      assignmentIndex,
-                                      e.target.value
-                                    )
-                                  }
-                                  className="w-full border rounded px-3 py-2 pr-10 appearance-none bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
-                                  disabled={!assignment.companyId}
-                                >
-                                  <option value="">Select a job role</option>
-                                  {allJobRolesData.map((role) => (
-                                    <option key={role.id} value={role.id}>
-                                      {role.title}
-                                    </option>
-                                  ))}
-                                </select>
-                                <ExpandMore className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                              </div>
+                              <select
+                                value={assignment.jobRoleId || ""}
+                                onChange={(e) =>
+                                  handleAssignmentJobRoleChange(
+                                    assignmentIndex,
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full border rounded px-3 py-2"
+                                disabled={!assignment.companyId}
+                              >
+                                <option value="">Select a job role</option>
+                                {allJobRolesData.map((role) => (
+                                  <option key={role.id} value={role.id}>
+                                    {role.title}
+                                  </option>
+                                ))}
+                              </select>
                               {!assignment.companyId && (
                                 <p className="text-gray-500 text-xs mt-1">
                                   Select a company first
@@ -3289,31 +3048,28 @@ export default function AdminDashboard() {
                             {/* Location Dropdown */}
                             <div>
                               <Label>Location</Label>
-                              <div className="relative">
-                                <select
-                                  value={assignment.locationId || ""}
-                                  onChange={(e) =>
-                                    handleAssignmentLocationChange(
-                                      assignmentIndex,
-                                      e.target.value
-                                    )
-                                  }
-                                  className="w-full border rounded px-3 py-2 pr-10 appearance-none bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
-                                  disabled={!assignment.companyId}
-                                >
-                                  <option value="">
-                                    Select a location (optional)
+                              <select
+                                value={assignment.locationId || ""}
+                                onChange={(e) =>
+                                  handleAssignmentLocationChange(
+                                    assignmentIndex,
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full border rounded px-3 py-2"
+                                disabled={!assignment.companyId}
+                              >
+                                <option value="">
+                                  Select a location (optional)
+                                </option>
+                                {assignmentDropdownData[
+                                  assignmentIndex
+                                ]?.locations?.map((loc) => (
+                                  <option key={loc.id} value={loc.id}>
+                                    {loc.name}
                                   </option>
-                                  {assignmentDropdownData[
-                                    assignmentIndex
-                                  ]?.locations?.map((loc) => (
-                                    <option key={loc.id} value={loc.id}>
-                                      {loc.name}
-                                    </option>
-                                  ))}
-                                </select>
-                                <ExpandMore className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                              </div>
+                                ))}
+                              </select>
                               {!assignment.companyId && (
                                 <p className="text-gray-500 text-xs mt-1">
                                   Select a company first
@@ -3346,32 +3102,29 @@ export default function AdminDashboard() {
                                     key={deptIndex}
                                     className="flex items-center gap-2 mb-2"
                                   >
-                                    <div className="relative flex-1">
-                                      <select
-                                        value={deptId}
-                                        onChange={(e) =>
-                                          handleAssignmentDepartmentChange(
-                                            assignmentIndex,
-                                            deptIndex,
-                                            e.target.value
-                                          )
-                                        }
-                                        className="w-full border rounded px-3 py-2 pr-10 appearance-none bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
-                                        disabled={!assignment.companyId}
-                                      >
-                                        <option value="">
-                                          Select a department (optional)
+                                    <select
+                                      value={deptId}
+                                      onChange={(e) =>
+                                        handleAssignmentDepartmentChange(
+                                          assignmentIndex,
+                                          deptIndex,
+                                          e.target.value
+                                        )
+                                      }
+                                      className="flex-1 border rounded px-3 py-2"
+                                      disabled={!assignment.companyId}
+                                    >
+                                      <option value="">
+                                        Select a department (optional)
+                                      </option>
+                                      {assignmentDropdownData[
+                                        assignmentIndex
+                                      ]?.departments?.map((dept) => (
+                                        <option key={dept.id} value={dept.id}>
+                                          {dept.name}
                                         </option>
-                                        {assignmentDropdownData[
-                                          assignmentIndex
-                                        ]?.departments?.map((dept) => (
-                                          <option key={dept.id} value={dept.id}>
-                                            {dept.name}
-                                          </option>
-                                        ))}
-                                      </select>
-                                      <ExpandMore className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                                    </div>
+                                      ))}
+                                    </select>
                                     {assignment.departmentIds.length > 1 && (
                                       <Button
                                         type="button"
@@ -3431,147 +3184,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Assign Employee Modal */}
-      {showAssignEmployee && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold">
-                  Assign Employee to {editingCompany?.name}
-                </h3>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowAssignEmployee(false);
-                    setSelectedEmployee(null);
-                    setEmployeeAssignment({
-                      job_role: '',
-                      department_id: '',
-                      location_id: ''
-                    });
-                  }}
-                >
-                  Close
-                </Button>
-              </div>
-
-              <div className="space-y-6">
-                {/* Employee Selection */}
-                <div>
-                  <Label htmlFor="employee-select">Select Employee *</Label>
-                  <div className="relative">
-                    <select
-                      id="employee-select"
-                      value={selectedEmployee?.id || ''}
-                      onChange={(e) => {
-                        const emp = availableEmployees.find(emp => emp.id === e.target.value);
-                        setSelectedEmployee(emp);
-                      }}
-                      className="w-full border rounded px-3 py-2 pr-10 appearance-none bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Select an employee</option>
-                      {availableEmployees.map((employee) => (
-                        <option key={employee.id} value={employee.id}>
-                          {employee.first_name} {employee.last_name} ({employee.email})
-                        </option>
-                      ))}
-                    </select>
-                    <ExpandMore className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Job Role */}
-                <div>
-                  <Label htmlFor="job-role">Job Role *</Label>
-                  <Input
-                    id="job-role"
-                    value={employeeAssignment.job_role}
-                    onChange={(e) => setEmployeeAssignment(prev => ({
-                      ...prev,
-                      job_role: e.target.value
-                    }))}
-                    placeholder="e.g., Software Developer, Manager, etc."
-                  />
-                </div>
-
-                {/* Department Selection */}
-                <div>
-                  <Label htmlFor="department-select">Department (Optional)</Label>
-                  <div className="relative">
-                    <select
-                      id="department-select"
-                      value={employeeAssignment.department_id}
-                      onChange={(e) => setEmployeeAssignment(prev => ({
-                        ...prev,
-                        department_id: e.target.value
-                      }))}
-                      className="w-full border rounded px-3 py-2 pr-10 appearance-none bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Select a department (optional)</option>
-                      {companyDetails.departments?.map((department) => (
-                        <option key={department.id} value={department.id}>
-                          {department.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ExpandMore className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Location Selection */}
-                <div>
-                  <Label htmlFor="location-select">Location (Optional)</Label>
-                  <div className="relative">
-                    <select
-                      id="location-select"
-                      value={employeeAssignment.location_id}
-                      onChange={(e) => setEmployeeAssignment(prev => ({
-                        ...prev,
-                        location_id: e.target.value
-                      }))}
-                      className="w-full border rounded px-3 py-2 pr-10 appearance-none bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Select a location (optional)</option>
-                      {companyDetails.locations?.map((location) => (
-                        <option key={location.id} value={location.id}>
-                          {location.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ExpandMore className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex justify-end space-x-4 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowAssignEmployee(false);
-                      setSelectedEmployee(null);
-                      setEmployeeAssignment({
-                        job_role: '',
-                        department_id: '',
-                        location_id: ''
-                      });
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleAssignEmployee}
-                    disabled={isSubmitting || !selectedEmployee || !employeeAssignment.job_role.trim()}
-                  >
-                    {isSubmitting ? "Assigning..." : "Assign Employee"}
-                  </Button>
-                </div>
-              </div>
             </div>
           </div>
         </div>

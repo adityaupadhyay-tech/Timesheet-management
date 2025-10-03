@@ -9,7 +9,6 @@ import Users from '@mui/icons-material/People'
 import Settings from '@mui/icons-material/Settings'
 import BarChart from '@mui/icons-material/BarChart'
 import AdminDashboard from '@/components/admin/AdminDashboard'
-import UserManagement from '@/components/admin/UserManagement'
 import { useSupabase } from '@/contexts/SupabaseContext'
 
 export default function AdministrationPage() {
@@ -155,7 +154,15 @@ export default function AdministrationPage() {
                 ← Back to Administration
               </Button>
             </div>
-            <UserManagement />
+            <Card>
+              <CardHeader>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>Manage user accounts, roles, and permissions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-center text-gray-500">User Management module coming soon...</p>
+              </CardContent>
+            </Card>
           </>
         )
       case 'monitoring':

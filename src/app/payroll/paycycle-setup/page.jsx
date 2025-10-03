@@ -10,7 +10,6 @@ import { useCompanies } from '@/contexts/CompaniesContext'
 import Settings from '@mui/icons-material/Settings'
 import Business from '@mui/icons-material/Business'
 import CalendarToday from '@mui/icons-material/CalendarToday'
-import Event from '@mui/icons-material/Event'
 import Add from '@mui/icons-material/Add'
 import Edit from '@mui/icons-material/Edit'
 import Delete from '@mui/icons-material/Delete'
@@ -70,14 +69,6 @@ export default function PaycycleSetupPage() {
       ...prev,
       [field]: value
     }))
-  }
-
-  const handleDateKeyDown = (e, field) => {
-    // Allow backspace to clear the field when all text is selected
-    if (e.key === 'Backspace' && e.target.selectionStart === 0 && e.target.selectionEnd === e.target.value.length) {
-      e.preventDefault()
-      handlePaycycleChange(field, '')
-    }
   }
 
   const savePaycycleConfig = () => {
@@ -200,16 +191,17 @@ export default function PaycycleSetupPage() {
   const formatDateForInput = (dateString) => {
     if (!dateString) return ''
     const date = new Date(dateString)
-    const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
+    const year = date.getFullYear()
+    return `${month}-${day}-${year}`
   }
 
   const parseDateFromInput = (inputValue) => {
     if (!inputValue) return ''
-    // Input is already in yyyy-mm-dd format for HTML date input
-    return inputValue
+    // Convert mm-dd-yyyy to yyyy-mm-dd for storage
+    const [month, day, year] = inputValue.split('-')
+    return `${year}-${month}-${day}`
   }
 
   // Filter companies based on search term
@@ -401,24 +393,10 @@ export default function PaycycleSetupPage() {
                                 className="h-8 px-3 text-xs"
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  if (selectedCompany?.id === company.id) {
-                                    setSelectedCompany(null)
-                                  } else {
-                                    setSelectedCompany(company)
-                                    // Scroll to company details section after state update
-                                    setTimeout(() => {
-                                      const element = document.getElementById('company-details')
-                                      if (element) {
-                                        element.scrollIntoView({ 
-                                          behavior: 'smooth', 
-                                          block: 'start' 
-                                        })
-                                      }
-                                    }, 100)
-                                  }
+                                  setSelectedCompany(company)
                                 }}
                               >
-                                {selectedCompany?.id === company.id ? 'Hide Details' : 'View Details'}
+                                View Details
                               </Button>
                             </td>
                           </tr>
@@ -479,7 +457,7 @@ export default function PaycycleSetupPage() {
 
             {/* Company Details and Configuration */}
             {selectedCompany && (
-              <div id="company-details" className="space-y-6">
+              <div className="space-y-6">
                 {/* Company Paycycles List */}
                 <Card>
                   <CardHeader>
@@ -506,16 +484,6 @@ export default function PaycycleSetupPage() {
                             processingDays: 3,
                             employeeCount: 0
                           })
-                          // Scroll to configuration section
-                          setTimeout(() => {
-                            const element = document.getElementById('paycycle-configuration')
-                            if (element) {
-                              element.scrollIntoView({ 
-                                behavior: 'smooth', 
-                                block: 'start' 
-                              })
-                            }
-                          }, 100)
                         }}
                         className="flex items-center"
                       >
@@ -624,16 +592,6 @@ export default function PaycycleSetupPage() {
                               secondEndDate: '',
                               type: 'regular'
                             })
-                            // Scroll to configuration section
-                            setTimeout(() => {
-                              const element = document.getElementById('paycycle-configuration')
-                              if (element) {
-                                element.scrollIntoView({ 
-                                  behavior: 'smooth', 
-                                  block: 'start' 
-                                })
-                              }
-                            }, 100)
                           }}
                         >
                           <Add className="w-4 h-4 mr-2" />
@@ -646,7 +604,7 @@ export default function PaycycleSetupPage() {
 
                 {/* Configuration Card */}
                 {(isEditingPaycycle || selectedPaycycle) && (
-                  <Card id="paycycle-configuration">
+                  <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         <Settings className="w-5 h-5 mr-2" />
@@ -705,53 +663,25 @@ export default function PaycycleSetupPage() {
                         <div className="space-y-4">
                                  <div>
                                    <Label htmlFor="endDate">Period End Date</Label>
-                                   <div className="relative">
-                                     <Input
-                                       id="endDate"
-                                       type="date"
-                                       value={formatDateForInput(paycycleConfig.endDate)}
-                                       onChange={(e) => handlePaycycleChange('endDate', parseDateFromInput(e.target.value))}
-                                       onKeyDown={(e) => handleDateKeyDown(e, 'endDate')}
-                                       className="pr-12 [&::-webkit-calendar-picker-indicator]:hidden"
-                                       style={{
-                                         backgroundImage: 'none'
-                                       }}
-                                     />
-                                     <button
-                                       type="button"
-                                       className="absolute right-4 top-1/2 transform -translate-y-1/2 hover:bg-gray-100 rounded p-1 transition-colors"
-                                       onClick={() => document.getElementById('endDate').showPicker?.()}
-                                       title="Select date"
-                                     >
-                                       <Event className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-                                     </button>
-                                   </div>
+                                   <Input
+                                     id="endDate"
+                                     type="text"
+                                     value={formatDateForInput(paycycleConfig.endDate)}
+                                     onChange={(e) => handlePaycycleChange('endDate', parseDateFromInput(e.target.value))}
+                                     placeholder="mm-dd-yyyy"
+                                   />
                                  </div>
 
                                  {paycycleConfig.frequency === 'semi-monthly' && (
                                    <div>
                                      <Label htmlFor="secondEndDate">Second Period End Date</Label>
-                                     <div className="relative">
                                        <Input
                                          id="secondEndDate"
-                                         type="date"
+                                         type="text"
                                          value={formatDateForInput(paycycleConfig.secondEndDate)}
                                          onChange={(e) => handlePaycycleChange('secondEndDate', parseDateFromInput(e.target.value))}
-                                         onKeyDown={(e) => handleDateKeyDown(e, 'secondEndDate')}
-                                         className="pr-12 [&::-webkit-calendar-picker-indicator]:hidden"
-                                         style={{
-                                           backgroundImage: 'none'
-                                         }}
+                                         placeholder="mm-dd-yyyy (e.g., 01-31-2024)"
                                        />
-                                       <button
-                                         type="button"
-                                         className="absolute right-4 top-1/2 transform -translate-y-1/2 hover:bg-gray-100 rounded p-1 transition-colors"
-                                         onClick={() => document.getElementById('secondEndDate').showPicker?.()}
-                                         title="Select date"
-                                       >
-                                         <Event className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-                                       </button>
-                                     </div>
                                    </div>
                                  )}
                         </div>
