@@ -35,7 +35,7 @@ export default function PayrollPage() {
         {/* Navigation Cards */}
         <div className="grid gap-6 md:grid-cols-2 mb-8">
           <Card 
-            className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:bg-gray-50"
+            className="cursor-pointer hover:shadow-md transition-shadow"
             onClick={navigateToPaycycleSetup}
           >
             <CardHeader>
@@ -56,8 +56,8 @@ export default function PayrollPage() {
           </Card>
 
           <Card 
-            className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-              activeSection === 'reports' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+            className={`cursor-pointer hover:shadow-md transition-shadow ${
+              activeSection === 'reports' ? 'ring-2 ring-blue-500 bg-blue-50' : ''
             }`}
             onClick={() => setActiveSection('reports')}
           >
