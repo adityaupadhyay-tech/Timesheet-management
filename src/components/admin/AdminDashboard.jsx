@@ -10,13 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Building from "@mui/icons-material/Business";
-import People from "@mui/icons-material/People";
 import Edit from "@mui/icons-material/Edit";
 import Search from "@mui/icons-material/Search";
 import Clear from "@mui/icons-material/Clear";
 import {
-  ListFilter,
-  ListX,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -28,7 +25,6 @@ import {
 import {
   getCompaniesWithStats,
   getCompaniesForDashboard,
-  getAllEmployeesWithAssignments,
   createCompany,
   updateCompany,
   deleteCompany,
@@ -45,13 +41,8 @@ import {
   addManagerToDepartment,
   removeManagerFromDepartment,
   addManagersToDepartment,
-  createEmployeeWithStructuredAssignments,
-  updateEmployeeWithStructuredAssignments,
-  getAllCompanies,
-  getAllJobRoles,
   getDepartmentsByCompany,
   getLocationsByCompany,
-  getEmployeeDetailsForEdit,
 } from "../../lib/adminHelpers";
 
 export default function AdminDashboard() {
@@ -60,7 +51,6 @@ export default function AdminDashboard() {
   // State management
   const [companies, setCompanies] = useState([]);
   const [dashboardCompanies, setDashboardCompanies] = useState([]);
-  const [allEmployees, setAllEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -125,21 +115,9 @@ export default function AdminDashboard() {
     manager_ids: [],
   });
 
-  // Employee pagination and filters
-  const [currentEmployeePage, setCurrentEmployeePage] = useState(1);
-  const EMPLOYEES_PER_PAGE = 25;
-  const [companyFilter, setCompanyFilter] = useState("");
-  const [jobRoleFilter, setJobRoleFilter] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState("");
-  const [showEmployeeFilters, setShowEmployeeFilters] = useState(false);
-  const [expandedRows, setExpandedRows] = useState({});
   const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
   const [selectedCompanyData, setSelectedCompanyData] = useState(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-
-  const toggleExpand = (employeeId) => {
-    setExpandedRows((prev) => ({ ...prev, [employeeId]: !prev[employeeId] }));
-  };
 
   // Company detail view handler
   const handleCompanyClick = async (companyId) => {
@@ -161,30 +139,6 @@ export default function AdminDashboard() {
     setIsLoadingDetails(false);
   };
 
-  // Employee form state
-  const [showEmployeeForm, setShowEmployeeForm] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState(null);
-  const [employeeFormData, setEmployeeFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-  });
-  const [employeeFormErrors, setEmployeeFormErrors] = useState({});
-
-  // New structured assignments state
-  const [assignments, setAssignments] = useState([
-    { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
-  ]);
-  const MAX_ASSIGNMENTS = 5;
-
-  // Dropdown data for employee form
-  const [allCompaniesData, setAllCompaniesData] = useState([]);
-  const [allJobRolesData, setAllJobRolesData] = useState([]);
-  // Store departments and locations per assignment
-  const [assignmentDropdownData, setAssignmentDropdownData] = useState({});
-  const [loadingDropdowns, setLoadingDropdowns] = useState(false);
-
   // Load initial data
   useEffect(() => {
     loadData();
@@ -195,13 +149,11 @@ export default function AdminDashboard() {
       setLoading(true);
       setError(null);
 
-      // Load both types of company data and employees in parallel
-      const [companiesResult, dashboardResult, employeesResult] =
-        await Promise.all([
-          getCompaniesWithStats(),
-          getCompaniesForDashboard(),
-          getAllEmployeesWithAssignments(),
-        ]);
+      // Load both types of company data in parallel
+      const [companiesResult, dashboardResult] = await Promise.all([
+        getCompaniesWithStats(),
+        getCompaniesForDashboard(),
+      ]);
 
       if (companiesResult.error) {
         console.error("Error loading companies:", companiesResult.error);
@@ -220,15 +172,6 @@ export default function AdminDashboard() {
       } else {
         console.log("Dashboard Companies Data:", dashboardResult.data); // Debug log
         setDashboardCompanies(dashboardResult.data || []);
-      }
-
-      if (employeesResult.error) {
-        console.error("Error loading employees:", employeesResult.error);
-        if (!companiesResult.error && !dashboardResult.error) {
-          setError(employeesResult.error);
-        }
-      } else {
-        setAllEmployees(employeesResult.data || []);
       }
     } catch (err) {
       setError("Failed to load administration data");
@@ -253,47 +196,6 @@ export default function AdminDashboard() {
       company.state?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Filter and paginate employees
-  const getFilteredEmployees = () => {
-    return allEmployees.filter((employee) => {
-      if (
-        companyFilter &&
-        !employee.company_name
-          ?.toLowerCase()
-          .includes(companyFilter.toLowerCase())
-      ) {
-        return false;
-      }
-      if (
-        jobRoleFilter &&
-        !employee.job_title?.toLowerCase().includes(jobRoleFilter.toLowerCase())
-      ) {
-        return false;
-      }
-      if (
-        departmentFilter &&
-        !employee.department_name
-          ?.toLowerCase()
-          .includes(departmentFilter.toLowerCase())
-      ) {
-        return false;
-      }
-      return true;
-    });
-  };
-
-  const getPaginatedEmployees = () => {
-    const filtered = getFilteredEmployees();
-    const startIndex = (currentEmployeePage - 1) * EMPLOYEES_PER_PAGE;
-    const endIndex = startIndex + EMPLOYEES_PER_PAGE;
-    return filtered.slice(startIndex, endIndex);
-  };
-
-  const getTotalEmployeePages = () => {
-    const totalEmployees = getFilteredEmployees().length;
-    return Math.ceil(totalEmployees / EMPLOYEES_PER_PAGE);
-  };
-
   const getStatusColor = (status) => {
     switch (status) {
       case "active":
@@ -309,13 +211,6 @@ export default function AdminDashboard() {
 
   const clearSearch = () => {
     setSearchTerm("");
-  };
-
-  const clearFilters = () => {
-    setCompanyFilter("");
-    setJobRoleFilter("");
-    setDepartmentFilter("");
-    setCurrentEmployeePage(1);
   };
 
   // CRUD operations for manage tab
@@ -774,25 +669,8 @@ export default function AdminDashboard() {
     }
   };
 
-  // Employee form functions
-  const openAddEmployeeForm = async () => {
-    setEditingEmployee(null);
-    setEmployeeFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-    });
-    setAssignments([
-      { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
-    ]);
-    setAssignmentDropdownData({});
-    setEmployeeFormErrors({});
-    setShowEmployeeForm(true);
-    await loadInitialDropdownData();
-  };
-
-  const openEditEmployeeForm = async (employee) => {
+  // Employee functions removed - moved to EmployeeManagement component
+  const dummyFunction = async (employee) => {
     try {
       setEditingEmployee(employee);
       setShowEmployeeForm(true);
@@ -1123,13 +1001,6 @@ export default function AdminDashboard() {
               <Edit className="w-4 h-4 mr-2" />
               Manage
             </TabsTrigger>
-            <TabsTrigger
-              value="employees"
-              className="flex items-center justify-center min-w-0 flex-1 mx-1"
-            >
-              <People className="w-4 h-4 mr-2" />
-              Employees
-            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -1320,240 +1191,6 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Employees Tab */}
-        <TabsContent value="employees" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <People className="mr-2" />
-                  All Employees ({getFilteredEmployees().length})
-                </CardTitle>
-                <div className="flex gap-2">
-                  <Button onClick={openAddEmployeeForm}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Employee
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowEmployeeFilters(!showEmployeeFilters)}
-                  >
-                    {showEmployeeFilters ? (
-                      <ListX className="w-4 h-4 mr-2" />
-                    ) : (
-                      <ListFilter className="w-4 h-4 mr-2" />
-                    )}
-                    {showEmployeeFilters ? "Hide Filters" : "Show Filters"}
-                  </Button>
-                  {(companyFilter || jobRoleFilter || departmentFilter) && (
-                    <Button variant="outline" onClick={clearFilters}>
-                      Clear Filters
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-
-            {showEmployeeFilters && (
-              <div className="px-6 pb-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <Label htmlFor="company-filter">Company</Label>
-                    <Input
-                      id="company-filter"
-                      placeholder="Filter by company..."
-                      value={companyFilter}
-                      onChange={(e) => setCompanyFilter(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="job-filter">Job Role</Label>
-                    <Input
-                      id="job-filter"
-                      placeholder="Filter by job role..."
-                      value={jobRoleFilter}
-                      onChange={(e) => setJobRoleFilter(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="dept-filter">Department</Label>
-                    <Input
-                      id="dept-filter"
-                      placeholder="Filter by department..."
-                      value={departmentFilter}
-                      onChange={(e) => setDepartmentFilter(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <CardContent>
-              {getPaginatedEmployees().length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <People className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg font-medium mb-2">No Employees Found</p>
-                  <p className="text-sm">
-                    {allEmployees.length === 0
-                      ? "Connect your Supabase database to see employees here."
-                      : "No employees match your current filters."}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-3 w-10"></th>
-                          <th className="text-left p-3">Name</th>
-                          <th className="text-left p-3">Email</th>
-                          <th className="text-left p-3">Job Title</th>
-                          <th className="text-left p-3">Company</th>
-                          <th className="text-left p-3">Department</th>
-                          <th className="text-left p-3">Location</th>
-                          <th className="text-left p-3">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {getPaginatedEmployees().map((employee) => (
-                          <React.Fragment key={employee.id}>
-                            <tr className="border-b hover:bg-gray-50">
-                              <td className="p-3 align-top">
-                                <button
-                                  onClick={() => toggleExpand(employee.id)}
-                                  className="p-2"
-                                >
-                                  {expandedRows[employee.id] ? "🔼" : "🔽"}
-                                </button>
-                              </td>
-                              <td className="p-3">
-                                <div className="font-medium">
-                                  {employee.first_name} {employee.last_name}
-                                </div>
-                              </td>
-                              <td className="p-3 text-sm text-gray-600">
-                                {employee.email}
-                              </td>
-                              <td className="p-3 text-sm">
-                                {employee.company_assignments?.[0]?.job_title ||
-                                  "N/A"}
-                                {employee.company_assignments?.length > 1 &&
-                                  ` +${
-                                    employee.company_assignments.length - 1
-                                  }`}
-                              </td>
-                              <td className="p-3 text-sm">
-                                {employee.company_assignments?.[0]
-                                  ?.company_name || "N/A"}
-                              </td>
-                              <td className="p-3 text-sm">
-                                {employee.department_assignments?.[0]
-                                  ?.department_name || "N/A"}
-                              </td>
-                              <td className="p-3 text-sm">
-                                {employee.location_assignments?.[0]
-                                  ?.location_name || "N/A"}
-                              </td>
-                              <td className="p-3">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openEditEmployeeForm(employee)}
-                                >
-                                  <Edit className="w-4 h-4 mr-2" />
-                                  Edit
-                                </Button>
-                              </td>
-                            </tr>
-
-                            {expandedRows[employee.id] &&
-                              (
-                                employee.company_assignments?.slice(1) || []
-                              ).map((assignment, index) => (
-                                <tr key={index} className="border-b bg-gray-50">
-                                  {/* Empty cells to align with columns: Expander, Name, Email */}
-                                  <td></td>
-                                  <td></td>
-                                  <td></td>
-                                  {/* Assignment data aligned under correct columns */}
-                                  <td className="p-3 text-sm">
-                                    {assignment.job_title || "N/A"}
-                                  </td>
-                                  <td className="p-3 text-sm">
-                                    {assignment.company_name || "N/A"}
-                                  </td>
-                                  <td className="p-3 text-sm">
-                                    {/* Optional: department name if available */}
-                                  </td>
-                                  <td className="p-3 text-sm">
-                                    {/* Optional: location name if available */}
-                                  </td>
-                                  {/* Actions column empty for expanded rows */}
-                                  <td></td>
-                                </tr>
-                              ))}
-                          </React.Fragment>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Pagination */}
-                  {getTotalEmployeePages() > 1 && (
-                    <div className="flex items-center justify-between mt-6">
-                      <div className="text-sm text-gray-600">
-                        Showing{" "}
-                        {(currentEmployeePage - 1) * EMPLOYEES_PER_PAGE + 1} to{" "}
-                        {Math.min(
-                          currentEmployeePage * EMPLOYEES_PER_PAGE,
-                          getFilteredEmployees().length
-                        )}{" "}
-                        of {getFilteredEmployees().length} employees
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            setCurrentEmployeePage(
-                              Math.max(1, currentEmployeePage - 1)
-                            )
-                          }
-                          disabled={currentEmployeePage === 1}
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </Button>
-                        <span className="px-3 py-2 text-sm">
-                          Page {currentEmployeePage} of{" "}
-                          {getTotalEmployeePages()}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            setCurrentEmployeePage(
-                              Math.min(
-                                getTotalEmployeePages(),
-                                currentEmployeePage + 1
-                              )
-                            )
-                          }
-                          disabled={
-                            currentEmployeePage === getTotalEmployeePages()
-                          }
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </>
               )}
             </CardContent>
           </Card>
@@ -2838,8 +2475,8 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Employee Form Modal */}
-      {showEmployeeForm && (
+      {/* Employee Form Modal - Removed, moved to EmployeeManagement component */}
+      {false && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
