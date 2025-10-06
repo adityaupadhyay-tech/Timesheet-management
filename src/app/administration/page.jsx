@@ -23,7 +23,7 @@ import Assignment from '@mui/icons-material/Assignment'
 import Logout from '@mui/icons-material/Logout'
 import Upgrade from '@mui/icons-material/Upgrade'
 import AdminDashboard from '@/components/admin/AdminDashboard'
-import UserManagement from '@/components/admin/UserManagement'
+import EmployeeManagement from '@/components/admin/EmployeeManagement'
 import PageHeader from '@/components/PageHeader'
 import { useSupabase } from '@/contexts/SupabaseContext'
 
@@ -357,7 +357,7 @@ export default function AdministrationPage() {
                 { label: 'User Management' }
               ]}
             />
-            <UserManagement />
+            <EmployeeManagement />
           </>
         )
       default:
