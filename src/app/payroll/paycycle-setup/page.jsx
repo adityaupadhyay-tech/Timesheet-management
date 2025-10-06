@@ -57,8 +57,9 @@ export default function PaycycleSetupPage() {
   const [paycycleToDelete, setPaycycleToDelete] = useState(null);
   const [paycycleForm, setPaycycleForm] = useState({
     paycycleName: "",
-    frequency: "monthly",
+    frequency: "weekly",
     cycleType: "regular",
+    periodEndDate: "",
     periodEndDay1: "",
     periodEndDay2: "",
   });
@@ -100,8 +101,8 @@ export default function PaycycleSetupPage() {
   ];
 
   const handlePaycycleChange = (field, value) => {
-    setPaycycleForm((prev) => ({
-      ...prev,
+    setPaycycleForm(prevState => ({
+      ...prevState,
       [field]: value,
     }));
   };
@@ -120,33 +121,60 @@ export default function PaycycleSetupPage() {
 
   const savePaycycleConfig = async () => {
     if (!selectedCompany) return;
+
+    const {
+      paycycleName,
+      frequency,
+      cycleType,
+      periodEndDate,
+      periodEndDay1,
+      periodEndDay2,
+    } = paycycleForm;
+
+    // --- Validate required inputs based on frequency ---
+    if (frequency === "semi_monthly") {
+      if (!periodEndDay1 || !periodEndDay2) {
+        alert("Please provide both the first and second period end days.");
+        return;
+      }
+    } else {
+      if (!periodEndDate) {
+        alert("Please select a Period End Date.");
+        return;
+      }
+    }
+
     try {
-      const {
-        paycycleName,
-        frequency,
-        cycleType,
-        periodEndDay1,
-        periodEndDay2,
-      } = paycycleForm;
-      const { data, error } = await supabase.rpc("create_paycycle", {
+      const payload = {
         p_company_id: selectedCompany.company_id,
-        p_name: paycycleName || getFrequencyLabel(frequency),
+        p_name: paycycleName || frequency.charAt(0).toUpperCase() + frequency.slice(1),
         p_frequency: frequency,
         p_cycle_type: cycleType,
-        p_period_end_day_1: periodEndDay1 ? Number(periodEndDay1) : null,
-        p_period_end_day_2:
-          paycycleForm.frequency === "semi-monthly" && periodEndDay2
-            ? Number(periodEndDay2)
-            : null,
-      });
+        p_first_period_end_date: null,
+        p_period_end_day_1: null,
+        p_period_end_day_2: null,
+      };
+
+      // --- Build the payload correctly ---
+      if (frequency === "semi_monthly") {
+        payload.p_period_end_day_1 = Number(periodEndDay1);
+        payload.p_period_end_day_2 = Number(periodEndDay2);
+      } else {
+        payload.p_first_period_end_date = periodEndDate;
+      }
+
+      const { data, error } = await supabase.rpc("create_paycycle", payload);
+
       if (error) throw error;
+
       await fetchCompanies();
       setSelectedPaycycle(null);
       setIsEditingPaycycle(false);
       setPaycycleForm({
         paycycleName: "",
-        frequency: "monthly",
+        frequency: "weekly",
         cycleType: "regular",
+        periodEndDate: "",
         periodEndDay1: "",
         periodEndDay2: "",
       });
@@ -793,17 +821,17 @@ export default function PaycycleSetupPage() {
                             <select
                               id="frequency"
                               value={paycycleForm.frequency}
-                              onChange={(e) =>
-                                handlePaycycleChange(
-                                  "frequency",
-                                  e.target.value
-                                )
-                              }
-                              className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              onChange={(e) => {
+                                handlePaycycleChange("frequency", e.target.value);
+                                handlePaycycleChange("periodEndDate", "");
+                                handlePaycycleChange("periodEndDay1", "");
+                                handlePaycycleChange("periodEndDay2", "");
+                              }}
+                              className="w-full mt-1 p-2 border rounded"
                             >
                               <option value="weekly">Weekly</option>
-                              <option value="bi-weekly">Bi-weekly</option>
-                              <option value="semi-monthly">Semi-monthly</option>
+                              <option value="biweekly">Bi-weekly</option>
+                              <option value="semi_monthly">Semi-monthly</option>
                               <option value="monthly">Monthly</option>
                             </select>
                           </div>
@@ -830,44 +858,53 @@ export default function PaycycleSetupPage() {
                         </div>
 
                         <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="periodEndDay1">
-                              Period End Day
-                            </Label>
-                            <Input
-                              id="periodEndDay1"
-                              type="number"
-                              min="1"
-                              max="31"
-                              value={paycycleForm.periodEndDay1}
-                              onChange={(e) =>
-                                handlePaycycleChange(
-                                  "periodEndDay1",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Enter day of month (1-31)"
-                            />
-                          </div>
-
-                          {paycycleForm.frequency === "semi-monthly" && (
+                          {paycycleForm.frequency === 'semi_monthly' ? (
+                            <>
+                              <div>
+                                <label htmlFor="periodEndDay1" className="block text-sm font-medium text-gray-700">
+                                  First Period End Day
+                                </label>
+                                <input
+                                  id="periodEndDay1"
+                                  type="number"
+                                  min="1"
+                                  max="31"
+                                  value={paycycleForm.periodEndDay1}
+                                  onChange={(e) => handlePaycycleChange('periodEndDay1', e.target.value)}
+                                  placeholder="e.g., 15"
+                                  className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                                />
+                              </div>
+                              <div>
+                                <label htmlFor="periodEndDay2" className="block text-sm font-medium text-gray-700">
+                                  Second Period End Day
+                                </label>
+                                <input
+                                  id="periodEndDay2"
+                                  type="number"
+                                  min="1"
+                                  max="31"
+                                  value={paycycleForm.periodEndDay2}
+                                  onChange={(e) => handlePaycycleChange('periodEndDay2', e.target.value)}
+                                  placeholder="e.g., 31"
+                                  className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Use 31 for the last day of the month.
+                                </p>
+                              </div>
+                            </>
+                          ) : (
                             <div>
-                              <Label htmlFor="periodEndDay2">
-                                Second Period End Day
-                              </Label>
-                              <Input
-                                id="periodEndDay2"
-                                type="number"
-                                min="1"
-                                max="31"
-                                value={paycycleForm.periodEndDay2}
-                                onChange={(e) =>
-                                  handlePaycycleChange(
-                                    "periodEndDay2",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="Enter second day of month (1-31)"
+                              <label htmlFor="periodEndDate" className="block text-sm font-medium text-gray-700">
+                                Period End Date
+                              </label>
+                              <input
+                                id="periodEndDate"
+                                type="date"
+                                value={paycycleForm.periodEndDate || ''}
+                                onChange={(e) => handlePaycycleChange('periodEndDate', e.target.value)}
+                                className="w-full mt-1 p-2 border border-gray-300 rounded-md"
                               />
                             </div>
                           )}
