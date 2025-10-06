@@ -83,6 +83,27 @@ export default function ExternalLinksPage() {
 
         <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
 
+          <div className="p-4 border-b flex justify-end">
+            <Button 
+              onClick={() => {
+                setEditing({
+                  id: Date.now(), // Temporary ID for new link
+                  label: '',
+                  address: '',
+                  description: '',
+                  linkType: 'any',
+                  displayMethod: 'new',
+                  displayInMenu: false,
+                  menuTopLevel: '',
+                  menuCategory: ''
+                })
+                setShowEditor(true)
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Add New Link
+            </Button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -223,9 +244,17 @@ export default function ExternalLinksPage() {
               </div>
 
               <div className="p-4 border-t flex justify-between gap-3">
-                <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={requestDelete}>Delete</Button>
-                <Button variant="outline" onClick={closeEditor}>Cancel</Button>
-                <Button onClick={saveEditor}>Save</Button>
+                <div>
+                  {initialLinks.some(link => link.id === editing.id) ? (
+                    <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={requestDelete}>
+                      Delete
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={closeEditor}>Cancel</Button>
+                  <Button onClick={saveEditor}>Save</Button>
+                </div>
               </div>
             </div>
           </div>
