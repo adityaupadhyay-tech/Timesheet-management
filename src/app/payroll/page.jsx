@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import AccountBalance from '@mui/icons-material/AccountBalance'
 import CalendarToday from '@mui/icons-material/CalendarToday'
 import ArrowForward from '@mui/icons-material/ArrowForward'
+import PageHeader from '@/components/PageHeader'
 
 export default function PayrollPage() {
   const router = useRouter()
@@ -27,10 +28,11 @@ export default function PayrollPage() {
   return (
     <Layout userRole={currentUser.role} userName={currentUser.name}>
       <div className="p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Payroll</h1>
-          <p className="text-gray-600">Manage payroll processing, salary information, and compensation details</p>
-        </div>
+        <PageHeader 
+          title="Payroll"
+          subtitle="Manage payroll processing, salary information, and compensation details"
+          icon={<AccountBalance />}
+        />
 
         {/* Navigation Cards */}
         <div className="grid gap-6 md:grid-cols-2 mb-8">

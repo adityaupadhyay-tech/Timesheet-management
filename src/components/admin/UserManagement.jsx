@@ -59,6 +59,12 @@ export default function UserManagement() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Delete employee state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingEmployee, setDeletingEmployee] = useState(null);
+  const [deleteEmailInput, setDeleteEmailInput] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const EMPLOYEES_PER_PAGE = 20;
 
   // Fetch employees data
@@ -136,16 +142,37 @@ export default function UserManagement() {
     setDepartmentFilter("");
   };
 
-  const handleDeleteEmployee = async (employeeId) => {
-    if (window.confirm("Are you sure you want to delete this employee?")) {
-      try {
-        await deleteEmployee(employeeId);
-        setAllEmployees(prev => prev.filter(emp => emp.id !== employeeId));
-        alert("Employee deleted successfully!");
-      } catch (error) {
-        console.error("Error deleting employee:", error);
-        alert("Error deleting employee. Please try again.");
-      }
+  const openDeleteModal = (employee) => {
+    setDeletingEmployee(employee);
+    setDeleteEmailInput('');
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteEmployee = async () => {
+    if (!deletingEmployee) return;
+
+    // Verify email matches
+    if (deleteEmailInput.trim() !== deletingEmployee.email) {
+      alert("Email does not match. Please enter the correct email address.");
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await deleteEmployee(deletingEmployee.id);
+      setAllEmployees(prev => prev.filter(emp => emp.id !== deletingEmployee.id));
+      
+      // Close modal and reset state
+      setShowDeleteModal(false);
+      setDeletingEmployee(null);
+      setDeleteEmailInput('');
+      
+      alert("Employee deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting employee:", error);
+      alert("Error deleting employee. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -469,7 +496,7 @@ export default function UserManagement() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleDeleteEmployee(employee.id)}
+                                onClick={() => openDeleteModal(employee)}
                                 className="h-8 px-3 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
                                 <Delete className="w-3 h-3 mr-1" />
@@ -865,6 +892,95 @@ export default function UserManagement() {
                     disabled={isSubmitting || !editFormData.firstName.trim() || !editFormData.lastName.trim() || !editFormData.email.trim() || !editAssignment.job_role.trim() || !editAssignment.company_id}
                   >
                     {isSubmitting ? "Updating..." : "Update Employee"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Employee Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-red-600">
+                  Delete Employee
+                </h3>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeletingEmployee(null);
+                    setDeleteEmailInput('');
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Warning Message */}
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center mb-2">
+                    <Delete className="w-5 h-5 text-red-600 mr-2" />
+                    <h4 className="text-lg font-medium text-red-800">Warning</h4>
+                  </div>
+                  <p className="text-red-700 text-sm">
+                    This action cannot be undone. Deleting this employee will permanently remove all their data from the system.
+                  </p>
+                </div>
+
+                {/* Employee Information */}
+                {deletingEmployee && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <h5 className="text-sm font-medium text-gray-800 mb-2">Employee to be deleted:</h5>
+                    <div className="text-sm text-gray-600">
+                      <div className="font-medium">{deletingEmployee.first_name} {deletingEmployee.last_name}</div>
+                      <div>Email: {deletingEmployee.email}</div>
+                      {deletingEmployee.phone && <div>Phone: {deletingEmployee.phone}</div>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Email Verification */}
+                <div>
+                  <Label htmlFor="delete-email-verification" className="text-red-700 font-medium">
+                    To confirm deletion, please enter the employee's email address:
+                  </Label>
+                  <Input
+                    id="delete-email-verification"
+                    type="email"
+                    value={deleteEmailInput}
+                    onChange={(e) => setDeleteEmailInput(e.target.value)}
+                    placeholder="Enter employee's email address"
+                    className="mt-2 border-red-300 focus:border-red-500 focus:ring-red-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    You must enter the exact email address to proceed with deletion.
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-4 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setDeletingEmployee(null);
+                      setDeleteEmailInput('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleDeleteEmployee}
+                    disabled={isDeleting || !deleteEmailInput.trim() || (deletingEmployee && deleteEmailInput.trim() !== deletingEmployee.email)}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    {isDeleting ? "Deleting..." : "Delete Employee"}
                   </Button>
                 </div>
               </div>

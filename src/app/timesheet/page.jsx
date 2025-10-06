@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Send, Download, Calendar, FolderOpen, CheckCircle } from 'lucide-react'
 import ExportModal from '@/components/timesheet/ExportModal'
 import { formatCyclePeriod } from '@/lib/cycleUtils'
+import PageHeader from '@/components/PageHeader'
+import ScheduleIcon from '@mui/icons-material/Schedule'
 
 function TimesheetContent() {
   const {
@@ -99,10 +101,15 @@ function TimesheetContent() {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="mx-auto px-5 py-6">
+        <PageHeader 
+          title="Timesheet Management"
+          subtitle="Track and manage your work hours and project time"
+          icon={<ScheduleIcon />}
+        />
+        
         <div className="mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Timesheet Management</h1>
               {selectedCompany && (
                 <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex-shrink-0">
                   <div className="w-2 h-2 rounded-full bg-blue-500"></div>
