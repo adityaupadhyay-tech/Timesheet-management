@@ -838,6 +838,9 @@ export const getDepartmentsByCompany = async (companyId) => {
   }
 }
 
+// Alias for getDepartmentsByCompany to match the import in UserManagement.jsx
+export const getDepartmentsForCompany = getDepartmentsByCompany
+
 export const getAllDepartments = async () => {
   try {
     const { data, error } = await supabase
@@ -892,6 +895,9 @@ export const getLocationsByCompany = async (companyId) => {
     return { data: [], error: error.message }
   }
 }
+
+// Alias for getLocationsByCompany to match the import in UserManagement.jsx
+export const getLocationsForCompany = getLocationsByCompany
 
 // Get employee details for editing with structured assignments
 export const getEmployeeDetailsForEdit = async (employeeId) => {

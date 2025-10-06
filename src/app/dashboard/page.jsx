@@ -11,6 +11,8 @@ import AddTaskIcon from '@mui/icons-material/AddTask'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import PeopleIcon from '@mui/icons-material/People'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import PageHeader from '@/components/PageHeader'
+import DashboardIcon from '@mui/icons-material/Dashboard'
 
 export default function DashboardPage() {
   // TODO: Get user data from authentication context/API
@@ -198,12 +200,11 @@ export default function DashboardPage() {
   return (
     <Layout userRole={currentUser.role} userName={currentUser.name}>
       <div className="p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Welcome back, {currentUser.name}! Here's what's happening today.
-          </p>
-        </div>
+        <PageHeader 
+          title="Dashboard"
+          subtitle={`Welcome back, ${currentUser.name}! Here's what's happening today.`}
+          icon={<DashboardIcon />}
+        />
 
         {/* Stats Cards */}
         <div className="mb-8">

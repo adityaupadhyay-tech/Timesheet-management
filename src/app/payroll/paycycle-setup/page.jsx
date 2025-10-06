@@ -20,6 +20,7 @@ import Warning from '@mui/icons-material/Warning'
 import Info from '@mui/icons-material/Info'
 import People from '@mui/icons-material/People'
 import Assessment from '@mui/icons-material/Assessment'
+import PageHeader from '@/components/PageHeader'
 
 export default function PaycycleSetupPage() {
   const [currentUser] = useState({
@@ -872,10 +873,15 @@ export default function PaycycleSetupPage() {
   return (
     <Layout userRole={currentUser.role} userName={currentUser.name}>
       <div className="p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Paycycle Setup</h1>
-          <p className="text-gray-600">Configure and manage payroll cycles for your companies</p>
-        </div>
+        <PageHeader 
+          title="Paycycle Setup"
+          subtitle="Configure and manage payroll cycles for your companies"
+          icon={<CalendarToday />}
+          breadcrumbs={[
+            { label: 'Payroll', href: '/payroll' },
+            { label: 'Paycycle Setup' }
+          ]}
+        />
 
                {/* Content */}
                {renderContent()}

@@ -16,6 +16,7 @@ import Settings from "@mui/icons-material/Settings";
 import BarChart from "@mui/icons-material/BarChart";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import EmployeeManagement from "@/components/admin/EmployeeManagement";
+import PageHeader from "@/components/PageHeader";
 import { useSupabase } from "@/contexts/SupabaseContext";
 
 export default function AdministrationPage() {
@@ -150,48 +151,34 @@ export default function AdministrationPage() {
 
     // Show navigation when a card is selected
     switch (activeSection) {
-      case "company":
-        return (
-          <>
-            {/* Back Button */}
-            <div className="mb-6">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActiveSection("overview");
-                  setShowNavigation(false);
-                }}
-                className="flex items-center mb-4"
-              >
-                ← Back to Administration
-              </Button>
-            </div>
-            <AdminDashboard />
-          </>
-        );
+       case "company":
+         return (
+           <>
+             <PageHeader 
+               title="Company Setup"
+               subtitle="Setup company structure, locations, departments, and employees"
+               icon={<Building />}
+               breadcrumbs={[
+                 { label: 'Administration', href: '/administration' },
+                 { label: 'Company Setup' }
+               ]}
+             />
+             <AdminDashboard />
+           </>
+         );
       case "users":
         return (
           <>
-            {/* Back Button */}
-            <div className="mb-6">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActiveSection("overview");
-                  setShowNavigation(false);
-                }}
-                className="flex items-center mb-4"
-              >
-                ← Back to Administration
-              </Button>
-            </div>
+            <PageHeader 
+              title="User Management"
+              subtitle="Manage user accounts, roles, and permissions"
+              icon={<Users />}
+              breadcrumbs={[
+                { label: 'Administration', href: '/administration' },
+                { label: 'User Management' }
+              ]}
+            />
             <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>
-                  Manage user accounts, roles, and permissions
-                </CardDescription>
-              </CardHeader>
               <CardContent>
                 <EmployeeManagement />
               </CardContent>
@@ -201,26 +188,16 @@ export default function AdministrationPage() {
       case "monitoring":
         return (
           <>
-            {/* Back Button */}
-            <div className="mb-6">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActiveSection("overview");
-                  setShowNavigation(false);
-                }}
-                className="flex items-center mb-4"
-              >
-                ← Back to Administration
-              </Button>
-            </div>
+            <PageHeader 
+              title="System Monitoring"
+              subtitle="Monitor system performance and usage statistics"
+              icon={<BarChart />}
+              breadcrumbs={[
+                { label: 'Administration', href: '/administration' },
+                { label: 'System Monitoring' }
+              ]}
+            />
             <Card>
-              <CardHeader>
-                <CardTitle>System Monitoring</CardTitle>
-                <CardDescription>
-                  Monitor system performance and usage statistics
-                </CardDescription>
-              </CardHeader>
               <CardContent>
                 <p className="text-center text-gray-500">
                   Monitoring module coming soon...
@@ -237,15 +214,14 @@ export default function AdministrationPage() {
   return (
     <Layout userRole={currentUser.role} userName={currentUser.name}>
       <div className="p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Administration
-          </h1>
-          <p className="text-gray-600">
-            System administration, configuration, and advanced management
-            features
-          </p>
-        </div>
+        {/* Only show main Administration header when in overview mode */}
+        {!showNavigation && (
+          <PageHeader 
+            title="Administration"
+            subtitle="System administration, configuration, and advanced management features"
+            icon={<Settings />}
+          />
+        )}
 
         {/* Content */}
         {renderContent()}
