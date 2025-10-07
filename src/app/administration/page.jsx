@@ -29,13 +29,13 @@ import Assignment from "@mui/icons-material/Assignment";
 import Logout from "@mui/icons-material/Logout";
 import Upgrade from "@mui/icons-material/Upgrade";
 import AdminDashboard from "@/components/admin/AdminDashboard";
-import UserManagement from "@/components/admin/UserManagement";
+import EmployeeManagement from "@/components/admin/EmployeeManagement";
 import PageHeader from "@/components/PageHeader";
 import { useSupabase } from "@/contexts/SupabaseContext";
 
 export default function AdministrationPage() {
   const { user, loading } = useSupabase();
-
+  
   // Fallback user data if not authenticated
   const currentUser = user
     ? {
@@ -302,33 +302,33 @@ export default function AdministrationPage() {
                 className="cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => { window.location.href = '/administration/company-setup' }}
               >
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Building className="mr-2" />
-                    Company Setup
-                  </CardTitle>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Building className="mr-2" />
+                Company Setup
+              </CardTitle>
                   <CardDescription>
                     Setup company structure, locations, departments, and
                     employees
                   </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600">
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
                     Configure your organization's structure including locations,
                     departments, and employee assignments.
-                  </p>
-                </CardContent>
-              </Card>
+              </p>
+            </CardContent>
+          </Card>
 
               <Card
                 className="cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => { window.location.href = '/administration/user-management' }}
               >
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="mr-2" />
-                    User Management
-                  </CardTitle>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="mr-2" />
+                User Management
+              </CardTitle>
                   <CardDescription>
                     Manage user accounts, roles, and permissions
                   </CardDescription>
@@ -403,36 +403,36 @@ export default function AdministrationPage() {
                   <CardDescription>
                     Manage employee logout sessions
                   </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600">
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
                     Monitor and manage employee logout sessions and security
                     settings.
-                  </p>
-                </CardContent>
-              </Card>
+              </p>
+            </CardContent>
+          </Card>
 
               <Card
                 className="cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => alert("Upgrade Legacy Accounts - Coming Soon!")}
               >
-                <CardHeader>
-                  <CardTitle className="flex items-center">
+            <CardHeader>
+              <CardTitle className="flex items-center">
                     <Upgrade className="mr-2" />
                     Upgrade Legacy Accounts
-                  </CardTitle>
+              </CardTitle>
                   <CardDescription>
                     Upgrade legacy user accounts
                   </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600">
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
                     Upgrade and migrate legacy user accounts to the new system
                     format.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
           </div>
         </div>
       );
@@ -467,7 +467,7 @@ export default function AdministrationPage() {
                 { label: "User Management" },
               ]}
             />
-            <UserManagement />
+            <EmployeeManagement />
           </>
         );
       default:

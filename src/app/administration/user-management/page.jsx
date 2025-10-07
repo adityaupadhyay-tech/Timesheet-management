@@ -4,7 +4,7 @@ import React from 'react'
 import Layout from '@/components/Layout'
 import PageHeader from '@/components/PageHeader'
 import Users from '@mui/icons-material/People'
-import UserManagement from '@/components/admin/UserManagement'
+import EmployeeManagement from '@/components/admin/EmployeeManagement'
 import { useSupabase } from '@/contexts/SupabaseContext'
 
 export default function UserManagementPage() {
@@ -30,7 +30,7 @@ export default function UserManagementPage() {
           ]}
         />
 
-        <UserManagement />
+        <EmployeeManagement />
       </div>
     </Layout>
   )
