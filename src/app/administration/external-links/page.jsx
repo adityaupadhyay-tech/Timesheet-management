@@ -1,75 +1,152 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Layout from '@/components/Layout'
 import PageHeader from '@/components/PageHeader'
 import LinkIcon from '@mui/icons-material/Link'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { toast } from 'sonner'
+
+// A constant for the new link structure to avoid repetition
+const NEW_LINK_TEMPLATE = {
+  id: null,
+  label: '',
+  web_address: '',
+  description: '',
+  type: 'Any',
+  display: 'New window',
+  show_in_menu: false,
+  top_level_menu: '', // New field
+  menu_category: '',  // New field
+};
 
 export default function ExternalLinksPage() {
-  const currentUser = {
-    name: 'Admin User',
-    role: 'admin',
-  }
-
-  const initialLinks = useMemo(() => ([
-    { id: 1, label: 'Company Website', address: 'https://example.com', description: 'Public corporate site', linkType: 'any', displayMethod: 'new', displayInMenu: false, menuTopLevel: '', menuCategory: '' },
-    { id: 2, label: 'HR Portal', address: 'https://hr.example.com', description: 'Internal HR resources', linkType: 'employee', displayMethod: 'current', displayInMenu: false, menuTopLevel: '', menuCategory: '' },
-    { id: 3, label: 'Benefits Provider', address: 'https://benefits.example.com', description: 'Benefits enrollment and info', linkType: 'employee', displayMethod: 'new', displayInMenu: true, menuTopLevel: 'Resources', menuCategory: 'Benefits' },
-    { id: 4, label: 'Support Desk', address: 'https://support.example.com', description: 'Ticketing and help center', linkType: 'client', displayMethod: 'embed', displayInMenu: false, menuTopLevel: '', menuCategory: '' },
-  ]), [])
-
-  const [links, setLinks] = useState(initialLinks)
+  const [links, setLinks] = useState([])
+  const [loading, setLoading] = useState(true)
   const [showEditor, setShowEditor] = useState(false)
   const [editing, setEditing] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  
+  // Initialize Supabase client
+  const supabase = createClientComponentClient()
 
-  const openEditor = (link) => {
-    setEditing({
+  // --- Database Functions (CRUD) ---
+
+  const fetchLinks = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('links')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setLinks(data || []);
+    } catch (error) {
+      toast.error('Failed to fetch links.', { description: error.message });
+      console.error("Error fetching links: ", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const saveLink = async () => {
+    if (!editing) return;
+
+    // Map form state to database schema, including the new fields
+    const linkData = {
+      label: editing.label,
+      web_address: editing.web_address,
+      description: editing.description,
+      type: editing.type,
+      display: editing.display,
+      show_in_menu: editing.show_in_menu,
+      top_level_menu: editing.top_level_menu || null, // Send null to DB if empty
+      menu_category: editing.menu_category || null,   // Send null to DB if empty
+    };
+
+    try {
+      let error;
+      if (editing.id) {
+        // Update existing link
+        ({ error } = await supabase.from('links').update(linkData).eq('id', editing.id));
+      } else {
+        // Create new link
+        ({ error } = await supabase.from('links').insert(linkData));
+      }
+
+      if (error) throw error;
+      toast.success(`Link has been successfully ${editing.id ? 'updated' : 'added'}.`);
+      
+      closeEditor();
+      await fetchLinks(); // Refresh data from DB
+    } catch (error) {
+      toast.error('Failed to save the link.', { description: error.message });
+      console.error("Error saving link: ", error);
+    }
+  };
+
+  const deleteLink = async () => {
+    if (!editing?.id) return;
+    
+    try {
+      const { error } = await supabase.from('links').delete().eq('id', editing.id);
+      if (error) throw error;
+      
+      toast.success('Link deleted successfully.');
+      setShowDeleteConfirm(false);
+      closeEditor();
+      await fetchLinks(); // Refresh data from DB
+    } catch (error) {
+      toast.error('Failed to delete the link.', { description: error.message });
+      console.error("Error deleting link: ", error);
+    }
+  };
+
+  // --- Component Lifecycle ---
+
+  useEffect(() => {
+    fetchLinks();
+  }, []);
+
+  // --- UI Event Handlers ---
+
+  const openEditor = (link = null) => {
+    // If no link is provided, use the new link template.
+    // Otherwise, map the DB fields to the form state fields, including new fields.
+    setEditing(link ? {
       id: link.id,
-      label: link.label || '',
-      address: link.address || '',
-      description: link.description || '',
-      linkType: link.linkType || 'any',
-      displayMethod: link.displayMethod || 'new',
-      displayInMenu: !!link.displayInMenu,
-      menuTopLevel: link.menuTopLevel || '',
-      menuCategory: link.menuCategory || '',
-    })
-    setShowEditor(true)
-  }
+      label: link.label,
+      web_address: link.web_address,
+      description: link.description,
+      type: link.type,
+      display: link.display,
+      show_in_menu: link.show_in_menu,
+      top_level_menu: link.top_level_menu,
+      menu_category: link.menu_category,
+    } : { ...NEW_LINK_TEMPLATE });
+    setShowEditor(true);
+  };
 
   const closeEditor = () => {
-    setShowEditor(false)
-    setEditing(null)
-  }
-
-  const saveEditor = () => {
-    if (!editing) return
-    setLinks(prev => prev.map(l => l.id === editing.id ? { ...l, ...editing } : l))
-    closeEditor()
-  }
+    setShowEditor(false);
+    setEditing(null);
+  };
 
   const requestDelete = () => {
-    if (!editing) return
-    setShowDeleteConfirm(true)
-  }
+    if (!editing) return;
+    setShowDeleteConfirm(true);
+  };
 
   const cancelDelete = () => {
-    setShowDeleteConfirm(false)
-  }
-
-  const confirmDelete = () => {
-    if (!editing) return
-    setLinks(prev => prev.filter(l => l.id !== editing.id))
-    setShowDeleteConfirm(false)
-    closeEditor()
-  }
+    setShowDeleteConfirm(false);
+  };
 
   return (
-    <Layout userRole={currentUser.role} userName={currentUser.name}>
+    <Layout userName="Admin User" userRole="admin">
       <div className="p-6">
         <PageHeader
           title="External Link Manager"
@@ -82,23 +159,9 @@ export default function ExternalLinksPage() {
         />
 
         <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-
           <div className="p-4 border-b flex justify-end">
             <Button 
-              onClick={() => {
-                setEditing({
-                  id: Date.now(), // Temporary ID for new link
-                  label: '',
-                  address: '',
-                  description: '',
-                  linkType: 'any',
-                  displayMethod: 'new',
-                  displayInMenu: false,
-                  menuTopLevel: '',
-                  menuCategory: ''
-                })
-                setShowEditor(true)
-              }}
+              onClick={() => openEditor()}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               Add New Link
@@ -114,22 +177,33 @@ export default function ExternalLinksPage() {
                 </tr>
               </thead>
               <tbody>
-                {links.map(link => (
-                  <tr key={link.id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => openEditor(link)}>
-                    <td className="px-6 py-3 font-medium text-gray-900">{link.label}</td>
-                    <td className="px-6 py-3">
-                      <a
-                        href={link.address}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 hover:underline break-all"
-                      >
-                        {link.address}
-                      </a>
-                    </td>
-                    <td className="px-6 py-3 text-right text-xs text-gray-400">Click to edit</td>
+                {loading ? (
+                  <tr>
+                    <td colSpan="3" className="text-center p-6 text-gray-500">Loading links...</td>
                   </tr>
-                ))}
+                ) : links.length > 0 ? (
+                  links.map(link => (
+                    <tr key={link.id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => openEditor(link)}>
+                      <td className="px-6 py-3 font-medium text-gray-900">{link.label}</td>
+                      <td className="px-6 py-3">
+                        <a
+                          href={link.web_address}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()} // Prevents modal from opening when link is clicked
+                          className="text-blue-600 hover:text-blue-800 hover:underline break-all"
+                        >
+                          {link.web_address}
+                        </a>
+                      </td>
+                      <td className="px-6 py-3 text-right text-xs text-gray-400">Click to edit</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" className="text-center p-6 text-gray-500">No links found. Add one to get started.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -140,7 +214,7 @@ export default function ExternalLinksPage() {
             <div className="absolute inset-0 bg-black/40" onClick={closeEditor} />
             <div className="relative bg-white rounded-lg w-full max-w-lg shadow-xl border">
               <div className="p-6 border-b flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Edit Link</h3>
+                <h3 className="text-lg font-semibold">{editing.id ? 'Edit Link' : 'Add New Link'}</h3>
                 <Button variant="outline" onClick={closeEditor}>Close</Button>
               </div>
 
@@ -149,55 +223,50 @@ export default function ExternalLinksPage() {
                   <Label htmlFor="label">Label</Label>
                   <Input id="label" value={editing.label} onChange={(e) => setEditing(v => ({ ...v, label: e.target.value }))} placeholder="e.g., Company Website" />
                 </div>
-
                 <div>
                   <Label htmlFor="address">Web address</Label>
-                  <Input id="address" type="url" value={editing.address} onChange={(e) => setEditing(v => ({ ...v, address: e.target.value }))} placeholder="https://..." />
+                  <Input id="address" type="url" value={editing.web_address} onChange={(e) => setEditing(v => ({ ...v, web_address: e.target.value }))} placeholder="https://..." />
                 </div>
-
                 <div>
                   <Label htmlFor="description">Description</Label>
                   <textarea
                     id="description"
-                    value={editing.description}
+                    value={editing.description || ''}
                     onChange={(e) => setEditing(v => ({ ...v, description: e.target.value }))}
                     placeholder="Short description"
                     className="mt-2 w-full border rounded-md px-3 py-2 min-h-[96px] focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-
                 <div>
                   <Label>Link type</Label>
                   <div className="mt-2 flex items-center gap-6 text-sm">
                     <label className="inline-flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="linkType" className="accent-blue-600" checked={editing.linkType === 'employee'} onChange={() => setEditing(v => ({ ...v, linkType: 'employee' }))} />
+                      <input type="radio" name="linkType" className="accent-blue-600" checked={editing.type === 'Employee'} onChange={() => setEditing(v => ({ ...v, type: 'Employee' }))} />
                       <span>Employee</span>
                     </label>
                     <label className="inline-flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="linkType" className="accent-blue-600" checked={editing.linkType === 'client'} onChange={() => setEditing(v => ({ ...v, linkType: 'client' }))} />
+                      <input type="radio" name="linkType" className="accent-blue-600" checked={editing.type === 'Client'} onChange={() => setEditing(v => ({ ...v, type: 'Client' }))} />
                       <span>Client</span>
                     </label>
                     <label className="inline-flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="linkType" className="accent-blue-600" checked={editing.linkType === 'any'} onChange={() => setEditing(v => ({ ...v, linkType: 'any' }))} />
+                      <input type="radio" name="linkType" className="accent-blue-600" checked={editing.type === 'Any'} onChange={() => setEditing(v => ({ ...v, type: 'Any' }))} />
                       <span>Any</span>
                     </label>
                   </div>
                 </div>
-
                 <div>
                   <Label htmlFor="displayMethod">Display method</Label>
                   <select
                     id="displayMethod"
-                    value={editing.displayMethod}
-                    onChange={(e) => setEditing(v => ({ ...v, displayMethod: e.target.value }))}
+                    value={editing.display}
+                    onChange={(e) => setEditing(v => ({ ...v, display: e.target.value }))}
                     className="mt-2 w-full border rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="new">New window</option>
-                    <option value="current">Current window</option>
-                    <option value="embed">Embed on page</option>
+                    <option value="New window">New window</option>
+                    <option value="Current page">Current page</option>
+                    <option value="Embed on page">Embed on page</option>
                   </select>
                 </div>
-
                 <div>
                   <Label>Display in menu</Label>
                   <div className="mt-2">
@@ -205,36 +274,38 @@ export default function ExternalLinksPage() {
                       <input
                         type="checkbox"
                         className="accent-blue-600"
-                        checked={!!editing.displayInMenu}
-                        onChange={(e) => setEditing(v => ({ ...v, displayInMenu: e.target.checked }))}
+                        checked={!!editing.show_in_menu}
+                        onChange={(e) => setEditing(v => ({ ...v, show_in_menu: e.target.checked }))}
                       />
                       <span>Show this link in a navigation menu</span>
                     </label>
                   </div>
-
-                  {editing.displayInMenu && (
-                    <div className="mt-3 grid gap-4 md:grid-cols-2">
+                  
+                  {editing.show_in_menu && (
+                    <div className="mt-4 pt-4 border-t grid gap-4 md:grid-cols-2">
                       <div>
-                        <Label htmlFor="menuTopLevel">Top level menu</Label>
+                        <Label htmlFor="top_level_menu">Top level menu</Label>
                         <select
-                          id="menuTopLevel"
-                          value={editing.menuTopLevel}
-                          onChange={(e) => setEditing(v => ({ ...v, menuTopLevel: e.target.value }))}
+                          id="top_level_menu"
+                          value={editing.top_level_menu || ''}
+                          onChange={(e) => setEditing(v => ({ ...v, top_level_menu: e.target.value }))}
                           className="mt-2 w-full border rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="">Select...</option>
                           <option value="Administration">Administration</option>
-                          <option value="Resources">Resources</option>
-                          <option value="Tools">Tools</option>
-                          <option value="Help">Help</option>
+                          <option value="My stuff">My stuff</option>
+                          <option value="Payroll">Payroll</option>
+                          <option value="personnel">Personnel</option>
+                          <option value="tools">Tools</option>
+                          <option value="resources">Resources</option>
                         </select>
                       </div>
                       <div>
-                        <Label htmlFor="menuCategory">Category</Label>
+                        <Label htmlFor="menu_category">Category</Label>
                         <Input
-                          id="menuCategory"
-                          value={editing.menuCategory}
-                          onChange={(e) => setEditing(v => ({ ...v, menuCategory: e.target.value }))}
+                          id="menu_category"
+                          value={editing.menu_category || ''}
+                          onChange={(e) => setEditing(v => ({ ...v, menu_category: e.target.value }))}
                           placeholder="e.g., Benefits, HR, Docs"
                         />
                       </div>
@@ -245,7 +316,7 @@ export default function ExternalLinksPage() {
 
               <div className="p-4 border-t flex justify-between gap-3">
                 <div>
-                  {initialLinks.some(link => link.id === editing.id) ? (
+                  {editing.id ? (
                     <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50" onClick={requestDelete}>
                       Delete
                     </Button>
@@ -253,7 +324,7 @@ export default function ExternalLinksPage() {
                 </div>
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={closeEditor}>Cancel</Button>
-                  <Button onClick={saveEditor}>Save</Button>
+                  <Button onClick={saveLink}>Save</Button>
                 </div>
               </div>
             </div>
@@ -270,7 +341,7 @@ export default function ExternalLinksPage() {
               </div>
               <div className="px-6 pb-6 flex justify-end gap-3">
                 <Button variant="outline" onClick={cancelDelete}>Cancel</Button>
-                <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={confirmDelete}>Delete</Button>
+                <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={deleteLink}>Delete</Button>
               </div>
             </div>
           </div>
@@ -279,5 +350,3 @@ export default function ExternalLinksPage() {
     </Layout>
   )
 }
-
-
