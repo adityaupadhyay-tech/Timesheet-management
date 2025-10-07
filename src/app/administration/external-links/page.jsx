@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-//import { toast } from "sonner";
+import { toast } from "sonner";
 
 // A constant for the new link structure to avoid repetition
 const NEW_LINK_TEMPLATE = {
