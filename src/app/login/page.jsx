@@ -19,7 +19,6 @@ export default function LoginPage() {
     setIsLoading(true)
 
     // TODO: Connect to backend later
-    console.log('Login attempt:', { email, password })
 
     // Simulate API call
     setTimeout(() => {

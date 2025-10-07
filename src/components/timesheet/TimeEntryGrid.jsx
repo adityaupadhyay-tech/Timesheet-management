@@ -99,7 +99,6 @@ export default function TimeEntryGrid({
 
   // Clear Saturday and Sunday cells when those days are removed
   useEffect(() => {
-    console.log('Weekend clearing effect triggered:', { includeSaturday, includeSunday, selectedDate })
     
     const weekStart = new Date(selectedDate)
     weekStart.setDate(selectedDate.getDate() - selectedDate.getDay())
@@ -152,7 +151,6 @@ export default function TimeEntryGrid({
     const isCompanySwitch = hasEntries && !hasGridRows
     
     if (isCompanySwitch) {
-      console.log('Company switch detected - clearing grid rows')
       setLocalGridRows([])
       setPendingAutoSaves([])
       lastWeekRef.current = ''
@@ -215,7 +213,6 @@ export default function TimeEntryGrid({
     })
 
     setLocalGridRows(newGridRows)
-    console.log('Initialized grid with existing entries:', newGridRows.length, 'rows')
   }
 
   useEffect(() => {
@@ -230,7 +227,6 @@ export default function TimeEntryGrid({
                            lastEntriesRef.current.length > 0
     
     if (isCompanySwitch) {
-      console.log('Company switch detected - clearing and reinitializing grid')
       setLocalGridRows([])
       setPendingAutoSaves([])
       lastWeekRef.current = ''
@@ -257,7 +253,6 @@ export default function TimeEntryGrid({
   // Handle pending auto-saves
   useEffect(() => {
     if (pendingAutoSaves.length > 0) {
-      console.log('Processing pending auto-saves:', pendingAutoSaves)
       setIsAutoSaving(true)
       pendingAutoSaves.forEach(({ id, date, duration, isNew, projectId, description }) => {
         const durationMinutes = hhmmToMinutes(duration)
@@ -270,7 +265,6 @@ export default function TimeEntryGrid({
           )
           
           if (existingEntry) {
-            console.log(`Deleting entry for row ${id}, date ${date}:`, existingEntry.id)
             onDelete(existingEntry.id)
           }
           return
@@ -309,10 +303,8 @@ export default function TimeEntryGrid({
 
   // Initialize grid with current week's entries
   useEffect(() => {
-    console.log('Grid initialization effect triggered - entries:', entries.length, 'selectedDate:', selectedDate, 'isAutoSaving:', isAutoSaving)
     
     if (isAutoSaving) {
-      console.log('Skipping grid reinitialization - auto-saving in progress')
       return
     }
     
@@ -325,15 +317,8 @@ export default function TimeEntryGrid({
     const currentWeekKey = weekStart.toISOString().split('T')[0]
     
     setLocalGridRows(prevRows => {
-      console.log('Grid reinitialization check:', {
-        lastWeek: lastWeekRef.current,
-        currentWeek: currentWeekKey,
-        prevRowsLength: prevRows.length,
-        willReinitialize: !(lastWeekRef.current === currentWeekKey && prevRows.length > 0)
-      })
       
       if (lastWeekRef.current === currentWeekKey && prevRows.length > 0) {
-        console.log('Skipping grid reinitialization - same week and rows exist')
         return prevRows
       }
       
@@ -390,7 +375,6 @@ export default function TimeEntryGrid({
         })
       }
 
-      console.log('Grid reinitialized with rows:', rows.length)
       return rows
     })
   }, [entries, selectedDate, isAutoSaving])
@@ -452,7 +436,6 @@ export default function TimeEntryGrid({
       const row = localGridRows.find(r => r.id === id)
       
       if (row) {
-        console.log(`Clearing row ${id} - Project: ${row.projectId}, Description: ${row.description}`)
         Object.keys(row.weekEntries).forEach(date => {
           const dayEntry = row.weekEntries[date]
           if (dayEntry.duration && dayEntry.duration !== '') {
@@ -462,7 +445,6 @@ export default function TimeEntryGrid({
                (entry.description === row.description && row.description !== '') ||
                (entry.description === 'Time entry' && (!row.description || row.description === '')))
             )
-            console.log(`Found ${entriesToDelete.length} entries to delete for date ${date}`)
             entriesToDelete.forEach(entry => onDelete(entry.id))
           }
         })
@@ -499,7 +481,6 @@ export default function TimeEntryGrid({
       const row = localGridRows.find(r => r.id === id)
       
       if (row) {
-        console.log(`Removing row ${id} - Project: ${row.projectId}, Description: ${row.description}`)
         Object.keys(row.weekEntries).forEach(date => {
           const dayEntry = row.weekEntries[date]
           if (dayEntry.duration && dayEntry.duration !== '') {
@@ -509,7 +490,6 @@ export default function TimeEntryGrid({
                (entry.description === row.description && row.description !== '') ||
                (entry.description === 'Time entry' && (!row.description || row.description === '')))
             )
-            console.log(`Found ${entriesToDelete.length} entries to delete for date ${date}`)
             entriesToDelete.forEach(entry => onDelete(entry.id))
           }
         })
@@ -520,7 +500,6 @@ export default function TimeEntryGrid({
   }
 
   const saveRow = (row) => {
-    console.log(`saveRow called for row ${row.id}`)
     
     Object.entries(row.weekEntries).forEach(([date, dayEntry]) => {
       if (dayEntry.duration && dayEntry.duration !== '') {
@@ -535,7 +514,6 @@ export default function TimeEntryGrid({
             status: row.status
           }
 
-          console.log(`Saving entry for row ${row.id}, date ${date}:`, entryData)
 
           if (row.isNew) {
             onSave(entryData)
@@ -575,7 +553,6 @@ export default function TimeEntryGrid({
   const updateDayEntry = (id, date, duration, isOnChange = true) => {
     const formattedDuration = validateAndFormatTimeInput(duration, isOnChange)
     
-    console.log(`updateDayEntry called:`, { id, date, duration, formattedDuration, isOnChange })
     
     setLocalGridRows(prev => prev.map(row => {
       if (row.id === id) {
@@ -593,7 +570,6 @@ export default function TimeEntryGrid({
           }
           
           saveTimeoutRef.current[debounceKey] = setTimeout(() => {
-            console.log(`Debounced auto-save for row ${id}, date ${date}, duration ${formattedDuration}`)
             setPendingAutoSaves(prev => [...prev, {
               id,
               date,
@@ -611,12 +587,10 @@ export default function TimeEntryGrid({
     }))
 
     if (!isOnChange && formattedDuration && formattedDuration !== '') {
-      console.log(`Queuing auto-save for row ${id}, date ${date}, duration ${formattedDuration}, isOnChange: ${isOnChange}`)
       setTimeout(() => {
         setLocalGridRows(currentGridRows => {
           const currentRow = currentGridRows.find(row => row.id === id)
           if (currentRow) {
-            console.log(`Adding to pending auto-saves:`, { id, date, duration: formattedDuration, isNew: currentRow.isNew })
             setPendingAutoSaves(prev => [...prev, {
               id,
               date,
@@ -626,7 +600,6 @@ export default function TimeEntryGrid({
               description: currentRow.description
             }])
           } else {
-            console.log(`Row ${id} not found when queuing auto-save`)
           }
           return currentGridRows
         })
@@ -1275,7 +1248,6 @@ export default function TimeEntryGrid({
                   const wasIncluded = includeSaturday
                   setIncludeSaturday(!includeSaturday)
                   if (wasIncluded) {
-                    console.log('Saturday removed - cells will be cleared')
                   }
                 }}
                 className="flex items-center gap-2"
@@ -1297,7 +1269,6 @@ export default function TimeEntryGrid({
                   const wasIncluded = includeSunday
                   setIncludeSunday(!includeSunday)
                   if (wasIncluded) {
-                    console.log('Sunday removed - cells will be cleared')
                   }
                 }}
                 className="flex items-center gap-2"

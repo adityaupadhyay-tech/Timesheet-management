@@ -170,7 +170,6 @@ export default function AdminDashboard() {
           setError(dashboardResult.error);
         }
       } else {
-        console.log("Dashboard Companies Data:", dashboardResult.data); // Debug log
         setDashboardCompanies(dashboardResult.data || []);
       }
     } catch (err) {

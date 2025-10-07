@@ -9,8 +9,6 @@ export default function Navigation({ userRole, userName }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const handleLogout = () => {
-    // TODO: Implement logout logic
-    console.log('Logging out...')
     router.push('/login')
   }
 

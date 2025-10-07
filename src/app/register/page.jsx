@@ -24,7 +24,6 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     // TODO: Connect to backend later
-    console.log('Registration attempt:', formData)
 
     // Simulate API call
     setTimeout(() => {

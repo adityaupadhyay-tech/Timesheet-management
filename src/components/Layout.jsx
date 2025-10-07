@@ -14,10 +14,6 @@ import { useSidebar } from '@/contexts/SidebarContext'
 export default function Layout({ children, userRole, userName }) {
   const { sidebarOpen, toggleSidebar } = useSidebar()
 
-  // Debug: Log sidebar state changes
-  useEffect(() => {
-    console.log('Sidebar state changed:', sidebarOpen)
-  }, [sidebarOpen])
 
   // Only close sidebar when screen size changes to desktop (not on mobile)
   useEffect(() => {

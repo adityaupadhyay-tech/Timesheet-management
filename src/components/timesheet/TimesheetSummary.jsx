@@ -6,9 +6,6 @@ import { Clock, Calendar, TrendingUp, Target, BarChart3 } from 'lucide-react'
 
 
 export default function TimesheetSummary({ entries, projects, selectedDate, gridRows }) {
-  console.log('TimesheetSummary - Received entries:', entries.length, entries)
-  console.log('TimesheetSummary - Received projects:', projects.length, projects)
-  
   // Force re-render when entries change by using a key based on entries length and content
   const entriesKey = entries.length + entries.reduce((sum, entry) => sum + entry.duration, 0) + (selectedDate?.getTime() || 0)
 
@@ -125,17 +122,6 @@ export default function TimesheetSummary({ entries, projects, selectedDate, grid
   const avgHoursPerDay = gridRows && gridRows.length > 0 
     ? (gridWorkingDays > 0 ? (gridTotalMinutes / 60) / gridWorkingDays : 0)
     : getAverageHoursPerDay(currentWeekEntries)
-
-  console.log('TimesheetSummary - Calculations:', {
-    selectedDate: selectedDate?.toISOString().split('T')[0] || 'current date',
-    currentWeekEntries,
-    currentMonthEntries,
-    gridRowsCount: gridRows ? gridRows.length : 0,
-    usingGridData: gridRows && gridRows.length > 0,
-    weekUsingGrid: gridRows && gridRows.length > 0,
-    monthUsingGrid: gridRows && gridRows.length > 0,
-    avgUsingGrid: gridRows && gridRows.length > 0
-  })
 
 
     return (

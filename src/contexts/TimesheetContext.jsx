@@ -118,13 +118,6 @@ export function TimesheetProvider({ children }) {
     ? allProjects.filter(project => project.companyId === selectedCompany.id)
     : []
 
-  console.log('TimesheetContext - Company-specific data:', {
-    selectedCompany: selectedCompany?.name,
-    companyId: selectedCompany?.id,
-    entriesCount: entries.length,
-    projectsCount: projects.length
-  })
-
   // Timer effect
   useEffect(() => {
     let interval
@@ -160,12 +153,7 @@ export function TimesheetProvider({ children }) {
       updatedAt: new Date().toISOString()
     }
 
-    console.log('TimesheetContext - addEntry called:', { entryData, newEntry, selectedCompany })
-    setAllEntries(prev => {
-      const updated = [...prev, newEntry]
-      console.log('TimesheetContext - allEntries updated:', updated.length, 'entries')
-      return updated
-    })
+    setAllEntries(prev => [...prev, newEntry])
   }
 
   const updateEntry = (id, updates) => {
@@ -174,16 +162,11 @@ export function TimesheetProvider({ children }) {
       return
     }
 
-    console.log('TimesheetContext - updateEntry called:', { id, updates, selectedCompany })
-    setAllEntries(prev => {
-      const updated = prev.map(entry => 
-        entry.id === id 
-          ? { ...entry, ...updates, companyId: selectedCompany.id, updatedAt: new Date().toISOString() }
-          : entry
-      )
-      console.log('TimesheetContext - allEntries updated:', updated.length, 'entries')
-      return updated
-    })
+    setAllEntries(prev => prev.map(entry => 
+      entry.id === id 
+        ? { ...entry, ...updates, companyId: selectedCompany.id, updatedAt: new Date().toISOString() }
+        : entry
+    ))
   }
 
   const deleteEntry = (id) => {
@@ -246,7 +229,6 @@ export function TimesheetProvider({ children }) {
         submittedAt: new Date().toISOString()
       }
       setCurrentTimesheet(updatedTimesheet)
-      console.log('Timesheet submitted:', updatedTimesheet)
     }
   }
 
@@ -259,7 +241,6 @@ export function TimesheetProvider({ children }) {
         approvedBy: 'manager1' // TODO: Get from auth context
       }
       setCurrentTimesheet(updatedTimesheet)
-      console.log('Timesheet approved:', updatedTimesheet)
     }
   }
 
@@ -273,7 +254,6 @@ export function TimesheetProvider({ children }) {
         rejectionReason: reason
       }
       setCurrentTimesheet(updatedTimesheet)
-      console.log('Timesheet rejected:', updatedTimesheet)
     }
   }
 

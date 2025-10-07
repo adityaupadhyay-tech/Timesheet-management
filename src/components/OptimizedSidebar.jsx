@@ -18,7 +18,6 @@ const OptimizedSidebar = memo(function OptimizedSidebar({
   const pathname = usePathname()
 
   const handleLogout = () => {
-    console.log('Logging out...')
     router.push('/login')
   }
 
@@ -97,7 +96,7 @@ const OptimizedSidebar = memo(function OptimizedSidebar({
                   name={item.icon} 
                   className={`h-5 w-5 ${!isOpen ? '' : 'mr-3'}`} 
                 />
-                {isOpen && {item.label}</span>}
+                {isOpen && <span>{item.label}</span>}
               </Link>
             )
           })}
@@ -111,8 +110,9 @@ const OptimizedSidebar = memo(function OptimizedSidebar({
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">
                     {userName.charAt(0).toUpperCase()}
-                  </span></div></div>
-                
+                  </span>
+                </div>
+                <div>
                   <p className="text-sm font-medium text-gray-900">{userName}</p>
                   <p className="text-xs text-gray-500 capitalize">{userRole}</p>
                 </div>
@@ -131,7 +131,8 @@ const OptimizedSidebar = memo(function OptimizedSidebar({
               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm font-medium">
                   {userName.charAt(0).toUpperCase()}
-                </span></div></div>
+                </span>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"

@@ -4,12 +4,14 @@ import { memo, useEffect } from 'react'
 import OptimizedSidebar from './OptimizedSidebar'
 import { useSidebar } from '@/contexts/SidebarContext'
 
-) {
+const OptimizedLayout = memo(function OptimizedLayout({ children }) {
   const { sidebarOpen, toggleSidebar } = useSidebar()
 
   // Optimized resize handler with debouncing
   useEffect(() => {
-    let timeoutId= () => {
+    let timeoutId
+    
+    const handleResize = () => {
       clearTimeout(timeoutId)
       timeoutId = setTimeout(() => {
         // Only auto-close on desktop if it was previously open on mobile

@@ -28,8 +28,6 @@ export default function Sidebar({ userRole, userName, isOpen, onToggle }) {
   const pathname = usePathname();
 
   const handleLogout = () => {
-    // TODO: Implement logout logic
-    console.log("Logging out...");
     router.push("/login");
   };
 

@@ -19,14 +19,8 @@ export function SidebarProvider({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const toggleSidebar = () => {
-    console.log('Toggling sidebar from:', sidebarOpen, 'to:', !sidebarOpen)
     setSidebarOpen(!sidebarOpen)
   }
-
-  // Debug: Log when sidebar state changes
-  useEffect(() => {
-    console.log('SidebarContext state changed:', sidebarOpen)
-  }, [sidebarOpen])
 
   return (
     <SidebarContext.Provider value={{ sidebarOpen, toggleSidebar, setSidebarOpen }}>
