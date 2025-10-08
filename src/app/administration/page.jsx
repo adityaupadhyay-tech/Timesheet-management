@@ -111,25 +111,28 @@ export default function AdministrationPage() {
                 </CardContent>
               </Card>
 
-              <a href="/administration/resource-admin">
-                <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <AdminPanelSettings className="mr-2" />
-                      Resource Admin
-                    </CardTitle>
-                    <CardDescription>
-                      Administrative resource management
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600">
-                      Manage system resources, configurations, and administrative
-                      settings.
-                    </p>
-                  </CardContent>
-                </Card>
-              </a>
+              <Card
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => {
+                  window.location.href = "/administration/resource-admin";
+                }}
+              >
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <AdminPanelSettings className="mr-2" />
+                    Resource Admin
+                  </CardTitle>
+                  <CardDescription>
+                    Administrative resource management
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">
+                    Manage system resources, configurations, and administrative
+                    settings.
+                  </p>
+                </CardContent>
+              </Card>
 
               <Card
                 className="cursor-pointer hover:shadow-md transition-shadow"

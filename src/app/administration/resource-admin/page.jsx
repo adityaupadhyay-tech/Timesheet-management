@@ -12,8 +12,9 @@ import { EditableTable } from "@/components/ui/editable-table"
 import Layout from '@/components/Layout'
 import PageHeader from '@/components/PageHeader'
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings'
-import { FileText, Upload, Plus, X } from 'lucide-react'
+import { FileText, Upload, Plus, X, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { 
   Description as DescriptionIcon,
   Work as WorkIcon,
@@ -41,6 +42,26 @@ export default function ResourceAdminPage() {
   // Documents state
   const [documents, setDocuments] = useState([]);
   
+  // Expanded categories state (all expanded by default)
+  const [expandedCategories, setExpandedCategories] = useState({
+    general: true,
+    employment: true,
+    admin: true,
+    video: true,
+    enrollment: true,
+    client: true,
+    driver: true,
+  });
+
+  // Properties/Record Types state
+  const [recordTypes, setRecordTypes] = useState([
+    { id: 1, enabled: false, propertyName: 'Unpublished', description: 'Documents and resources not yet published', clientUsage: 3 },
+    { id: 2, enabled: true, propertyName: 'Office fixtures', description: 'Office equipment and fixture management', clientUsage: 8 },
+    { id: 3, enabled: true, propertyName: 'Blueberry pickers', description: 'Seasonal blueberry picker records and documentation', clientUsage: 12 },
+    { id: 4, enabled: true, propertyName: 'User generic handbook', description: 'General user handbook and guidelines', clientUsage: 25 },
+    { id: 5, enabled: true, propertyName: 'Driver issue form', description: 'Driver incident and issue reporting forms', clientUsage: 7 },
+  ]);
+  
   // Document categories state with sample documents
   const [documentCategories, setDocumentCategories] = useState([
     { 
@@ -48,9 +69,39 @@ export default function ResourceAdminPage() {
       name: 'General Information', 
       icon: 'Description',
       documents: [
-        { id: 'doc1', name: '360 Employee Access', url: '#' },
-        { id: 'doc2', name: 'Payplus Support', url: '#' },
-        { id: 'doc3', name: 'Sundial Integration Doc', url: '#' }
+        { 
+          id: 'doc1', 
+          adminLabel: '360_employee_access',
+          displayLabel: '360 Employee Access',
+          type: 'External link',
+          instructions: 'Link to access 360 employee portal',
+          menuAccess: 'All Users',
+          file: null,
+          url: '#',
+          lastUpdated: new Date().toISOString()
+        },
+        { 
+          id: 'doc2', 
+          adminLabel: 'payplus_support',
+          displayLabel: 'Payplus Support',
+          type: 'External link',
+          instructions: 'Support documentation for Payplus system',
+          menuAccess: 'All Users',
+          file: null,
+          url: '#',
+          lastUpdated: new Date().toISOString()
+        },
+        { 
+          id: 'doc3', 
+          adminLabel: 'sundial_integration',
+          displayLabel: 'Sundial Integration Doc',
+          type: 'PDF document',
+          instructions: 'Integration guide for Sundial time tracking',
+          menuAccess: 'Admin Only',
+          file: null,
+          url: '#',
+          lastUpdated: new Date().toISOString()
+        }
       ]
     },
     { 
@@ -94,8 +145,14 @@ export default function ResourceAdminPage() {
   // State for dialogs
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isPropertyDialogOpen, setIsPropertyDialogOpen] = useState(false);
+  const [isDeletePropertyDialogOpen, setIsDeletePropertyDialogOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState(null);
   const [currentCategoryId, setCurrentCategoryId] = useState('');
+  const [documentToDelete, setDocumentToDelete] = useState(null);
+  const [editingProperty, setEditingProperty] = useState(null);
+  const [propertyToDelete, setPropertyToDelete] = useState(null);
   
   const [newCategory, setNewCategory] = useState({
     displayLabel: '',
@@ -110,6 +167,12 @@ export default function ResourceAdminPage() {
     file: null,
     instructions: '',
     menuAccess: ''
+  });
+
+  const [propertyForm, setPropertyForm] = useState({
+    propertyName: '',
+    description: '',
+    enabled: true
   });
   
   const documentTypes = [
@@ -184,16 +247,30 @@ export default function ResourceAdminPage() {
     { value: 'Folder', label: 'Folder', icon: <FolderIcon className="h-5 w-5" /> },
   ];
 
+  // Toggle category expansion
+  const toggleCategory = (categoryId) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+  };
+
   // Handle adding a new category
   const handleAddCategory = () => {
     if (newCategory.displayLabel && newCategory.adminLabel) {
+      const newCategoryId = newCategory.adminLabel.toLowerCase().replace(/\s+/g, '-');
       const newCategoryObj = {
-        id: newCategory.adminLabel.toLowerCase().replace(/\s+/g, '-'),
+        id: newCategoryId,
         name: newCategory.displayLabel,
-        icon: newCategory.icon
+        icon: newCategory.icon,
+        documents: []
       };
       
       setDocumentCategories([...documentCategories, newCategoryObj]);
+      setExpandedCategories(prev => ({
+        ...prev,
+        [newCategoryId]: true
+      }));
       setNewCategory({ displayLabel: '', adminLabel: '', icon: 'Folder' });
       setIsCategoryDialogOpen(false);
     }
@@ -220,19 +297,27 @@ export default function ResourceAdminPage() {
     return <IconComponent className="h-5 w-5" />;
   };
 
-  // Handle deleting a document from a category
-  const handleDeleteDocument = (categoryId, documentId) => {
-    if (window.confirm('Are you sure you want to delete this document?')) {
+  // Handle deleting a document from a category (opens confirmation dialog)
+  const handleDeleteDocument = (categoryId, documentId, documentLabel) => {
+    setDocumentToDelete({ categoryId, documentId, documentLabel });
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Confirm and execute document deletion
+  const confirmDeleteDocument = () => {
+    if (documentToDelete) {
       setDocumentCategories(prevCategories => {
         return prevCategories.map(category => {
-          if (category.id !== categoryId) return category;
+          if (category.id !== documentToDelete.categoryId) return category;
           
           return {
             ...category,
-            documents: category.documents.filter(doc => doc.id !== documentId)
+            documents: category.documents.filter(doc => doc.id !== documentToDelete.documentId)
           };
         });
       });
+      setIsDeleteDialogOpen(false);
+      setDocumentToDelete(null);
     }
   };
 
@@ -268,20 +353,11 @@ export default function ResourceAdminPage() {
     setIsDocumentDialogOpen(true);
   };
 
-  // Handle form input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   // Handle file upload
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData(prev => ({
+      setDocumentForm(prev => ({
         ...prev,
         file: file
       }));
@@ -294,59 +370,89 @@ export default function ResourceAdminPage() {
 
   // Remove uploaded file
   const handleRemoveFile = () => {
-    setFormData(prev => ({
+    setDocumentForm(prev => ({
       ...prev,
       file: null
     }));
     setFilePreview(null);
   };
 
-  // Save document
-  const saveDocument = (e) => {
-    e.preventDefault();
-    
-    const newDocument = {
-      id: editingDocument || Date.now(),
-      name: formData.name,
-      adminLabel: formData.adminLabel,
-      displayLabel: formData.displayLabel,
-      type: formData.type,
-      instructions: formData.instructions,
-      file: formData.file,
-      lastUpdated: new Date().toISOString().split('T')[0],
-    };
-
-    if (editingDocument) {
-      setDocuments(documents.map(doc => 
-        doc.id === editingDocument ? newDocument : doc
-      ));
-    } else {
-      setDocuments([...documents, newDocument]);
-    }
-    
-    setIsModalOpen(false);
-  };
-
-  // Delete document
-  const deleteDocument = (id) => {
-    if (window.confirm('Are you sure you want to delete this document?')) {
-      setDocuments(documents.filter(doc => doc.id !== id));
-    }
-  };
-
-  // Format file size
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   // Get category name by ID
   const getCategoryName = (id) => {
     const category = documentCategories.find(cat => cat.id === id);
     return category ? category.name : 'Unknown';
+  };
+
+  // Property Management Functions
+  const togglePropertyEnabled = (propertyId) => {
+    setRecordTypes(prevTypes => 
+      prevTypes.map(type => 
+        type.id === propertyId ? { ...type, enabled: !type.enabled } : type
+      )
+    );
+  };
+
+  const handleOpenPropertyDialog = (property = null) => {
+    if (property) {
+      setPropertyForm({
+        propertyName: property.propertyName,
+        description: property.description || '',
+        enabled: property.enabled
+      });
+      setEditingProperty(property.id);
+    } else {
+      setPropertyForm({
+        propertyName: '',
+        description: '',
+        enabled: true
+      });
+      setEditingProperty(null);
+    }
+    setIsPropertyDialogOpen(true);
+  };
+
+  const handleSaveProperty = () => {
+    if (!propertyForm.propertyName.trim()) return;
+
+    if (editingProperty) {
+      // Update existing property
+      setRecordTypes(prevTypes =>
+        prevTypes.map(type =>
+          type.id === editingProperty
+            ? { ...type, propertyName: propertyForm.propertyName, description: propertyForm.description, enabled: propertyForm.enabled }
+            : type
+        )
+      );
+    } else {
+      // Add new property
+      const newProperty = {
+        id: Date.now(),
+        propertyName: propertyForm.propertyName,
+        description: propertyForm.description,
+        enabled: propertyForm.enabled,
+        clientUsage: 0
+      };
+      setRecordTypes(prev => [...prev, newProperty]);
+    }
+
+    setIsPropertyDialogOpen(false);
+    setPropertyForm({ propertyName: '', description: '', enabled: true });
+    setEditingProperty(null);
+  };
+
+  const handleDeleteProperty = (property) => {
+    setPropertyToDelete(property);
+    setIsDeletePropertyDialogOpen(true);
+  };
+
+  const confirmDeleteProperty = () => {
+    if (propertyToDelete) {
+      setRecordTypes(prevTypes => 
+        prevTypes.filter(type => type.id !== propertyToDelete.id)
+      );
+      setIsDeletePropertyDialogOpen(false);
+      setPropertyToDelete(null);
+    }
   };
 
   return (
@@ -375,7 +481,7 @@ export default function ResourceAdminPage() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activeTab} className="space-y-6">
+          <TabsContent value="resource" className="space-y-6">
             {/* Document Categories */}
             <Card>
               <CardHeader className="border-b">
@@ -401,10 +507,21 @@ export default function ResourceAdminPage() {
                 <div className="space-y-6">
                   {documentCategories.map((category) => (
                     <div key={category.id} className="border rounded-lg overflow-hidden">
-                      <div className="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
+                      <div 
+                        className="bg-gray-50 px-4 py-3 border-b flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={() => toggleCategory(category.id)}
+                      >
                         <div className="flex items-center space-x-2">
+                          {expandedCategories[category.id] ? (
+                            <ChevronDown className="h-5 w-5 text-gray-500" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-gray-500" />
+                          )}
                           {getIconComponent(category.icon)}
                           <h3 className="font-medium text-gray-900">{category.name}</h3>
+                          <span className="text-sm text-gray-500">
+                            ({category.documents?.length || 0})
+                          </span>
                         </div>
                         <Button 
                           size="sm" 
@@ -418,50 +535,62 @@ export default function ResourceAdminPage() {
                           Add Document
                         </Button>
                       </div>
-                      <div className="divide-y">
-                        {category.documents.length > 0 ? (
-                          category.documents.map(doc => (
-                            <div key={doc.id} className="px-4 py-3 hover:bg-gray-50 flex justify-between items-center">
-                              <a 
-                                href={doc.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline flex-1"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {doc.name}
-                              </a>
-                              <div className="flex space-x-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenDocumentDialog(category.id, doc);
-                                  }}
-                                >
-                                  Edit
-                                </Button>
+                      {expandedCategories[category.id] && (
+                        <div className="divide-y">
+                          {category.documents.length > 0 ? (
+                            category.documents.map(doc => (
+                              <div key={doc.id} className="px-4 py-3 hover:bg-gray-50 flex justify-between items-center">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <a 
+                                      href={doc.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:underline font-medium"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {doc.displayLabel || doc.name}
+                                    </a>
+                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                                      {doc.type}
+                                    </span>
+                                  </div>
+                                  {doc.instructions && (
+                                    <p className="text-sm text-gray-600 mt-1">{doc.instructions}</p>
+                                  )}
+                                </div>
+                                <div className="flex space-x-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenDocumentDialog(category.id, doc);
+                                    }}
+                                  >
+                                    Edit
+                                  </Button>
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
                                   className="text-red-600 hover:text-red-700"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDeleteDocument(category.id, doc.id);
+                                    handleDeleteDocument(category.id, doc.id, doc.displayLabel || doc.name);
                                   }}
                                 >
                                   Delete
                                 </Button>
+                                </div>
                               </div>
+                            ))
+                          ) : (
+                            <div className="px-4 py-6 text-center text-gray-500">
+                              No documents added yet
                             </div>
-                          ))
-                        ) : (
-                          <div className="px-4 py-6 text-center text-gray-500">
-                            No documents added yet
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -748,6 +877,291 @@ export default function ResourceAdminPage() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                      <AlertTriangle className="h-6 w-6 text-red-600" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-lg">Delete Document</DialogTitle>
+                      <DialogDescription className="text-sm text-gray-500">
+                        This action cannot be undone
+                      </DialogDescription>
+                    </div>
+                  </div>
+                </DialogHeader>
+                <div className="py-4">
+                  <p className="text-sm text-gray-700">
+                    Are you sure you want to delete <span className="font-semibold">"{documentToDelete?.documentLabel}"</span>?
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    This will permanently remove the document from the system.
+                  </p>
+                </div>
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsDeleteDialogOpen(false);
+                      setDocumentToDelete(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive"
+                    onClick={confirmDeleteDocument}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Delete Document
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
+
+          {/* Properties Tab */}
+          <TabsContent value="properties" className="space-y-6">
+            <Card>
+              <CardHeader className="border-b">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Record Types</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Manage property record types and their settings
+                    </p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleOpenPropertyDialog()}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Record Type
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                          Enabled
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Property Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                          Client Usage
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {recordTypes.map((property) => (
+                        <tr key={property.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Switch
+                              checked={property.enabled}
+                              onCheckedChange={() => togglePropertyEnabled(property.id)}
+                            />
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {property.propertyName}
+                            </div>
+                            {property.description && (
+                              <div className="text-sm text-gray-500 mt-1">
+                                {property.description}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-900">
+                                {property.clientUsage}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {property.clientUsage === 1 ? 'client' : 'clients'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenPropertyDialog(property)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => handleDeleteProperty(property)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {recordTypes.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      No record types found. Click "Add Record Type" to create one.
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Property Dialog */}
+            <Dialog open={isPropertyDialogOpen} onOpenChange={setIsPropertyDialogOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingProperty ? 'Edit Record Type' : 'Add New Record Type'}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {editingProperty 
+                      ? 'Update the record type details below.' 
+                      : 'Create a new record type for property management.'}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="propertyName">Property Name *</Label>
+                    <Input
+                      id="propertyName"
+                      value={propertyForm.propertyName}
+                      onChange={(e) => 
+                        setPropertyForm({...propertyForm, propertyName: e.target.value})
+                      }
+                      placeholder="Enter property name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <textarea
+                      id="description"
+                      value={propertyForm.description}
+                      onChange={(e) => 
+                        setPropertyForm({...propertyForm, description: e.target.value})
+                      }
+                      placeholder="Enter a brief description of this record type"
+                      rows={3}
+                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="enabled">Enabled</Label>
+                      <p className="text-sm text-gray-500">
+                        Enable or disable this record type
+                      </p>
+                    </div>
+                    <Switch
+                      id="enabled"
+                      checked={propertyForm.enabled}
+                      onCheckedChange={(checked) => 
+                        setPropertyForm({...propertyForm, enabled: checked})
+                      }
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsPropertyDialogOpen(false);
+                      setPropertyForm({ propertyName: '', description: '', enabled: true });
+                      setEditingProperty(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSaveProperty}
+                    disabled={!propertyForm.propertyName.trim()}
+                  >
+                    {editingProperty ? 'Save Changes' : 'Add Record Type'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Delete Property Confirmation Dialog */}
+            <Dialog open={isDeletePropertyDialogOpen} onOpenChange={setIsDeletePropertyDialogOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                      <AlertTriangle className="h-6 w-6 text-red-600" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-lg">Delete Record Type</DialogTitle>
+                      <DialogDescription className="text-sm text-gray-500">
+                        This action cannot be undone
+                      </DialogDescription>
+                    </div>
+                  </div>
+                </DialogHeader>
+                <div className="py-4">
+                  <p className="text-sm text-gray-700">
+                    Are you sure you want to delete <span className="font-semibold">"{propertyToDelete?.propertyName}"</span>?
+                  </p>
+                  {propertyToDelete && propertyToDelete.clientUsage > 0 && (
+                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-sm text-yellow-800">
+                        <strong>Warning:</strong> This record type is currently being used by {propertyToDelete.clientUsage} {propertyToDelete.clientUsage === 1 ? 'client' : 'clients'}.
+                      </p>
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-500 mt-2">
+                    This will permanently remove the record type from the system.
+                  </p>
+                </div>
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsDeletePropertyDialogOpen(false);
+                      setPropertyToDelete(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive"
+                    onClick={confirmDeleteProperty}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Delete Record Type
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
+
+          {/* Client Configuration Tab */}
+          <TabsContent value="client-config" className="space-y-6">
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-gray-500">Client Configuration section coming soon...</p>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
