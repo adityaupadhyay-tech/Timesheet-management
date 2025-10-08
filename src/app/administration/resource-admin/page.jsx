@@ -162,6 +162,12 @@ export default function ResourceAdminPage() {
   // Modal tab state
   const [modalTab, setModalTab] = useState("general");
 
+  // Client Configuration state
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [companyPropertyStates, setCompanyPropertyStates] = useState({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   // Fetch all categories and their documents from Supabase
   const fetchResourceData = async () => {
     try {
@@ -275,10 +281,145 @@ export default function ResourceAdminPage() {
     }
   };
 
+  // Fetch companies for client configuration
+  const fetchCompanies = async () => {
+    try {
+      const { data: companiesData, error: companiesError } = await supabase
+        .from("companies")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (companiesError) {
+        console.error("Error fetching companies:", companiesError);
+        return;
+      }
+
+      setCompanies(companiesData || []);
+    } catch (error) {
+      console.error("Error in fetchCompanies:", error);
+    }
+  };
+
+  // Fetch company's property associations
+  const fetchCompanyProperties = async (companyId) => {
+    try {
+      // Fetch all property associations for this company where is_active is true
+      const { data: associations, error: associationsError } = await supabase
+        .from("resource_company_properties")
+        .select("property_id, is_active")
+        .eq("company_id", companyId)
+        .eq("is_active", true);
+
+      if (associationsError) {
+        console.error("Error fetching company properties:", associationsError);
+        return {};
+      }
+
+      // Create a map of property_id -> true for active properties
+      const propertyStates = {};
+      recordTypes.forEach((property) => {
+        const isActive = associations?.some(
+          (assoc) => assoc.property_id === property.id
+        );
+        propertyStates[property.id] = isActive || false;
+      });
+
+      return propertyStates;
+    } catch (error) {
+      console.error("Error in fetchCompanyProperties:", error);
+      return {};
+    }
+  };
+
+  // Handle company selection
+  const handleCompanySelect = async (company) => {
+    // Check for unsaved changes
+    if (hasUnsavedChanges) {
+      const confirm = window.confirm(
+        "You have unsaved changes. Do you want to discard them?"
+      );
+      if (!confirm) return;
+    }
+
+    setSelectedCompany(company);
+    setHasUnsavedChanges(false);
+
+    // Fetch and set property states for this company
+    const propertyStates = await fetchCompanyProperties(company.id);
+    setCompanyPropertyStates(propertyStates);
+  };
+
+  // Handle property toggle
+  const handlePropertyToggle = (propertyId) => {
+    setCompanyPropertyStates((prev) => ({
+      ...prev,
+      [propertyId]: !prev[propertyId],
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  // Save company property configuration
+  const saveCompanyProperties = async () => {
+    if (!selectedCompany) return;
+
+    try {
+      setSaving(true);
+
+      // Step 1: Delete all existing associations for this company
+      const { error: deleteError } = await supabase
+        .from("resource_company_properties")
+        .delete()
+        .eq("company_id", selectedCompany.id);
+
+      if (deleteError) {
+        console.error("Error deleting existing associations:", deleteError);
+        alert("Error saving configuration. Please try again.");
+        setSaving(false);
+        return;
+      }
+
+      // Step 2: Insert new associations for checked properties
+      const activePropertyIds = Object.keys(companyPropertyStates).filter(
+        (propertyId) => companyPropertyStates[propertyId] === true
+      );
+
+      if (activePropertyIds.length > 0) {
+        const insertData = activePropertyIds.map((propertyId) => ({
+          company_id: selectedCompany.id,
+          property_id: parseInt(propertyId),
+          is_active: true,
+        }));
+
+        const { error: insertError } = await supabase
+          .from("resource_company_properties")
+          .insert(insertData);
+
+        if (insertError) {
+          console.error("Error inserting new associations:", insertError);
+          alert("Error saving configuration. Please try again.");
+          setSaving(false);
+          return;
+        }
+      }
+
+      // Refresh properties to update usage counts
+      await fetchProperties();
+
+      setHasUnsavedChanges(false);
+      alert("Configuration saved successfully!");
+    } catch (error) {
+      console.error("Error in saveCompanyProperties:", error);
+      alert("An unexpected error occurred. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Load data on component mount
   useEffect(() => {
     fetchResourceData();
     fetchProperties();
+    fetchCompanies();
   }, []);
 
   // Helper function to sync property associations (delete-then-insert)
@@ -2424,10 +2565,156 @@ export default function ResourceAdminPage() {
           {/* Client Configuration Tab */}
           <TabsContent value="client-config" className="space-y-6">
             <Card>
-              <CardContent className="p-12 text-center">
-                <p className="text-gray-500">
-                  Client Configuration section coming soon...
-                </p>
+              <CardHeader className="border-b">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Client Property Configuration</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Manage property access for each client company
+                    </p>
+                  </div>
+                  {selectedCompany && (
+                    <Button
+                      onClick={saveCompanyProperties}
+                      disabled={!hasUnsavedChanges || saving}
+                      className="flex items-center gap-2"
+                    >
+                      {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                      Save Configuration
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="grid grid-cols-12 divide-x min-h-[600px]">
+                  {/* Left Panel - Companies List */}
+                  <div className="col-span-4 overflow-y-auto max-h-[600px]">
+                    <div className="p-4">
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3 px-2">
+                        Select a Client
+                      </h3>
+                      {companies.length > 0 ? (
+                        <div className="space-y-1">
+                          {companies.map((company) => (
+                            <button
+                              key={company.id}
+                              onClick={() => handleCompanySelect(company)}
+                              className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                                selectedCompany?.id === company.id
+                                  ? "bg-blue-50 border-2 border-blue-500 text-blue-900"
+                                  : "bg-white border-2 border-transparent hover:bg-gray-50"
+                              }`}
+                            >
+                              <div className="font-medium text-sm">
+                                {company.name}
+                              </div>
+                              {company.description && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {company.description}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12 text-gray-500">
+                          <p className="text-sm">No companies found</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Panel - Properties List */}
+                  <div className="col-span-8 overflow-y-auto max-h-[600px]">
+                    {selectedCompany ? (
+                      <div className="p-6">
+                        <div className="mb-6">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            Configure Properties for {selectedCompany.name}
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Enable or disable properties to control resource
+                            access for this client
+                          </p>
+                          {hasUnsavedChanges && (
+                            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                              <p className="text-sm text-yellow-800">
+                                <strong>Unsaved changes:</strong> Remember to
+                                click "Save Configuration" to apply your
+                                changes.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {recordTypes.length > 0 ? (
+                          <div className="space-y-3">
+                            {recordTypes.map((property) => (
+                              <div
+                                key={property.id}
+                                className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                              >
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3">
+                                    <Switch
+                                      checked={
+                                        companyPropertyStates[property.id] ||
+                                        false
+                                      }
+                                      onCheckedChange={() =>
+                                        handlePropertyToggle(property.id)
+                                      }
+                                    />
+                                    <div>
+                                      <h4 className="text-sm font-medium text-gray-900">
+                                        {property.propertyName}
+                                      </h4>
+                                      {property.description && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          {property.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="ml-4">
+                                  <span
+                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                      companyPropertyStates[property.id]
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-gray-100 text-gray-600"
+                                    }`}
+                                  >
+                                    {companyPropertyStates[property.id]
+                                      ? "Enabled"
+                                      : "Disabled"}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-12 text-gray-500">
+                            <p className="text-sm">
+                              No properties available. Create properties in the
+                              Properties tab first.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center text-gray-400">
+                          <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                          <p className="text-sm">
+                            Select a client from the left panel to configure
+                            their property access
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
