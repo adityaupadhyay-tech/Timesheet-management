@@ -136,21 +136,23 @@ export default function AdministrationPage() {
 
               <Card
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => alert("Site Branching - Coming Soon!")}
+                onClick={() => {
+                  window.location.href = "/administration/site-branding";
+                }}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Public className="mr-2" />
-                    Site Branching
+                    Site Branding
                   </CardTitle>
                   <CardDescription>
-                    Manage site branches and environments
+                    Manage site branding and customization
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-gray-600">
-                    Configure and manage different site branches and deployment
-                    environments.
+                    Configure and manage site branding, themes, logos, and
+                    visual customization.
                   </p>
                 </CardContent>
               </Card>
