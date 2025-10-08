@@ -90,6 +90,7 @@ export default function ResourceAdminPage() {
     useState(false);
   const [isResourceUsageModalOpen, setIsResourceUsageModalOpen] =
     useState(false);
+  const [isClientUsageModalOpen, setIsClientUsageModalOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState(null);
   const [currentCategoryId, setCurrentCategoryId] = useState("");
   const [documentToDelete, setDocumentToDelete] = useState(null);
@@ -98,6 +99,9 @@ export default function ResourceAdminPage() {
   const [selectedPropertyForUsage, setSelectedPropertyForUsage] =
     useState(null);
   const [resourcesUsingProperty, setResourcesUsingProperty] = useState([]);
+  const [selectedPropertyForClientUsage, setSelectedPropertyForClientUsage] =
+    useState(null);
+  const [companiesUsingProperty, setCompaniesUsingProperty] = useState([]);
 
   const [newCategory, setNewCategory] = useState({
     displayLabel: "",
@@ -1196,6 +1200,61 @@ export default function ResourceAdminPage() {
     }
   };
 
+  // Handle clicking on client usage count
+  const handleClientUsageClick = async (property) => {
+    try {
+      setLoading(true);
+      setSelectedPropertyForClientUsage(property);
+
+      // Fetch all company_ids linked to this property
+      const { data: propertyLinks, error: linksError } = await supabase
+        .from("resource_company_properties")
+        .select("company_id")
+        .eq("property_id", property.id)
+        .eq("is_active", true);
+
+      if (linksError) {
+        console.error("Error fetching company property links:", linksError);
+        alert("Error loading companies. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // If no companies are using this property
+      if (!propertyLinks || propertyLinks.length === 0) {
+        setCompaniesUsingProperty([]);
+        setIsClientUsageModalOpen(true);
+        setLoading(false);
+        return;
+      }
+
+      // Extract company IDs
+      const companyIds = propertyLinks.map((link) => link.company_id);
+
+      // Fetch company details
+      const { data: companies, error: companiesError } = await supabase
+        .from("companies")
+        .select("id, name, description, status")
+        .in("id", companyIds)
+        .order("name", { ascending: true });
+
+      if (companiesError) {
+        console.error("Error fetching companies:", companiesError);
+        alert("Error loading company details. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      setCompaniesUsingProperty(companies || []);
+      setIsClientUsageModalOpen(true);
+    } catch (error) {
+      console.error("Error in handleClientUsageClick:", error);
+      alert("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Layout userRole={currentUser.role} userName={currentUser.name}>
       <div className="p-6">
@@ -2283,8 +2342,25 @@ export default function ResourceAdminPage() {
                             </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-900">
+                            <button
+                              onClick={() => handleClientUsageClick(property)}
+                              disabled={
+                                !property.clientUsage ||
+                                property.clientUsage === 0
+                              }
+                              className={`flex items-center gap-2 ${
+                                property.clientUsage > 0
+                                  ? "cursor-pointer hover:text-blue-600 transition-colors"
+                                  : "cursor-default"
+                              }`}
+                            >
+                              <span
+                                className={`text-sm font-medium ${
+                                  property.clientUsage > 0
+                                    ? "text-blue-600 underline"
+                                    : "text-gray-900"
+                                }`}
+                              >
                                 {property.clientUsage || 0}
                               </span>
                               <span className="text-xs text-gray-500">
@@ -2292,7 +2368,7 @@ export default function ResourceAdminPage() {
                                   ? "client"
                                   : "clients"}
                               </span>
-                            </div>
+                            </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex justify-end gap-2">
@@ -2553,6 +2629,89 @@ export default function ResourceAdminPage() {
                       setIsResourceUsageModalOpen(false);
                       setSelectedPropertyForUsage(null);
                       setResourcesUsingProperty([]);
+                    }}
+                  >
+                    Close
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Client Usage Modal */}
+            <Dialog
+              open={isClientUsageModalOpen}
+              onOpenChange={setIsClientUsageModalOpen}
+            >
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle className="text-lg">
+                    Clients Using "
+                    {selectedPropertyForClientUsage?.propertyName}"
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-gray-500">
+                    {companiesUsingProperty.length > 0
+                      ? `This property is currently enabled for ${
+                          companiesUsingProperty.length
+                        } ${
+                          companiesUsingProperty.length === 1
+                            ? "client"
+                            : "clients"
+                        }`
+                      : "This property is not currently enabled for any clients"}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="max-h-[400px] overflow-y-auto">
+                  {companiesUsingProperty.length > 0 ? (
+                    <div className="divide-y divide-gray-200">
+                      {companiesUsingProperty.map((company) => (
+                        <div
+                          key={company.id}
+                          className="py-3 px-4 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">
+                                {company.name}
+                              </p>
+                              {company.description && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {company.description}
+                                </p>
+                              )}
+                            </div>
+                            {company.status && (
+                              <span
+                                className={`text-xs px-2 py-1 rounded ${
+                                  company.status === "active"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-gray-100 text-gray-600"
+                                }`}
+                              >
+                                {company.status}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-gray-500">
+                        No clients are currently using this property
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsClientUsageModalOpen(false);
+                      setSelectedPropertyForClientUsage(null);
+                      setCompaniesUsingProperty([]);
                     }}
                   >
                     Close
