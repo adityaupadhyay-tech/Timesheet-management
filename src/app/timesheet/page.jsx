@@ -7,8 +7,11 @@ import TimeEntryGrid from '@/components/timesheet/TimeEntryGrid'
 import TimesheetSummary from '@/components/timesheet/TimesheetSummary'
 import ProjectOverview from '@/components/timesheet/ProjectOverview'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Send, Download, Calendar, FolderOpen, CheckCircle } from 'lucide-react'
+import { Send, Download, Calendar, FolderOpen, CheckCircle, Eye, Search, Filter, ArrowLeft, Clock, XCircle, CheckCircle2, User } from 'lucide-react'
 import ExportModal from '@/components/timesheet/ExportModal'
 import { formatCyclePeriod } from '@/lib/cycleUtils'
 import PageHeader from '@/components/PageHeader'
@@ -39,6 +42,79 @@ function TimesheetContent() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [gridRows, setGridRows] = useState([])
   const [validationTrigger, setValidationTrigger] = useState(0)
+  
+  // View mode state - 'list' or 'detail'
+  const [viewMode, setViewMode] = useState('list')
+  const [selectedTimesheetView, setSelectedTimesheetView] = useState(null)
+  
+  // Search and filter state for list view
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [filterCompany, setFilterCompany] = useState('all')
+  
+  // Sample timesheets data (for admin view)
+  const [submittedTimesheets] = useState([
+    {
+      id: 1,
+      employeeName: 'John Doe',
+      employeeEmail: 'john.doe@company.com',
+      company: 'Acme Corporation',
+      department: 'Engineering',
+      period: 'Dec 16 - Dec 22, 2024',
+      submittedDate: '2024-12-22',
+      totalHours: 40.0,
+      status: 'submitted',
+      projects: 3
+    },
+    {
+      id: 2,
+      employeeName: 'Jane Smith',
+      employeeEmail: 'jane.smith@company.com',
+      company: 'Acme Corporation',
+      department: 'Marketing',
+      period: 'Dec 16 - Dec 22, 2024',
+      submittedDate: '2024-12-21',
+      totalHours: 38.5,
+      status: 'approved',
+      projects: 2
+    },
+    {
+      id: 3,
+      employeeName: 'Mike Johnson',
+      employeeEmail: 'mike.j@company.com',
+      company: 'Tech Solutions Inc',
+      department: 'Sales',
+      period: 'Dec 16 - Dec 22, 2024',
+      submittedDate: '2024-12-20',
+      totalHours: 42.0,
+      status: 'rejected',
+      projects: 4
+    },
+    {
+      id: 4,
+      employeeName: 'Sarah Williams',
+      employeeEmail: 'sarah.w@company.com',
+      company: 'Acme Corporation',
+      department: 'Engineering',
+      period: 'Dec 9 - Dec 15, 2024',
+      submittedDate: '2024-12-15',
+      totalHours: 40.0,
+      status: 'approved',
+      projects: 2
+    },
+    {
+      id: 5,
+      employeeName: 'David Brown',
+      employeeEmail: 'david.b@company.com',
+      company: 'Global Enterprises',
+      department: 'Operations',
+      period: 'Dec 16 - Dec 22, 2024',
+      submittedDate: '2024-12-22',
+      totalHours: 37.5,
+      status: 'submitted',
+      projects: 5
+    },
+  ])
 
   const handleExportReport = () => {
     setShowExportModal(true)
@@ -98,305 +174,448 @@ function TimesheetContent() {
     }
   }
 
+  // Get unique companies for filter
+  const getUniqueCompanies = () => {
+    const companies = [...new Set(submittedTimesheets.map(ts => ts.company))]
+    return companies.sort()
+  }
+
+  // Filter timesheets
+  const getFilteredTimesheets = () => {
+    return submittedTimesheets.filter(ts => {
+      const matchesSearch = 
+        ts.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ts.employeeEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ts.department.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      const matchesStatus = filterStatus === 'all' || ts.status === filterStatus
+      const matchesCompany = filterCompany === 'all' || ts.company === filterCompany
+      
+      return matchesSearch && matchesStatus && matchesCompany
+    })
+  }
+
+  // Clear filters
+  const clearFilters = () => {
+    setSearchTerm('')
+    setFilterStatus('all')
+    setFilterCompany('all')
+  }
+
+  // View timesheet details
+  const handleViewTimesheet = (timesheet) => {
+    setSelectedTimesheetView(timesheet)
+    setViewMode('detail')
+  }
+
+  // Back to list view
+  const handleBackToList = () => {
+    setViewMode('list')
+    setSelectedTimesheetView(null)
+  }
+
+  // Get status badge
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      submitted: {
+        bg: 'bg-blue-100',
+        text: 'text-blue-800',
+        icon: <Clock className="h-3 w-3" />
+      },
+      approved: {
+        bg: 'bg-green-100',
+        text: 'text-green-800',
+        icon: <CheckCircle2 className="h-3 w-3" />
+      },
+      rejected: {
+        bg: 'bg-red-100',
+        text: 'text-red-800',
+        icon: <XCircle className="h-3 w-3" />
+      }
+    }
+
+    const config = statusConfig[status] || statusConfig.submitted
+
+  return (
+      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+        {config.icon}
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    )
+  }
+
+  // Render list view (all timesheets)
+  const renderListView = () => (
+    <div className="space-y-6">
+      {/* Search and Filter Card */}
+      <Card>
+        <CardHeader className="border-b">
+          <div className="flex items-center gap-2">
+            <Filter className="h-5 w-5 text-gray-500" />
+            <CardTitle>Search & Filter</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search by employee name, email, or department..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Filters Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Status Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="filterStatus" className="text-sm">Status</Label>
+                <select
+                  id="filterStatus"
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="all">All Status</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+
+              {/* Company Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="filterCompany" className="text-sm">Company</Label>
+                <select
+                  id="filterCompany"
+                  value={filterCompany}
+                  onChange={(e) => setFilterCompany(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="all">All Companies</option>
+                  {getUniqueCompanies().map(company => (
+                    <option key={company} value={company}>{company}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Clear Filters Button */}
+              <div className="space-y-2">
+                <Label className="text-sm invisible">Actions</Label>
+                <Button variant="outline" onClick={clearFilters} className="w-full">
+                  Clear Filters
+                </Button>
+              </div>
+            </div>
+
+            {/* Results Count */}
+            <div className="text-sm text-gray-600">
+              Showing <span className="font-medium">{getFilteredTimesheets().length}</span> of{' '}
+              <span className="font-medium">{submittedTimesheets.length}</span> timesheets
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Timesheets Table */}
+      <Card>
+        <CardHeader className="border-b">
+          <CardTitle>Submitted Timesheets</CardTitle>
+          <CardDescription>
+            View and manage timesheet submissions from employees
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {getFilteredTimesheets().length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hours</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {getFilteredTimesheets().map((timesheet) => (
+                    <tr key={timesheet.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600 font-medium">
+                            {timesheet.employeeName.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{timesheet.employeeName}</div>
+                            <div className="text-xs text-gray-500">{timesheet.employeeEmail}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{timesheet.company}</div>
+                        <div className="text-xs text-gray-500">{timesheet.department}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2 text-sm text-gray-900">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          {timesheet.period}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-600">{timesheet.submittedDate}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{timesheet.totalHours}h</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getStatusBadge(timesheet.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewTimesheet(timesheet)}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <User className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+              {submittedTimesheets.length === 0 ? (
+                <p className="text-sm">No timesheets submitted yet</p>
+              ) : (
+                <div>
+                  <p className="text-sm mb-2">No timesheets match your search criteria</p>
+                  <Button variant="outline" size="sm" onClick={clearFilters}>Clear Filters</Button>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+
+  // Render detail view (time entry grid)
+  const renderDetailView = () => (
+    <>
+      <div className="mb-6">
+        <Button variant="outline" onClick={handleBackToList} className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Timesheets
+        </Button>
+        
+        {selectedTimesheetView && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-blue-900">{selectedTimesheetView.employeeName}</span>
+              </div>
+              <div className="text-sm text-blue-700">
+                {selectedTimesheetView.company} - {selectedTimesheetView.department}
+              </div>
+              <div className="text-sm text-blue-700">
+                Period: {selectedTimesheetView.period}
+              </div>
+              {getStatusBadge(selectedTimesheetView.status)}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Summary Cards */}
+      <div className="mb-6">
+        <TimesheetSummary entries={entries} projects={projects} selectedDate={selectedDate} gridRows={gridRows} />
+      </div>
+
+      {/* Main Content with Tabs */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="p-5">
+          <Tabs defaultValue="timesheet" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="timesheet" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Time Entry
+              </TabsTrigger>
+              <TabsTrigger value="projects" className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4" />
+                Project Overview
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="timesheet" className="space-y-4">
+              <TimeEntryGrid
+                projects={projects}
+                entries={entries}
+                gridRows={gridRows}
+                onSave={addEntry}
+                onUpdate={updateEntry}
+                onDelete={deleteEntry}
+                onStartTimer={startTimer}
+                onStopTimer={stopTimer}
+                isTracking={trackingState.isTracking}
+                currentTime={trackingState.isTracking ? getCurrentTime() : '00:00:00'}
+                onGridDataChange={handleGridDataChange}
+                selectedCompany={selectedCompany}
+                timesheet={currentTimesheet}
+                onSubmitTimesheet={submitTimesheet}
+                onApproveTimesheet={approveTimesheet}
+                onRejectTimesheet={rejectTimesheet}
+                validationTrigger={validationTrigger}
+                userRole="admin" // TODO: Get from user context
+              />
+            </TabsContent>
+            
+            <TabsContent value="projects" className="space-y-4">
+              <ProjectOverview
+                projects={projects}
+                entries={entries}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </>
+  )
+
+  // Main return
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="mx-auto px-5 py-6">
         <PageHeader 
           title="Timesheet Management"
-          subtitle="Track and manage your work hours and project time"
+          subtitle={viewMode === 'list' ? "Review and manage employee timesheets" : "Track and manage work hours and project time"}
           icon={<ScheduleIcon />}
         />
         
-        <div className="mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-            <div className="flex items-center gap-3">
-              {selectedCompany && (
-                <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex-shrink-0">
-                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  <span className="truncate">{selectedCompany.name}</span>
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="flex items-center gap-2 w-full sm:w-auto"
-                onClick={handleExportReport}
-              >
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Export Report</span>
-                <span className="sm:hidden">Export</span>
-              </Button>
-              {/* Submit Timesheet Button - Top Right */}
-              {(!currentTimesheet || currentTimesheet.status === 'draft') && (
-                <Button 
-                  size="sm"
-                  className="flex items-center gap-2 w-full sm:w-auto"
-                  onClick={handleSubmitTimesheet}
-                >
-                  <Send className="h-4 w-4" />
-                  <span className="hidden sm:inline">Submit Timesheet</span>
-                  <span className="sm:hidden">Submit</span>
-                </Button>
-              )}
-              {currentTimesheet && currentTimesheet.status === 'submitted' && (
-                <Button 
-                  size="sm"
-                  variant="outline"
-                  className="flex items-center gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 w-full sm:w-auto"
-                  disabled
-                >
-                  <Send className="h-4 w-4" />
-                  <span className="hidden sm:inline">Under Review</span>
-                  <span className="sm:hidden">Review</span>
-                </Button>
-              )}
-              {currentTimesheet && currentTimesheet.status === 'rejected' && (
-                <Button 
-                  size="sm"
-                  variant="outline"
-                  className="flex items-center gap-2 w-full sm:w-auto"
-                  onClick={handleSubmitTimesheet}
-                >
-                  <Send className="h-4 w-4" />
-                  <span className="hidden sm:inline">Submit Revision</span>
-                  <span className="sm:hidden">Revise</span>
-                </Button>
-              )}
-              {currentTimesheet && currentTimesheet.status === 'approved' && (
-                <Button 
-                  size="sm"
-                  variant="outline"
-                  className="flex items-center gap-2 bg-green-50 border-green-200 text-green-700 w-full sm:w-auto"
-                  disabled
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  Approved
-                </Button>
-              )}
-            </div>
-          </div>
-          
-          {/* Company Selector */}
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-              {/* Company Selector */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  <span className="text-sm font-semibold text-blue-900">Active Company:</span>
-                </div>
-                <div className="relative">
-                  <select
-                    value={selectedCompany?.id || ''}
-                    onChange={(e) => {
-                      const company = companies.find(c => c.id === e.target.value)
-                      setSelectedCompany(company || null)
-                    }}
-                    className="appearance-none px-4 py-2.5 pr-10 border border-blue-300 rounded-lg text-sm font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer w-full sm:min-w-[200px]"
-                  >
-                    {companies.map((company) => (
-                      <option key={company.id} value={company.id}>
-                        {company.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Cycle Selector */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <span className="text-sm font-semibold text-blue-900">Timesheet Cycle:</span>
-                <div className="relative">
-                  <select
-                    value={selectedCompany?.timesheetCycle || 'weekly'}
-                    onChange={(e) => handleCycleChange(e.target.value)}
-                    className="appearance-none px-3 py-2 pr-8 border border-blue-300 rounded-lg text-sm font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer w-full sm:min-w-[120px]"
-                  >
-                    <option value="semi-monthly">Semi-monthly</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="bi-weekly">Bi-weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <svg className="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Conditional rendering based on view mode */}
+        {viewMode === 'list' ? renderListView() : renderDetailView()}
 
-        {/* Summary Cards */}
-        <div className="mb-6">
-          <TimesheetSummary entries={entries} projects={projects} selectedDate={selectedDate} gridRows={gridRows} />
-        </div>
+        {showExportModal && (
+          <ExportModal
+            entries={entries}
+            projects={projects}
+            onClose={closeExportModal}
+          />
+        )}
 
-        {/* Main Content with Tabs */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-5">
-            <Tabs defaultValue="timesheet" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="timesheet" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Time Entry
-                </TabsTrigger>
-                <TabsTrigger value="projects" className="flex items-center gap-2">
-                  <FolderOpen className="h-4 w-4" />
-                  Project Overview
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="timesheet" className="space-y-4">
-                <TimeEntryGrid
-                  projects={projects}
-                  entries={entries}
-                  gridRows={gridRows}
-                  onSave={addEntry}
-                  onUpdate={updateEntry}
-                  onDelete={deleteEntry}
-                  onStartTimer={startTimer}
-                  onStopTimer={stopTimer}
-                  isTracking={trackingState.isTracking}
-                  currentTime={trackingState.isTracking ? getCurrentTime() : '00:00:00'}
-                  onGridDataChange={handleGridDataChange}
-                  selectedCompany={selectedCompany}
-                  timesheet={currentTimesheet}
-                  onSubmitTimesheet={submitTimesheet}
-                  onApproveTimesheet={approveTimesheet}
-                  onRejectTimesheet={rejectTimesheet}
-                  validationTrigger={validationTrigger}
-                  userRole="admin" // TODO: Get from user context
-                />
-              </TabsContent>
-              
-              <TabsContent value="projects" className="space-y-4">
-                <ProjectOverview
-                  projects={projects}
-                  entries={entries}
-                />
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-      </div>
-
-      {showExportModal && (
-        <ExportModal
-          entries={entries}
-          projects={projects}
-          onClose={closeExportModal}
-        />
-      )}
-
-      {/* Submit Confirmation Modal */}
-      {showSubmitModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <Send className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Submit Timesheet</h3>
-                  <p className="text-sm text-gray-600">Confirm your submission</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="px-6 py-6">
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <div className="p-1 bg-amber-100 rounded-full">
-                    <CheckCircle className="h-4 w-4 text-amber-600" />
+        {/* Submit Confirmation Modal */}
+        {showSubmitModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-full">
+                    <Send className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-amber-800">Ready to Submit?</p>
-                    <p className="text-xs text-amber-700 mt-1">
-                      Your timesheet will be sent for review and cannot be edited after submission.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Total Hours:</span>
-                    <span className="font-semibold text-gray-900">
-                      {(() => {
-                        // Helper function to convert HH:MM to minutes
-                        const hhmmToMinutes = (hhmm) => {
-                          if (!hhmm || hhmm === '') return 0
-                          const [hours, minutes] = hhmm.split(':').map(Number)
-                          if (isNaN(hours) || isNaN(minutes)) return 0
-                          return hours * 60 + minutes
-                        }
-                        
-                        // Calculate total minutes from gridRows
-                        const totalMinutes = gridRows.reduce((total, row) => {
-                          if (!row.weekEntries) return total
-                          const rowTotal = Object.values(row.weekEntries).reduce((dayTotal, dayEntry) => 
-                            dayTotal + hhmmToMinutes(dayEntry.duration), 0
-                          )
-                          return total + rowTotal
-                        }, 0)
-                        
-                        // Convert minutes to hours with 1 decimal place
-                        return (totalMinutes / 60).toFixed(1) + 'h'
-                      })()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Period:</span>
-                    <span className="font-semibold text-gray-900">
-                      {selectedCompany?.timesheetCycle ? 
-                        formatCyclePeriod(selectedDate, selectedCompany.timesheetCycle) :
-                        selectedDate.toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric',
-                          year: 'numeric'
-                        })
-                      }
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Company:</span>
-                    <span className="font-semibold text-gray-900">{selectedCompany?.name}</span>
+                    <h3 className="text-lg font-semibold text-gray-900">Submit Timesheet</h3>
+                    <p className="text-sm text-gray-600">Confirm your submission</p>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Actions */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
-              <Button
-                onClick={cancelSubmitTimesheet}
-                variant="outline"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={confirmSubmitTimesheet}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Submit Timesheet
-              </Button>
+              {/* Content */}
+              <div className="px-6 py-6">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="p-1 bg-amber-100 rounded-full">
+                      <CheckCircle className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">Ready to Submit?</p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        Your timesheet will be sent for review and cannot be edited after submission.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Total Hours:</span>
+                      <span className="font-semibold text-gray-900">
+                        {(() => {
+                          // Helper function to convert HH:MM to minutes
+                          const hhmmToMinutes = (hhmm) => {
+                            if (!hhmm || hhmm === '') return 0
+                            const [hours, minutes] = hhmm.split(':').map(Number)
+                            if (isNaN(hours) || isNaN(minutes)) return 0
+                            return hours * 60 + minutes
+                          }
+                          
+                          // Calculate total minutes from gridRows
+                          const totalMinutes = gridRows.reduce((total, row) => {
+                            if (!row.weekEntries) return total
+                            const rowTotal = Object.values(row.weekEntries).reduce((dayTotal, dayEntry) => 
+                              dayTotal + hhmmToMinutes(dayEntry.duration), 0
+                            )
+                            return total + rowTotal
+                          }, 0)
+                          
+                          // Convert minutes to hours with 1 decimal place
+                          return (totalMinutes / 60).toFixed(1) + 'h'
+                        })()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Period:</span>
+                      <span className="font-semibold text-gray-900">
+                        {selectedCompany?.timesheetCycle ? 
+                          formatCyclePeriod(selectedDate, selectedCompany.timesheetCycle) :
+                          selectedDate.toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                          })
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Company:</span>
+                      <span className="font-semibold text-gray-900">{selectedCompany?.name}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
+                <Button
+                  onClick={cancelSubmitTimesheet}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmSubmitTimesheet}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Submit Timesheet
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
