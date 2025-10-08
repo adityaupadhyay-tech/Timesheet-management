@@ -76,43 +76,7 @@ export default function ResourceAdminPage() {
   const [expandedCategories, setExpandedCategories] = useState({});
 
   // Properties/Record Types state
-  const [recordTypes, setRecordTypes] = useState([
-    {
-      id: 1,
-      enabled: false,
-      propertyName: "Unpublished",
-      description: "Documents and resources not yet published",
-      clientUsage: 3,
-    },
-    {
-      id: 2,
-      enabled: true,
-      propertyName: "Office fixtures",
-      description: "Office equipment and fixture management",
-      clientUsage: 8,
-    },
-    {
-      id: 3,
-      enabled: true,
-      propertyName: "Blueberry pickers",
-      description: "Seasonal blueberry picker records and documentation",
-      clientUsage: 12,
-    },
-    {
-      id: 4,
-      enabled: true,
-      propertyName: "User generic handbook",
-      description: "General user handbook and guidelines",
-      clientUsage: 25,
-    },
-    {
-      id: 5,
-      enabled: true,
-      propertyName: "Driver issue form",
-      description: "Driver incident and issue reporting forms",
-      clientUsage: 7,
-    },
-  ]);
+  const [recordTypes, setRecordTypes] = useState([]);
 
   // Document categories state - initially empty, will be populated from Supabase
   const [documentCategories, setDocumentCategories] = useState([]);
@@ -124,11 +88,16 @@ export default function ResourceAdminPage() {
   const [isPropertyDialogOpen, setIsPropertyDialogOpen] = useState(false);
   const [isDeletePropertyDialogOpen, setIsDeletePropertyDialogOpen] =
     useState(false);
+  const [isResourceUsageModalOpen, setIsResourceUsageModalOpen] =
+    useState(false);
   const [editingDocument, setEditingDocument] = useState(null);
   const [currentCategoryId, setCurrentCategoryId] = useState("");
   const [documentToDelete, setDocumentToDelete] = useState(null);
   const [editingProperty, setEditingProperty] = useState(null);
   const [propertyToDelete, setPropertyToDelete] = useState(null);
+  const [selectedPropertyForUsage, setSelectedPropertyForUsage] =
+    useState(null);
+  const [resourcesUsingProperty, setResourcesUsingProperty] = useState([]);
 
   const [newCategory, setNewCategory] = useState({
     displayLabel: "",
@@ -185,6 +154,13 @@ export default function ResourceAdminPage() {
   ];
 
   const [filePreview, setFilePreview] = useState(null);
+
+  // Properties selection state
+  const [availableProperties, setAvailableProperties] = useState([]);
+  const [selectedProperties, setSelectedProperties] = useState([]);
+
+  // Modal tab state
+  const [modalTab, setModalTab] = useState("general");
 
   // Fetch all categories and their documents from Supabase
   const fetchResourceData = async () => {
@@ -253,10 +229,95 @@ export default function ResourceAdminPage() {
     }
   };
 
+  // Fetch all properties with usage counts
+  const fetchProperties = async () => {
+    try {
+      // Fetch all properties
+      const { data: properties, error: propertiesError } = await supabase
+        .from("resource_properties")
+        .select("*")
+        .order("property_label", { ascending: true });
+
+      if (propertiesError) {
+        console.error("Error fetching properties:", propertiesError);
+        return;
+      }
+
+      // For each property, fetch usage counts
+      const propertiesWithCounts = await Promise.all(
+        properties.map(async (property) => {
+          // Count resource usage
+          const { count: resourceCount, error: resourceError } = await supabase
+            .from("resource_item_properties")
+            .select("*", { count: "exact", head: true })
+            .eq("property_id", property.property_id);
+
+          // Count client/company usage
+          const { count: clientCount, error: clientError } = await supabase
+            .from("resource_company_properties")
+            .select("*", { count: "exact", head: true })
+            .eq("property_id", property.property_id);
+
+          return {
+            id: property.property_id,
+            propertyName: property.property_label,
+            description: property.description || "",
+            enabled: property.is_enabled !== false,
+            resourceUsage: resourceError ? 0 : resourceCount || 0,
+            clientUsage: clientError ? 0 : clientCount || 0,
+          };
+        })
+      );
+
+      setRecordTypes(propertiesWithCounts);
+    } catch (error) {
+      console.error("Error in fetchProperties:", error);
+    }
+  };
+
   // Load data on component mount
   useEffect(() => {
     fetchResourceData();
+    fetchProperties();
   }, []);
+
+  // Helper function to sync property associations (delete-then-insert)
+  const syncPropertyAssociations = async (resourceId, propertyIds) => {
+    try {
+      // Step 1: Delete all existing property associations for this resource
+      const { error: deleteError } = await supabase
+        .from("resource_item_properties")
+        .delete()
+        .eq("resource_id", resourceId);
+
+      if (deleteError) {
+        console.error("Error deleting existing properties:", deleteError);
+        throw deleteError;
+      }
+
+      // Step 2: Insert new property associations
+      if (propertyIds && propertyIds.length > 0) {
+        const insertData = propertyIds.map((propertyId) => ({
+          resource_id: resourceId,
+          property_id: propertyId,
+        }));
+
+        const { error: insertError } = await supabase
+          .from("resource_item_properties")
+          .insert(insertData);
+
+        if (insertError) {
+          console.error("Error inserting new properties:", insertError);
+          throw insertError;
+        }
+      }
+
+      console.log("Property associations synced successfully");
+    } catch (error) {
+      console.error("Error in syncPropertyAssociations:", error);
+      throw error;
+    }
+  };
 
   // Helper function to upload file to Supabase Storage
   const uploadFileToStorage = async (file, folder = "resource_files") => {
@@ -425,9 +486,12 @@ export default function ResourceAdminPage() {
         }
 
         console.log("Update successful:", updateResult);
+
+        // Sync property associations for updated resource
+        await syncPropertyAssociations(editingDocument, selectedProperties);
       } else {
         // Create new document
-        const { error: insertError } = await supabase
+        const { data: insertResult, error: insertError } = await supabase
           .from("resource_items")
           .insert([
             {
@@ -439,13 +503,22 @@ export default function ResourceAdminPage() {
               details: details,
               menu_access: documentForm.menuAccess,
             },
-          ]);
+          ])
+          .select();
 
         if (insertError) {
           console.error("Error creating document:", insertError);
           alert("Error creating document. Please try again.");
           setSaving(false);
           return;
+        }
+
+        // Sync property associations for newly created resource
+        if (insertResult && insertResult[0]) {
+          await syncPropertyAssociations(
+            insertResult[0].resource_id,
+            selectedProperties
+          );
         }
       }
 
@@ -490,6 +563,7 @@ export default function ResourceAdminPage() {
       contactPhone: "",
     });
     setFilePreview(null);
+    setSelectedProperties([]);
   };
 
   // Available icons for selection
@@ -638,8 +712,26 @@ export default function ResourceAdminPage() {
   };
 
   // Handle opening document dialog
-  const handleOpenDocumentDialog = (categoryId, document = null) => {
+  const handleOpenDocumentDialog = async (categoryId, document = null) => {
     setCurrentCategoryId(categoryId);
+    setModalTab("general"); // Reset to general tab
+
+    // Fetch available properties
+    const { data: properties, error: propertiesError } = await supabase
+      .from("resource_properties")
+      .select("*")
+      .eq("is_enabled", true)
+      .order("property_label", { ascending: true });
+
+    if (!propertiesError && properties) {
+      setAvailableProperties(
+        properties.map((p) => ({
+          id: p.property_id,
+          label: p.property_label,
+        }))
+      );
+    }
+
     if (document) {
       const details = document.details || {};
 
@@ -674,9 +766,22 @@ export default function ResourceAdminPage() {
 
       setDocumentForm(formData);
       setEditingDocument(document.id);
+
+      // Fetch existing property associations for this resource
+      const { data: existingProps, error: existingPropsError } = await supabase
+        .from("resource_item_properties")
+        .select("property_id")
+        .eq("resource_id", document.id);
+
+      if (!existingPropsError && existingProps) {
+        setSelectedProperties(existingProps.map((p) => p.property_id));
+      } else {
+        setSelectedProperties([]);
+      }
     } else {
       resetDocumentForm();
       setEditingDocument(null);
+      setSelectedProperties([]);
     }
     setIsDocumentDialogOpen(true);
   };
@@ -732,12 +837,34 @@ export default function ResourceAdminPage() {
   };
 
   // Property Management Functions
-  const togglePropertyEnabled = (propertyId) => {
-    setRecordTypes((prevTypes) =>
-      prevTypes.map((type) =>
-        type.id === propertyId ? { ...type, enabled: !type.enabled } : type
-      )
-    );
+  const togglePropertyEnabled = async (propertyId) => {
+    try {
+      // Find current property to get its current enabled state
+      const property = recordTypes.find((type) => type.id === propertyId);
+      if (!property) return;
+
+      // Update in database
+      const { error } = await supabase
+        .from("resource_properties")
+        .update({ is_enabled: !property.enabled })
+        .eq("property_id", propertyId);
+
+      if (error) {
+        console.error("Error toggling property:", error);
+        alert("Error updating property status. Please try again.");
+        return;
+      }
+
+      // Update local state
+      setRecordTypes((prevTypes) =>
+        prevTypes.map((type) =>
+          type.id === propertyId ? { ...type, enabled: !type.enabled } : type
+        )
+      );
+    } catch (error) {
+      console.error("Error in togglePropertyEnabled:", error);
+      alert("An unexpected error occurred. Please try again.");
+    }
   };
 
   const handleOpenPropertyDialog = (property = null) => {
@@ -759,38 +886,82 @@ export default function ResourceAdminPage() {
     setIsPropertyDialogOpen(true);
   };
 
-  const handleSaveProperty = () => {
+  const handleSaveProperty = async () => {
     if (!propertyForm.propertyName.trim()) return;
 
-    if (editingProperty) {
-      // Update existing property
-      setRecordTypes((prevTypes) =>
-        prevTypes.map((type) =>
-          type.id === editingProperty
-            ? {
-                ...type,
-                propertyName: propertyForm.propertyName,
-                description: propertyForm.description,
-                enabled: propertyForm.enabled,
-              }
-            : type
-        )
-      );
-    } else {
-      // Add new property
-      const newProperty = {
-        id: Date.now(),
-        propertyName: propertyForm.propertyName,
-        description: propertyForm.description,
-        enabled: propertyForm.enabled,
-        clientUsage: 0,
-      };
-      setRecordTypes((prev) => [...prev, newProperty]);
-    }
+    try {
+      setSaving(true);
 
-    setIsPropertyDialogOpen(false);
-    setPropertyForm({ propertyName: "", description: "", enabled: true });
-    setEditingProperty(null);
+      // Build data object with proper null handling
+      const propertyData = {
+        property_label: propertyForm.propertyName.trim(),
+        description: propertyForm.description?.trim() || null,
+        is_enabled: propertyForm.enabled === true,
+      };
+
+      // Remove any undefined values
+      Object.keys(propertyData).forEach((key) => {
+        if (propertyData[key] === undefined) {
+          delete propertyData[key];
+        }
+      });
+
+      if (editingProperty) {
+        // Update existing property
+        console.log("Updating property with ID:", editingProperty);
+        console.log("Property data:", propertyData);
+
+        const { error: updateError } = await supabase
+          .from("resource_properties")
+          .update(propertyData)
+          .eq("property_id", editingProperty)
+          .select();
+
+        if (updateError) {
+          console.error("Error updating property:", updateError);
+          console.error("Full error:", JSON.stringify(updateError, null, 2));
+          alert(
+            `Error updating property: ${
+              updateError.message || "Please try again."
+            }`
+          );
+          setSaving(false);
+          return;
+        }
+      } else {
+        // Add new property
+        console.log("Creating new property with data:", propertyData);
+
+        const { error: insertError } = await supabase
+          .from("resource_properties")
+          .insert([propertyData])
+          .select();
+
+        if (insertError) {
+          console.error("Error creating property:", insertError);
+          console.error("Full error:", JSON.stringify(insertError, null, 2));
+          alert(
+            `Error creating property: ${
+              insertError.message || "Please try again."
+            }`
+          );
+          setSaving(false);
+          return;
+        }
+      }
+
+      // Refresh properties list
+      await fetchProperties();
+
+      setIsPropertyDialogOpen(false);
+      setPropertyForm({ propertyName: "", description: "", enabled: true });
+      setEditingProperty(null);
+    } catch (error) {
+      console.error("Error in handleSaveProperty:", error);
+      alert(error.message || "An unexpected error occurred. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDeleteProperty = (property) => {
@@ -798,13 +969,89 @@ export default function ResourceAdminPage() {
     setIsDeletePropertyDialogOpen(true);
   };
 
-  const confirmDeleteProperty = () => {
-    if (propertyToDelete) {
-      setRecordTypes((prevTypes) =>
-        prevTypes.filter((type) => type.id !== propertyToDelete.id)
-      );
+  const confirmDeleteProperty = async () => {
+    if (!propertyToDelete) return;
+
+    try {
+      setSaving(true);
+
+      // Delete from database (cascading deletes will handle junction tables)
+      const { error: deleteError } = await supabase
+        .from("resource_properties")
+        .delete()
+        .eq("property_id", propertyToDelete.id);
+
+      if (deleteError) {
+        console.error("Error deleting property:", deleteError);
+        alert("Error deleting property. Please try again.");
+        setSaving(false);
+        return;
+      }
+
+      // Refresh properties list
+      await fetchProperties();
+
       setIsDeletePropertyDialogOpen(false);
       setPropertyToDelete(null);
+    } catch (error) {
+      console.error("Error in confirmDeleteProperty:", error);
+      alert("An unexpected error occurred. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle clicking on resource usage count
+  const handleResourceUsageClick = async (property) => {
+    try {
+      setLoading(true);
+      setSelectedPropertyForUsage(property);
+
+      // Fetch all resource_ids linked to this property
+      const { data: propertyLinks, error: linksError } = await supabase
+        .from("resource_item_properties")
+        .select("resource_id")
+        .eq("property_id", property.id);
+
+      if (linksError) {
+        console.error("Error fetching property links:", linksError);
+        alert("Error loading resources. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // If no resources are using this property
+      if (!propertyLinks || propertyLinks.length === 0) {
+        setResourcesUsingProperty([]);
+        setIsResourceUsageModalOpen(true);
+        setLoading(false);
+        return;
+      }
+
+      // Extract resource IDs
+      const resourceIds = propertyLinks.map((link) => link.resource_id);
+
+      // Fetch resource details
+      const { data: resources, error: resourcesError } = await supabase
+        .from("resource_items")
+        .select("resource_id, display_label, admin_label, resource_type")
+        .in("resource_id", resourceIds)
+        .order("display_label", { ascending: true });
+
+      if (resourcesError) {
+        console.error("Error fetching resources:", resourcesError);
+        alert("Error loading resource details. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      setResourcesUsingProperty(resources || []);
+      setIsResourceUsageModalOpen(true);
+    } catch (error) {
+      console.error("Error in handleResourceUsageClick:", error);
+      alert("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1041,390 +1288,505 @@ export default function ResourceAdminPage() {
                   open={isDocumentDialogOpen}
                   onOpenChange={setIsDocumentDialogOpen}
                 >
-                  <DialogContent className="sm:max-w-[500px]">
+                  <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
                       <DialogTitle>
-                        {editingDocument ? "Edit Document" : "Add New Document"}
+                        {editingDocument ? "Edit Resource" : "Add New Resource"}
                       </DialogTitle>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
-                      <div className="space-y-2">
-                        <Label htmlFor="adminLabel">Admin Label *</Label>
-                        <Input
-                          id="adminLabel"
-                          value={documentForm.adminLabel}
-                          onChange={(e) =>
-                            setDocumentForm({
-                              ...documentForm,
-                              adminLabel: e.target.value,
-                            })
-                          }
-                          placeholder="Enter admin label"
-                        />
-                      </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="displayLabel">Display Label *</Label>
-                        <Input
-                          id="displayLabel"
-                          value={documentForm.displayLabel}
-                          onChange={(e) =>
-                            setDocumentForm({
-                              ...documentForm,
-                              displayLabel: e.target.value,
-                            })
-                          }
-                          placeholder="Enter display label"
-                        />
-                      </div>
+                    {/* Tabs for General Settings and Properties */}
+                    <Tabs
+                      value={modalTab}
+                      onValueChange={setModalTab}
+                      className="w-full"
+                    >
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="general">
+                          General Settings
+                        </TabsTrigger>
+                        <TabsTrigger value="properties">Properties</TabsTrigger>
+                      </TabsList>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="documentType">Type *</Label>
-                        <Select
-                          value={documentForm.type}
-                          onValueChange={(value) =>
-                            setDocumentForm({ ...documentForm, type: value })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select document type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {documentTypes.map((type) => (
-                              <SelectItem key={type.value} value={type.value}>
-                                {type.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* HTML Text Fields */}
-                      {documentForm.type === "html_text" && (
-                        <div className="space-y-2 border-t pt-4">
-                          <Label>Image</Label>
-                          <Tabs
-                            value={documentForm.imageInputType}
-                            onValueChange={(value) =>
-                              setDocumentForm({
-                                ...documentForm,
-                                imageInputType: value,
-                              })
-                            }
-                          >
-                            <TabsList className="grid w-full grid-cols-2">
-                              <TabsTrigger value="upload">
-                                Upload File
-                              </TabsTrigger>
-                              <TabsTrigger value="url">Paste URL</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="upload" className="mt-2">
-                              <div className="space-y-2">
-                                <Input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) => {
-                                    const file = e.target.files[0];
-                                    setDocumentForm({
-                                      ...documentForm,
-                                      imageFile: file || null,
-                                    });
-                                  }}
-                                />
-                                {documentForm.imageFile && (
-                                  <p className="text-sm text-gray-600">
-                                    Selected: {documentForm.imageFile.name}
-                                  </p>
-                                )}
-                              </div>
-                            </TabsContent>
-                            <TabsContent value="url" className="mt-2">
-                              <Input
-                                value={documentForm.imageUrl}
-                                onChange={(e) =>
-                                  setDocumentForm({
-                                    ...documentForm,
-                                    imageUrl: e.target.value,
-                                  })
-                                }
-                                placeholder="https://example.com/image.jpg"
-                              />
-                            </TabsContent>
-                          </Tabs>
-                        </div>
-                      )}
-
-                      {/* PDF Document Fields */}
-                      {documentForm.type === "pdf_document" && (
-                        <div className="space-y-2 border-t pt-4">
-                          <Label>PDF File</Label>
-                          <Tabs
-                            value={documentForm.pdfInputType}
-                            onValueChange={(value) =>
-                              setDocumentForm({
-                                ...documentForm,
-                                pdfInputType: value,
-                              })
-                            }
-                          >
-                            <TabsList className="grid w-full grid-cols-2">
-                              <TabsTrigger value="upload">
-                                Upload File
-                              </TabsTrigger>
-                              <TabsTrigger value="url">Paste URL</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="upload" className="mt-2">
-                              <div className="space-y-2">
-                                <Input
-                                  type="file"
-                                  accept=".pdf,application/pdf"
-                                  onChange={(e) => {
-                                    const file = e.target.files[0];
-                                    setDocumentForm({
-                                      ...documentForm,
-                                      pdfFile: file || null,
-                                    });
-                                  }}
-                                />
-                                {documentForm.pdfFile && (
-                                  <p className="text-sm text-gray-600">
-                                    Selected: {documentForm.pdfFile.name}
-                                  </p>
-                                )}
-                              </div>
-                            </TabsContent>
-                            <TabsContent value="url" className="mt-2">
-                              <Input
-                                value={documentForm.pdfUrl}
-                                onChange={(e) =>
-                                  setDocumentForm({
-                                    ...documentForm,
-                                    pdfUrl: e.target.value,
-                                  })
-                                }
-                                placeholder="https://example.com/document.pdf"
-                              />
-                            </TabsContent>
-                          </Tabs>
-                        </div>
-                      )}
-
-                      {/* External Link Fields */}
-                      {documentForm.type === "external_link" && (
-                        <>
-                          <div className="space-y-2 border-t pt-4">
-                            <Label htmlFor="externalUrl">URL *</Label>
+                      {/* General Settings Tab */}
+                      <TabsContent value="general" className="mt-4">
+                        <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="adminLabel">Admin Label *</Label>
                             <Input
-                              id="externalUrl"
-                              value={documentForm.externalUrl}
+                              id="adminLabel"
+                              value={documentForm.adminLabel}
                               onChange={(e) =>
                                 setDocumentForm({
                                   ...documentForm,
-                                  externalUrl: e.target.value,
+                                  adminLabel: e.target.value,
                                 })
                               }
-                              placeholder="https://example.com"
+                              placeholder="Enter admin label"
                             />
                           </div>
+
                           <div className="space-y-2">
-                            <Label>Thumbnail Image (Optional)</Label>
-                            <Tabs
-                              value={documentForm.externalImageInputType}
+                            <Label htmlFor="displayLabel">
+                              Display Label *
+                            </Label>
+                            <Input
+                              id="displayLabel"
+                              value={documentForm.displayLabel}
+                              onChange={(e) =>
+                                setDocumentForm({
+                                  ...documentForm,
+                                  displayLabel: e.target.value,
+                                })
+                              }
+                              placeholder="Enter display label"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="documentType">Type *</Label>
+                            <Select
+                              value={documentForm.type}
                               onValueChange={(value) =>
                                 setDocumentForm({
                                   ...documentForm,
-                                  externalImageInputType: value,
+                                  type: value,
                                 })
                               }
                             >
-                              <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="upload">
-                                  Upload File
-                                </TabsTrigger>
-                                <TabsTrigger value="url">Paste URL</TabsTrigger>
-                              </TabsList>
-                              <TabsContent value="upload" className="mt-2">
-                                <div className="space-y-2">
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select document type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {documentTypes.map((type) => (
+                                  <SelectItem
+                                    key={type.value}
+                                    value={type.value}
+                                  >
+                                    {type.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* HTML Text Fields */}
+                          {documentForm.type === "html_text" && (
+                            <div className="space-y-2 border-t pt-4">
+                              <Label>Image</Label>
+                              <Tabs
+                                value={documentForm.imageInputType}
+                                onValueChange={(value) =>
+                                  setDocumentForm({
+                                    ...documentForm,
+                                    imageInputType: value,
+                                  })
+                                }
+                              >
+                                <TabsList className="grid w-full grid-cols-2">
+                                  <TabsTrigger value="upload">
+                                    Upload File
+                                  </TabsTrigger>
+                                  <TabsTrigger value="url">
+                                    Paste URL
+                                  </TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="upload" className="mt-2">
+                                  <div className="space-y-2">
+                                    <Input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        setDocumentForm({
+                                          ...documentForm,
+                                          imageFile: file || null,
+                                        });
+                                      }}
+                                    />
+                                    {documentForm.imageFile && (
+                                      <p className="text-sm text-gray-600">
+                                        Selected: {documentForm.imageFile.name}
+                                      </p>
+                                    )}
+                                  </div>
+                                </TabsContent>
+                                <TabsContent value="url" className="mt-2">
                                   <Input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                      const file = e.target.files[0];
+                                    value={documentForm.imageUrl}
+                                    onChange={(e) =>
                                       setDocumentForm({
                                         ...documentForm,
-                                        externalImageFile: file || null,
-                                      });
-                                    }}
+                                        imageUrl: e.target.value,
+                                      })
+                                    }
+                                    placeholder="https://example.com/image.jpg"
                                   />
-                                  {documentForm.externalImageFile && (
-                                    <p className="text-sm text-gray-600">
-                                      Selected:{" "}
-                                      {documentForm.externalImageFile.name}
-                                    </p>
-                                  )}
-                                </div>
-                              </TabsContent>
-                              <TabsContent value="url" className="mt-2">
+                                </TabsContent>
+                              </Tabs>
+                            </div>
+                          )}
+
+                          {/* PDF Document Fields */}
+                          {documentForm.type === "pdf_document" && (
+                            <div className="space-y-2 border-t pt-4">
+                              <Label>PDF File</Label>
+                              <Tabs
+                                value={documentForm.pdfInputType}
+                                onValueChange={(value) =>
+                                  setDocumentForm({
+                                    ...documentForm,
+                                    pdfInputType: value,
+                                  })
+                                }
+                              >
+                                <TabsList className="grid w-full grid-cols-2">
+                                  <TabsTrigger value="upload">
+                                    Upload File
+                                  </TabsTrigger>
+                                  <TabsTrigger value="url">
+                                    Paste URL
+                                  </TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="upload" className="mt-2">
+                                  <div className="space-y-2">
+                                    <Input
+                                      type="file"
+                                      accept=".pdf,application/pdf"
+                                      onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        setDocumentForm({
+                                          ...documentForm,
+                                          pdfFile: file || null,
+                                        });
+                                      }}
+                                    />
+                                    {documentForm.pdfFile && (
+                                      <p className="text-sm text-gray-600">
+                                        Selected: {documentForm.pdfFile.name}
+                                      </p>
+                                    )}
+                                  </div>
+                                </TabsContent>
+                                <TabsContent value="url" className="mt-2">
+                                  <Input
+                                    value={documentForm.pdfUrl}
+                                    onChange={(e) =>
+                                      setDocumentForm({
+                                        ...documentForm,
+                                        pdfUrl: e.target.value,
+                                      })
+                                    }
+                                    placeholder="https://example.com/document.pdf"
+                                  />
+                                </TabsContent>
+                              </Tabs>
+                            </div>
+                          )}
+
+                          {/* External Link Fields */}
+                          {documentForm.type === "external_link" && (
+                            <>
+                              <div className="space-y-2 border-t pt-4">
+                                <Label htmlFor="externalUrl">URL *</Label>
                                 <Input
-                                  value={documentForm.externalImageUrl}
+                                  id="externalUrl"
+                                  value={documentForm.externalUrl}
                                   onChange={(e) =>
                                     setDocumentForm({
                                       ...documentForm,
-                                      externalImageUrl: e.target.value,
+                                      externalUrl: e.target.value,
                                     })
                                   }
-                                  placeholder="https://example.com/image.jpg"
+                                  placeholder="https://example.com"
                                 />
-                              </TabsContent>
-                            </Tabs>
-                          </div>
-                        </>
-                      )}
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Thumbnail Image (Optional)</Label>
+                                <Tabs
+                                  value={documentForm.externalImageInputType}
+                                  onValueChange={(value) =>
+                                    setDocumentForm({
+                                      ...documentForm,
+                                      externalImageInputType: value,
+                                    })
+                                  }
+                                >
+                                  <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="upload">
+                                      Upload File
+                                    </TabsTrigger>
+                                    <TabsTrigger value="url">
+                                      Paste URL
+                                    </TabsTrigger>
+                                  </TabsList>
+                                  <TabsContent value="upload" className="mt-2">
+                                    <div className="space-y-2">
+                                      <Input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                          const file = e.target.files[0];
+                                          setDocumentForm({
+                                            ...documentForm,
+                                            externalImageFile: file || null,
+                                          });
+                                        }}
+                                      />
+                                      {documentForm.externalImageFile && (
+                                        <p className="text-sm text-gray-600">
+                                          Selected:{" "}
+                                          {documentForm.externalImageFile.name}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </TabsContent>
+                                  <TabsContent value="url" className="mt-2">
+                                    <Input
+                                      value={documentForm.externalImageUrl}
+                                      onChange={(e) =>
+                                        setDocumentForm({
+                                          ...documentForm,
+                                          externalImageUrl: e.target.value,
+                                        })
+                                      }
+                                      placeholder="https://example.com/image.jpg"
+                                    />
+                                  </TabsContent>
+                                </Tabs>
+                              </div>
+                            </>
+                          )}
 
-                      {/* Contact Info Fields */}
-                      {documentForm.type === "contact_info" && (
-                        <>
+                          {/* Contact Info Fields */}
+                          {documentForm.type === "contact_info" && (
+                            <>
+                              <div className="space-y-2 border-t pt-4">
+                                <Label>Profile Picture (Optional)</Label>
+                                <Tabs
+                                  value={documentForm.profilePicInputType}
+                                  onValueChange={(value) =>
+                                    setDocumentForm({
+                                      ...documentForm,
+                                      profilePicInputType: value,
+                                    })
+                                  }
+                                >
+                                  <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="upload">
+                                      Upload File
+                                    </TabsTrigger>
+                                    <TabsTrigger value="url">
+                                      Paste URL
+                                    </TabsTrigger>
+                                  </TabsList>
+                                  <TabsContent value="upload" className="mt-2">
+                                    <div className="space-y-2">
+                                      <Input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                          const file = e.target.files[0];
+                                          setDocumentForm({
+                                            ...documentForm,
+                                            profilePicFile: file || null,
+                                          });
+                                        }}
+                                      />
+                                      {documentForm.profilePicFile && (
+                                        <p className="text-sm text-gray-600">
+                                          Selected:{" "}
+                                          {documentForm.profilePicFile.name}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </TabsContent>
+                                  <TabsContent value="url" className="mt-2">
+                                    <Input
+                                      value={documentForm.profilePicUrl}
+                                      onChange={(e) =>
+                                        setDocumentForm({
+                                          ...documentForm,
+                                          profilePicUrl: e.target.value,
+                                        })
+                                      }
+                                      placeholder="https://example.com/profile.jpg"
+                                    />
+                                  </TabsContent>
+                                </Tabs>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="contactName">Name</Label>
+                                <Input
+                                  id="contactName"
+                                  value={documentForm.contactName}
+                                  onChange={(e) =>
+                                    setDocumentForm({
+                                      ...documentForm,
+                                      contactName: e.target.value,
+                                    })
+                                  }
+                                  placeholder="John Doe"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="contactEmail">
+                                  Email Address
+                                </Label>
+                                <Input
+                                  id="contactEmail"
+                                  type="email"
+                                  value={documentForm.contactEmail}
+                                  onChange={(e) =>
+                                    setDocumentForm({
+                                      ...documentForm,
+                                      contactEmail: e.target.value,
+                                    })
+                                  }
+                                  placeholder="john@example.com"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="contactPhone">
+                                  Phone Number
+                                </Label>
+                                <Input
+                                  id="contactPhone"
+                                  type="tel"
+                                  value={documentForm.contactPhone}
+                                  onChange={(e) =>
+                                    setDocumentForm({
+                                      ...documentForm,
+                                      contactPhone: e.target.value,
+                                    })
+                                  }
+                                  placeholder="+1 (555) 123-4567"
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {/* Common Instructions Field */}
                           <div className="space-y-2 border-t pt-4">
-                            <Label>Profile Picture (Optional)</Label>
-                            <Tabs
-                              value={documentForm.profilePicInputType}
+                            <Label htmlFor="instructions">Instructions</Label>
+                            <textarea
+                              id="instructions"
+                              value={documentForm.instructions}
+                              onChange={(e) =>
+                                setDocumentForm({
+                                  ...documentForm,
+                                  instructions: e.target.value,
+                                })
+                              }
+                              placeholder="Enter instructions or additional notes"
+                              rows={3}
+                              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="menuAccess">Menu Access</Label>
+                            <Select
+                              value={documentForm.menuAccess}
                               onValueChange={(value) =>
                                 setDocumentForm({
                                   ...documentForm,
-                                  profilePicInputType: value,
+                                  menuAccess: value,
                                 })
                               }
                             >
-                              <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="upload">
-                                  Upload File
-                                </TabsTrigger>
-                                <TabsTrigger value="url">Paste URL</TabsTrigger>
-                              </TabsList>
-                              <TabsContent value="upload" className="mt-2">
-                                <div className="space-y-2">
-                                  <Input
-                                    type="file"
-                                    accept="image/*"
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select menu access" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {menuAccessOptions.map((option) => (
+                                  <SelectItem key={option} value={option}>
+                                    {option}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </TabsContent>
+
+                      {/* Properties Tab */}
+                      <TabsContent value="properties" className="mt-4">
+                        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                          <div>
+                            <Label className="text-base font-semibold">
+                              Properties / Tags
+                            </Label>
+                            <p className="text-sm text-gray-500 mt-1 mb-4">
+                              Select properties to associate with this resource.
+                              These help categorize and filter resources.
+                            </p>
+                          </div>
+
+                          {availableProperties.length > 0 ? (
+                            <div className="space-y-3 border rounded-lg p-4">
+                              {availableProperties.map((property) => (
+                                <div
+                                  key={property.id}
+                                  className="flex items-start space-x-3 p-2 rounded hover:bg-gray-50 transition-colors"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    id={`property-${property.id}`}
+                                    checked={selectedProperties.includes(
+                                      property.id
+                                    )}
                                     onChange={(e) => {
-                                      const file = e.target.files[0];
-                                      setDocumentForm({
-                                        ...documentForm,
-                                        profilePicFile: file || null,
-                                      });
+                                      if (e.target.checked) {
+                                        setSelectedProperties([
+                                          ...selectedProperties,
+                                          property.id,
+                                        ]);
+                                      } else {
+                                        setSelectedProperties(
+                                          selectedProperties.filter(
+                                            (id) => id !== property.id
+                                          )
+                                        );
+                                      }
                                     }}
+                                    className="h-4 w-4 mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
                                   />
-                                  {documentForm.profilePicFile && (
-                                    <p className="text-sm text-gray-600">
-                                      Selected:{" "}
-                                      {documentForm.profilePicFile.name}
-                                    </p>
-                                  )}
+                                  <Label
+                                    htmlFor={`property-${property.id}`}
+                                    className="text-sm font-medium cursor-pointer flex-1"
+                                  >
+                                    {property.label}
+                                  </Label>
                                 </div>
-                              </TabsContent>
-                              <TabsContent value="url" className="mt-2">
-                                <Input
-                                  value={documentForm.profilePicUrl}
-                                  onChange={(e) =>
-                                    setDocumentForm({
-                                      ...documentForm,
-                                      profilePicUrl: e.target.value,
-                                    })
-                                  }
-                                  placeholder="https://example.com/profile.jpg"
-                                />
-                              </TabsContent>
-                            </Tabs>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="contactName">Name</Label>
-                            <Input
-                              id="contactName"
-                              value={documentForm.contactName}
-                              onChange={(e) =>
-                                setDocumentForm({
-                                  ...documentForm,
-                                  contactName: e.target.value,
-                                })
-                              }
-                              placeholder="John Doe"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="contactEmail">Email Address</Label>
-                            <Input
-                              id="contactEmail"
-                              type="email"
-                              value={documentForm.contactEmail}
-                              onChange={(e) =>
-                                setDocumentForm({
-                                  ...documentForm,
-                                  contactEmail: e.target.value,
-                                })
-                              }
-                              placeholder="john@example.com"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="contactPhone">Phone Number</Label>
-                            <Input
-                              id="contactPhone"
-                              type="tel"
-                              value={documentForm.contactPhone}
-                              onChange={(e) =>
-                                setDocumentForm({
-                                  ...documentForm,
-                                  contactPhone: e.target.value,
-                                })
-                              }
-                              placeholder="+1 (555) 123-4567"
-                            />
-                          </div>
-                        </>
-                      )}
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed">
+                              <p className="text-sm text-gray-500 mb-2">
+                                No properties available
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                Create properties in the Properties tab first,
+                                then come back here to assign them.
+                              </p>
+                            </div>
+                          )}
 
-                      {/* Common Instructions Field */}
-                      <div className="space-y-2 border-t pt-4">
-                        <Label htmlFor="instructions">Instructions</Label>
-                        <textarea
-                          id="instructions"
-                          value={documentForm.instructions}
-                          onChange={(e) =>
-                            setDocumentForm({
-                              ...documentForm,
-                              instructions: e.target.value,
-                            })
-                          }
-                          placeholder="Enter instructions or additional notes"
-                          rows={3}
-                          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="menuAccess">Menu Access</Label>
-                        <Select
-                          value={documentForm.menuAccess}
-                          onValueChange={(value) =>
-                            setDocumentForm({
-                              ...documentForm,
-                              menuAccess: value,
-                            })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select menu access" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {menuAccessOptions.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                          {selectedProperties.length > 0 && (
+                            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                              <p className="text-sm text-blue-900">
+                                <strong>{selectedProperties.length}</strong>{" "}
+                                {selectedProperties.length === 1
+                                  ? "property"
+                                  : "properties"}{" "}
+                                selected
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                     <DialogFooter>
                       <Button
                         variant="outline"
@@ -1718,7 +2080,10 @@ export default function ResourceAdminPage() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Property Name
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                          Resource Usage
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                           Client Usage
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
@@ -1748,9 +2113,38 @@ export default function ResourceAdminPage() {
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
+                            <button
+                              onClick={() => handleResourceUsageClick(property)}
+                              disabled={
+                                !property.resourceUsage ||
+                                property.resourceUsage === 0
+                              }
+                              className={`flex items-center gap-2 ${
+                                property.resourceUsage > 0
+                                  ? "cursor-pointer hover:text-blue-600 transition-colors"
+                                  : "cursor-default"
+                              }`}
+                            >
+                              <span
+                                className={`text-sm font-medium ${
+                                  property.resourceUsage > 0
+                                    ? "text-blue-600 underline"
+                                    : "text-gray-900"
+                                }`}
+                              >
+                                {property.resourceUsage || 0}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {property.resourceUsage === 1
+                                  ? "resource"
+                                  : "resources"}
+                              </span>
+                            </button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-gray-900">
-                                {property.clientUsage}
+                                {property.clientUsage || 0}
                               </span>
                               <span className="text-xs text-gray-500">
                                 {property.clientUsage === 1
@@ -1948,6 +2342,79 @@ export default function ResourceAdminPage() {
                     className="bg-red-600 hover:bg-red-700"
                   >
                     Delete Record Type
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Resource Usage Modal */}
+            <Dialog
+              open={isResourceUsageModalOpen}
+              onOpenChange={setIsResourceUsageModalOpen}
+            >
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle className="text-lg">
+                    Resources Using "{selectedPropertyForUsage?.propertyName}"
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-gray-500">
+                    {resourcesUsingProperty.length > 0
+                      ? `This property is currently assigned to ${
+                          resourcesUsingProperty.length
+                        } ${
+                          resourcesUsingProperty.length === 1
+                            ? "resource"
+                            : "resources"
+                        }`
+                      : "This property is not currently assigned to any resources"}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="max-h-[400px] overflow-y-auto">
+                  {resourcesUsingProperty.length > 0 ? (
+                    <div className="divide-y divide-gray-200">
+                      {resourcesUsingProperty.map((resource) => (
+                        <div
+                          key={resource.resource_id}
+                          className="py-3 px-4 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">
+                                {resource.display_label}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Admin Label: {resource.admin_label}
+                              </p>
+                            </div>
+                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+                              {resource.resource_type?.replace(/_/g, " ") ||
+                                "Unknown"}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-gray-500">
+                        No resources are currently using this property
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsResourceUsageModalOpen(false);
+                      setSelectedPropertyForUsage(null);
+                      setResourcesUsingProperty([]);
+                    }}
+                  >
+                    Close
                   </Button>
                 </DialogFooter>
               </DialogContent>
