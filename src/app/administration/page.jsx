@@ -217,7 +217,9 @@ export default function AdministrationPage() {
 
               <Card
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => alert("Import W-2s - Coming Soon!")}
+                onClick={() => {
+                  window.location.href = "/administration/import-w2s";
+                }}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center">
