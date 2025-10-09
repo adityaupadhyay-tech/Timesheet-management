@@ -111,6 +111,9 @@ export default function AdminTimesheetsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCompany, setFilterCompany] = useState('all');
+  const [filterDateRange, setFilterDateRange] = useState('all');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [selectedTimesheet, setSelectedTimesheet] = useState(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   
@@ -122,6 +125,7 @@ export default function AdminTimesheetsPage() {
   const [showDisposeWarning, setShowDisposeWarning] = useState(false);
   const [showDisposeModal, setShowDisposeModal] = useState(false);
   const [requestedChanges, setRequestedChanges] = useState('');
+  const [disposeConfirmation, setDisposeConfirmation] = useState('');
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -144,6 +148,41 @@ export default function AdminTimesheetsPage() {
     return companies.sort();
   };
 
+  // Get date range based on filter selection
+  const getDateRange = () => {
+    const now = new Date();
+    let startDate, endDate;
+
+    switch (filterDateRange) {
+      case 'this_week':
+        startDate = new Date(now.setDate(now.getDate() - now.getDay()));
+        endDate = new Date(now.setDate(now.getDate() - now.getDay() + 6));
+        break;
+      case 'last_week':
+        const lastWeekStart = new Date(now.setDate(now.getDate() - now.getDay() - 7));
+        startDate = lastWeekStart;
+        endDate = new Date(lastWeekStart);
+        endDate.setDate(lastWeekStart.getDate() + 6);
+        break;
+      case 'this_month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'last_month':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      case 'custom':
+        startDate = customStartDate ? new Date(customStartDate) : null;
+        endDate = customEndDate ? new Date(customEndDate) : null;
+        break;
+      default:
+        return { startDate: null, endDate: null };
+    }
+
+    return { startDate, endDate };
+  };
+
   // Filter timesheets
   const getFilteredTimesheets = () => {
     return timesheets.filter(ts => {
@@ -155,7 +194,17 @@ export default function AdminTimesheetsPage() {
       const matchesStatus = filterStatus === 'all' || ts.status === filterStatus;
       const matchesCompany = filterCompany === 'all' || ts.company === filterCompany;
       
-      return matchesSearch && matchesStatus && matchesCompany;
+      // Date range filter
+      let matchesDateRange = true;
+      if (filterDateRange !== 'all') {
+        const { startDate, endDate } = getDateRange();
+        if (startDate && endDate) {
+          const submittedDate = new Date(ts.submittedDate);
+          matchesDateRange = submittedDate >= startDate && submittedDate <= endDate;
+        }
+      }
+      
+      return matchesSearch && matchesStatus && matchesCompany && matchesDateRange;
     });
   };
 
@@ -164,6 +213,9 @@ export default function AdminTimesheetsPage() {
     setSearchTerm('');
     setFilterStatus('all');
     setFilterCompany('all');
+    setFilterDateRange('all');
+    setCustomStartDate('');
+    setCustomEndDate('');
   };
 
   // View timesheet details
@@ -282,6 +334,7 @@ export default function AdminTimesheetsPage() {
   // Proceed from warning to dispose modal
   const handleProceedToDispose = () => {
     setShowDisposeWarning(false);
+    setDisposeConfirmation('');
     setShowDisposeModal(true);
   };
 
@@ -468,7 +521,7 @@ export default function AdminTimesheetsPage() {
                 </div>
 
                 {/* Filters Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {/* Status Filter */}
                   <div className="space-y-2">
                     <Label htmlFor="filterStatus" className="text-sm">Status</Label>
@@ -501,6 +554,24 @@ export default function AdminTimesheetsPage() {
                     </select>
                   </div>
 
+                  {/* Date Range Filter */}
+                  <div className="space-y-2">
+                    <Label htmlFor="filterDateRange" className="text-sm">Date Range</Label>
+                    <select
+                      id="filterDateRange"
+                      value={filterDateRange}
+                      onChange={(e) => setFilterDateRange(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="all">All Time</option>
+                      <option value="this_week">This Week</option>
+                      <option value="last_week">Last Week</option>
+                      <option value="this_month">This Month</option>
+                      <option value="last_month">Last Month</option>
+                      <option value="custom">Custom Range</option>
+                    </select>
+                  </div>
+
                   {/* Clear Filters Button */}
                   <div className="space-y-2">
                     <Label className="text-sm invisible">Actions</Label>
@@ -513,6 +584,32 @@ export default function AdminTimesheetsPage() {
                     </Button>
                   </div>
                 </div>
+
+                {/* Custom Date Range */}
+                {filterDateRange === 'custom' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="space-y-2">
+                      <Label htmlFor="customStartDate" className="text-sm">Start Date</Label>
+                      <Input
+                        id="customStartDate"
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        className="h-10"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="customEndDate" className="text-sm">End Date</Label>
+                      <Input
+                        id="customEndDate"
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        className="h-10"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Results Count */}
                 <div className="text-sm text-gray-600">
@@ -905,20 +1002,39 @@ export default function AdminTimesheetsPage() {
                     <li>This action cannot be reversed</li>
                   </ul>
                 </div>
+
+                {/* Confirmation Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="disposeConfirmation" className="text-sm font-medium">
+                    To confirm, type <span className="font-bold text-red-600">DISPOSE</span> below:
+                  </Label>
+                  <Input
+                    id="disposeConfirmation"
+                    type="text"
+                    value={disposeConfirmation}
+                    onChange={(e) => setDisposeConfirmation(e.target.value)}
+                    placeholder="Type DISPOSE to confirm"
+                    className="border-red-300 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
               </div>
             </div>
 
             <DialogFooter className="gap-2">
               <Button
                 variant="outline"
-                onClick={() => setShowDisposeWarning(false)}
+                onClick={() => {
+                  setShowDisposeWarning(false);
+                  setDisposeConfirmation('');
+                }}
                 className="flex-1"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleProceedToDispose}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                disabled={disposeConfirmation !== 'DISPOSE'}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white disabled:bg-red-300 disabled:cursor-not-allowed disabled:opacity-75"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 I Understand, Proceed
