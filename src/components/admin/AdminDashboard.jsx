@@ -45,6 +45,7 @@ import {
   addManagersToDepartment,
   getDepartmentsByCompany,
   getLocationsByCompany,
+  getAllEmployeesWithAssignments,
 } from "../../lib/adminHelpers";
 
 export default function AdminDashboard() {
@@ -59,6 +60,15 @@ export default function AdminDashboard() {
   // UI state
   const [activeTab, setActiveTab] = useState("companies");
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Manage tab filters
+  const [manageFilters, setManageFilters] = useState({
+    name: '',
+    status: 'all',
+    minLocations: '',
+    minDepartments: '',
+    minEmployees: ''
+  });
 
   // Manage tab state
   const [showAddCompany, setShowAddCompany] = useState(false);
@@ -126,6 +136,7 @@ export default function AdminDashboard() {
   const [availableEmployees, setAvailableEmployees] = useState([]);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
+  const [employeeAssignments, setEmployeeAssignments] = useState({}); // Maps employee_id to {department_id, location_id}
 
   // Company detail view handler
   const handleCompanyClick = async (companyId) => {
@@ -202,6 +213,55 @@ export default function AdminDashboard() {
       company.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.state?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Filter companies for Manage tab
+  const getFilteredManageCompanies = () => {
+    return companies.filter((company) => {
+      // Name filter
+      if (manageFilters.name && !company.name.toLowerCase().includes(manageFilters.name.toLowerCase())) {
+        return false;
+      }
+      
+      // Status filter
+      if (manageFilters.status !== 'all' && company.status !== manageFilters.status) {
+        return false;
+      }
+      
+      // Min locations filter
+      if (manageFilters.minLocations && company.location_count < parseInt(manageFilters.minLocations)) {
+        return false;
+      }
+      
+      // Min departments filter
+      if (manageFilters.minDepartments && company.department_count < parseInt(manageFilters.minDepartments)) {
+        return false;
+      }
+      
+      // Min employees filter
+      if (manageFilters.minEmployees && company.employee_count < parseInt(manageFilters.minEmployees)) {
+        return false;
+      }
+      
+      return true;
+    });
+  };
+
+  const updateManageFilter = (field, value) => {
+    setManageFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const clearManageFilters = () => {
+    setManageFilters({
+      name: '',
+      status: 'all',
+      minLocations: '',
+      minDepartments: '',
+      minEmployees: ''
+    });
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -410,34 +470,77 @@ export default function AdminDashboard() {
   // Employee assignment functions
   const loadAvailableEmployees = async () => {
     try {
-      // Fetch all employees using the RPC function
-      const { data, error } = await supabase.rpc('get_all_employees_detailed');
+      // Fetch all employees from user management system
+      const result = await getAllEmployeesWithAssignments();
 
-      if (error) {
-        console.error('Error loading employees:', error);
-        // If RPC doesn't exist, try direct query as fallback
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('employees')
-          .select('id, first_name, last_name, email, job_title')
-          .order('last_name', { ascending: true });
+      if (result.error) {
+        console.warn('Database not configured or employees table not found. Using mock data for development.');
+        console.log('To use real data, ensure your Supabase database is set up. Go to Administration > User Management to add employees.');
         
-        if (fallbackError) {
-          console.error('Fallback query also failed:', fallbackError);
-          // Set empty array if both methods fail
-          setAvailableEmployees([]);
-          return;
-        }
+        // Use mock data if database is not set up
+        const mockEmployees = [
+          {
+            id: 'emp-1',
+            first_name: 'Alice',
+            last_name: 'Johnson',
+            email: 'alice.johnson@example.com',
+            job_title: 'Software Engineer',
+            company_name: null,
+            assignments: []
+          },
+          {
+            id: 'emp-2',
+            first_name: 'Bob',
+            last_name: 'Smith',
+            email: 'bob.smith@example.com',
+            job_title: 'Product Manager',
+            company_name: null,
+            assignments: []
+          },
+          {
+            id: 'emp-3',
+            first_name: 'Carol',
+            last_name: 'Williams',
+            email: 'carol.williams@example.com',
+            job_title: 'Designer',
+            company_name: null,
+            assignments: []
+          },
+          {
+            id: 'emp-4',
+            first_name: 'David',
+            last_name: 'Brown',
+            email: 'david.brown@example.com',
+            job_title: 'Sales Representative',
+            company_name: null,
+            assignments: []
+          },
+          {
+            id: 'emp-5',
+            first_name: 'Emma',
+            last_name: 'Davis',
+            email: 'emma.davis@example.com',
+            job_title: 'Marketing Specialist',
+            company_name: null,
+            assignments: []
+          }
+        ];
         
-        // Use fallback data
-        const companyEmployeeIds = companyDetails.employees.map(emp => emp.id);
-        const available = (fallbackData || []).filter(emp => !companyEmployeeIds.includes(emp.id));
-        setAvailableEmployees(available);
+        setAvailableEmployees(mockEmployees);
         return;
       }
 
-      // Filter out employees already assigned to this company
-      const companyEmployeeIds = companyDetails.employees.map(emp => emp.id);
-      const available = (data || []).filter(emp => !companyEmployeeIds.includes(emp.id));
+      // Get all employees from user management
+      const allEmployees = result.data || [];
+      
+      // Filter to only show employees not already assigned to this company
+      const available = allEmployees.filter(emp => {
+        // Check if employee has any assignment to the current company
+        const hasAssignment = emp.assignments?.some(
+          assignment => assignment.company_name === editingCompany.name
+        );
+        return !hasAssignment;
+      });
       
       setAvailableEmployees(available);
     } catch (err) {
@@ -450,6 +553,7 @@ export default function AdminDashboard() {
     setShowAssignEmployee(true);
     setSelectedEmployees([]);
     setEmployeeSearchTerm('');
+    setEmployeeAssignments({});
     loadAvailableEmployees();
   };
 
@@ -459,24 +563,95 @@ export default function AdminDashboard() {
       return;
     }
 
+    // Validate that all selected employees have department and location assigned
+    const missingAssignments = selectedEmployees.filter(employeeId => {
+      const assignment = employeeAssignments[employeeId] || {};
+      return !assignment.department_id || !assignment.location_id;
+    });
+
+    if (missingAssignments.length > 0) {
+      const employees = missingAssignments.map(id => {
+        const emp = availableEmployees.find(e => e.id === id);
+        return emp ? `${emp.first_name} ${emp.last_name}` : 'Unknown';
+      }).join(', ');
+      
+      alert(`Please assign both department and location for:\n${employees}`);
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
-      // Assign each selected employee to the company
-      const insertData = selectedEmployees.map(employeeId => ({
-        employee_id: employeeId,
-        company_id: editingCompany.id,
-        is_primary: false
-      }));
-
-      const { error } = await supabase
-        .from('employee_companies')
-        .insert(insertData);
-
-      if (error) {
-        console.error('Error assigning employees:', error);
-        alert('Failed to assign employees: ' + error.message);
+      // Check if using mock data (employee IDs start with 'emp-')
+      const isMockData = selectedEmployees.some(id => id.startsWith('emp-'));
+      
+      if (isMockData) {
+        // Simulate assignment for mock data
+        const assignmentSummary = selectedEmployees.map(employeeId => {
+          const employee = availableEmployees.find(e => e.id === employeeId);
+          const assignment = employeeAssignments[employeeId] || {};
+          const dept = companyDetails.departments.find(d => d.id === assignment.department_id);
+          const loc = companyDetails.locations.find(l => l.id === assignment.location_id);
+          
+          return `• ${employee.first_name} ${employee.last_name}${dept ? ` → ${dept.name}` : ''}${loc ? ` @ ${loc.name}` : ''}`;
+        }).join('\n');
+        
+        alert(`Successfully assigned ${selectedEmployees.length} employee${selectedEmployees.length !== 1 ? 's' : ''} to ${editingCompany.name}:\n\n${assignmentSummary}\n\nNote: Using mock data. Connect to Supabase to persist changes.`);
+        
+        // Close modal and reset
+        setShowAssignEmployee(false);
+        setSelectedEmployees([]);
+        setEmployeeSearchTerm('');
+        setEmployeeAssignments({});
+        setIsSubmitting(false);
         return;
+      }
+
+      // Real database update - Create new assignment for each employee
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const employeeId of selectedEmployees) {
+        const assignment = employeeAssignments[employeeId] || {};
+        
+        // Prepare the assignment data (department and location are now required)
+        const assignmentData = {
+          employee_id: employeeId,
+          company_id: editingCompany.id,
+          department_id: assignment.department_id,
+          location_id: assignment.location_id,
+          is_primary: false // Can be made configurable if needed
+        };
+
+        // Insert into employee_company_assignments table (many-to-many)
+        const { error: assignmentError } = await supabase
+          .from('employee_company_assignments')
+          .insert(assignmentData);
+
+        if (assignmentError) {
+          // If junction table doesn't exist, fall back to updating employee directly
+          console.warn('employee_company_assignments table not found, updating employee directly');
+          
+          const updateData = {
+            company_id: editingCompany.id,
+            department_id: assignment.department_id,
+            location_id: assignment.location_id
+          };
+
+          const { error: updateError } = await supabase
+            .from('employees')
+            .update(updateData)
+            .eq('id', employeeId);
+
+          if (updateError) {
+            console.error(`Error assigning employee ${employeeId}:`, updateError);
+            errorCount++;
+          } else {
+            successCount++;
+          }
+        } else {
+          successCount++;
+        }
       }
 
       // Refresh company details
@@ -486,11 +661,16 @@ export default function AdminDashboard() {
       setShowAssignEmployee(false);
       setSelectedEmployees([]);
       setEmployeeSearchTerm('');
+      setEmployeeAssignments({});
       
-      alert(`Successfully assigned ${selectedEmployees.length} employee${selectedEmployees.length > 1 ? 's' : ''} to ${editingCompany.name}`);
+      if (errorCount > 0) {
+        alert(`Assigned ${successCount} employee${successCount !== 1 ? 's' : ''} successfully. ${errorCount} failed.`);
+      } else {
+        alert(`Successfully assigned ${successCount} employee${successCount !== 1 ? 's' : ''} to ${editingCompany.name}`);
+      }
     } catch (err) {
       console.error('Error assigning employees:', err);
-      alert('Failed to assign employees');
+      alert('Failed to assign employees: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -503,16 +683,27 @@ export default function AdminDashboard() {
     try {
       setDetailsLoading(true);
 
-      const { error } = await supabase
-        .from('employee_companies')
+      // Try to delete from employee_company_assignments table first
+      const { error: assignmentError } = await supabase
+        .from('employee_company_assignments')
         .delete()
         .eq('employee_id', employeeId)
         .eq('company_id', editingCompany.id);
 
-      if (error) {
-        console.error('Error removing employee:', error);
-        alert('Failed to remove employee: ' + error.message);
-        return;
+      if (assignmentError) {
+        // If junction table doesn't exist, fall back to updating employee directly
+        console.warn('employee_company_assignments table not found, updating employee directly');
+        
+        const { error } = await supabase
+          .from('employees')
+          .update({ company_id: null, department_id: null, location_id: null })
+          .eq('id', employeeId);
+
+        if (error) {
+          console.error('Error removing employee:', error);
+          alert('Failed to remove employee: ' + error.message);
+          return;
+        }
       }
 
       // Refresh company details
@@ -520,7 +711,7 @@ export default function AdminDashboard() {
       alert('Employee removed successfully');
     } catch (err) {
       console.error('Error removing employee:', err);
-      alert('Failed to remove employee');
+      alert('Failed to remove employee: ' + err.message);
     } finally {
       setDetailsLoading(false);
     }
@@ -529,11 +720,30 @@ export default function AdminDashboard() {
   const toggleEmployeeSelection = (employeeId) => {
     setSelectedEmployees(prev => {
       if (prev.includes(employeeId)) {
+        // Remove from selection and clear assignment data
+        const newAssignments = { ...employeeAssignments };
+        delete newAssignments[employeeId];
+        setEmployeeAssignments(newAssignments);
         return prev.filter(id => id !== employeeId);
       } else {
+        // Add to selection and initialize assignment data
+        setEmployeeAssignments(prev => ({
+          ...prev,
+          [employeeId]: { department_id: '', location_id: '' }
+        }));
         return [...prev, employeeId];
       }
     });
+  };
+
+  const updateEmployeeAssignment = (employeeId, field, value) => {
+    setEmployeeAssignments(prev => ({
+      ...prev,
+      [employeeId]: {
+        ...(prev[employeeId] || {}),
+        [field]: value
+      }
+    }));
   };
 
   const getFilteredAvailableEmployees = () => {
@@ -1266,11 +1476,29 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <Edit className="mr-2" />
-                  Manage Companies
-                </CardTitle>
-                <Button onClick={startAddCompanyWizard}>Add Company</Button>
+                <div className="flex items-center gap-3">
+                  <CardTitle className="flex items-center">
+                    <Edit className="mr-2" />
+                    Manage Companies
+                  </CardTitle>
+                  {(manageFilters.name || manageFilters.status !== 'all' || manageFilters.minLocations || manageFilters.minDepartments || manageFilters.minEmployees) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearManageFilters}
+                      className="text-gray-600 hover:text-gray-900"
+                    >
+                      <Clear className="mr-1" />
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">
+                    Showing {getFilteredManageCompanies().length} of {companies.length}
+                  </span>
+                  <Button onClick={startAddCompanyWizard}>Add Company</Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -1285,57 +1513,136 @@ export default function AdminDashboard() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-3">Company Name</th>
-                        <th className="text-left p-3">Status</th>
-                        <th className="text-left p-3">Locations</th>
-                        <th className="text-left p-3">Departments</th>
-                        <th className="text-left p-3">Employees</th>
-                        <th className="text-left p-3">Actions</th>
+                      <tr className="border-b bg-gray-50">
+                        <th className="text-left p-3">
+                          <div className="space-y-2">
+                            <div className="font-medium text-gray-700">Company Name</div>
+                            <Input
+                              type="text"
+                              placeholder="Filter by name..."
+                              value={manageFilters.name}
+                              onChange={(e) => updateManageFilter('name', e.target.value)}
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                        </th>
+                        <th className="text-left p-3">
+                          <div className="space-y-2">
+                            <div className="font-medium text-gray-700">Status</div>
+                            <select
+                              value={manageFilters.status}
+                              onChange={(e) => updateManageFilter('status', e.target.value)}
+                              className="h-8 text-xs w-full px-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <option value="all">All</option>
+                              <option value="active">Active</option>
+                              <option value="on-hold">On Hold</option>
+                              <option value="inactive">Inactive</option>
+                            </select>
+                          </div>
+                        </th>
+                        <th className="text-left p-3">
+                          <div className="space-y-2">
+                            <div className="font-medium text-gray-700">Locations</div>
+                            <Input
+                              type="number"
+                              placeholder="Min..."
+                              value={manageFilters.minLocations}
+                              onChange={(e) => updateManageFilter('minLocations', e.target.value)}
+                              className="h-8 text-xs w-20"
+                              min="0"
+                            />
+                          </div>
+                        </th>
+                        <th className="text-left p-3">
+                          <div className="space-y-2">
+                            <div className="font-medium text-gray-700">Departments</div>
+                            <Input
+                              type="number"
+                              placeholder="Min..."
+                              value={manageFilters.minDepartments}
+                              onChange={(e) => updateManageFilter('minDepartments', e.target.value)}
+                              className="h-8 text-xs w-20"
+                              min="0"
+                            />
+                          </div>
+                        </th>
+                        <th className="text-left p-3">
+                          <div className="space-y-2">
+                            <div className="font-medium text-gray-700">Employees</div>
+                            <Input
+                              type="number"
+                              placeholder="Min..."
+                              value={manageFilters.minEmployees}
+                              onChange={(e) => updateManageFilter('minEmployees', e.target.value)}
+                              className="h-8 text-xs w-20"
+                              min="0"
+                            />
+                          </div>
+                        </th>
+                        <th className="text-left p-3">
+                          <div className="font-medium text-gray-700">Actions</div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {companies.map((company) => (
-                        <tr
-                          key={company.id}
-                          className="border-b hover:bg-gray-50"
-                        >
-                          <td className="p-3">
-                            <div className="font-medium">{company.name}</div>
-                            <div className="text-sm text-gray-500">
-                              {company.description}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                                company.status
-                              )}`}
-                            >
-                              {company.status}
-                            </span>
-                          </td>
-                          <td className="p-3 text-sm">
-                            {company.location_count || 0}
-                          </td>
-                          <td className="p-3 text-sm">
-                            {company.department_count || 0}
-                          </td>
-                          <td className="p-3 text-sm">
-                            {company.employee_count || 0}
-                          </td>
-                          <td className="p-3">
+                      {getFilteredManageCompanies().length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="p-8 text-center text-gray-500">
+                            <FilterList className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                            <p className="mb-2">No companies match your filters</p>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => openEditModal(company)}
+                              onClick={clearManageFilters}
                             >
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
+                              Clear Filters
                             </Button>
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        getFilteredManageCompanies().map((company) => (
+                          <tr
+                            key={company.id}
+                            className="border-b hover:bg-gray-50"
+                          >
+                            <td className="p-3">
+                              <div className="font-medium">{company.name}</div>
+                              <div className="text-sm text-gray-500">
+                                {company.description}
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                                  company.status
+                                )}`}
+                              >
+                                {company.status}
+                              </span>
+                            </td>
+                            <td className="p-3 text-sm">
+                              {company.location_count || 0}
+                            </td>
+                            <td className="p-3 text-sm">
+                              {company.department_count || 0}
+                            </td>
+                            <td className="p-3 text-sm">
+                              {company.employee_count || 0}
+                            </td>
+                            <td className="p-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditModal(company)}
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -2083,6 +2390,7 @@ export default function AdminDashboard() {
                     setShowAssignEmployee(false);
                     setSelectedEmployees([]);
                     setEmployeeSearchTerm('');
+                    setEmployeeAssignments({});
                   }}
                 >
                   <X className="h-4 w-4" />
@@ -2164,6 +2472,87 @@ export default function AdminDashboard() {
               )}
             </div>
 
+            {/* Assignment Details for Selected Employees */}
+            {selectedEmployees.length > 0 && (
+              <div className="px-6 py-4 border-t bg-blue-50">
+                <div className="flex items-start justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-gray-900">
+                    Assign Details for Selected Employees
+                  </h4>
+                  <span className="text-xs text-red-600 font-medium">* Required</span>
+                </div>
+                {(companyDetails.departments.length === 0 || companyDetails.locations.length === 0) && (
+                  <div className="mb-3 p-2 bg-yellow-50 border border-yellow-300 rounded text-xs text-yellow-800">
+                    ⚠️ {companyDetails.departments.length === 0 && companyDetails.locations.length === 0 
+                      ? 'No departments or locations available. Please add them first in the Locations and Departments tabs.'
+                      : companyDetails.departments.length === 0
+                      ? 'No departments available. Please add them first in the Departments tab.'
+                      : 'No locations available. Please add them first in the Locations tab.'}
+                  </div>
+                )}
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {selectedEmployees.map((employeeId) => {
+                    const employee = availableEmployees.find(e => e.id === employeeId);
+                    if (!employee) return null;
+                    
+                    return (
+                      <div key={employeeId} className="bg-white p-3 rounded-lg border border-blue-200">
+                        <p className="text-sm font-medium text-gray-900 mb-2">
+                          {employee.first_name} {employee.last_name}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs text-gray-600 mb-1 block">
+                              Department <span className="text-red-500">*</span>
+                            </Label>
+                            <select
+                              value={employeeAssignments[employeeId]?.department_id || ''}
+                              onChange={(e) => updateEmployeeAssignment(employeeId, 'department_id', e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className={`w-full px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                !employeeAssignments[employeeId]?.department_id 
+                                  ? 'border-red-300 bg-red-50' 
+                                  : 'border-gray-300'
+                              }`}
+                            >
+                              <option value="">Select Department</option>
+                              {companyDetails.departments.map((dept) => (
+                                <option key={dept.id} value={dept.id}>
+                                  {dept.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-gray-600 mb-1 block">
+                              Location <span className="text-red-500">*</span>
+                            </Label>
+                            <select
+                              value={employeeAssignments[employeeId]?.location_id || ''}
+                              onChange={(e) => updateEmployeeAssignment(employeeId, 'location_id', e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className={`w-full px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                !employeeAssignments[employeeId]?.location_id 
+                                  ? 'border-red-300 bg-red-50' 
+                                  : 'border-gray-300'
+                              }`}
+                            >
+                              <option value="">Select Location</option>
+                              {companyDetails.locations.map((loc) => (
+                                <option key={loc.id} value={loc.id}>
+                                  {loc.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Footer */}
             <div className="px-6 py-4 border-t bg-gray-50">
               <div className="flex items-center justify-between mb-3">
@@ -2174,7 +2563,10 @@ export default function AdminDashboard() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setSelectedEmployees([])}
+                    onClick={() => {
+                      setSelectedEmployees([]);
+                      setEmployeeAssignments({});
+                    }}
                     className="text-blue-600"
                   >
                     Clear Selection
@@ -2188,6 +2580,7 @@ export default function AdminDashboard() {
                     setShowAssignEmployee(false);
                     setSelectedEmployees([]);
                     setEmployeeSearchTerm('');
+                    setEmployeeAssignments({});
                   }}
                   className="flex-1"
                 >
@@ -2195,7 +2588,12 @@ export default function AdminDashboard() {
                 </Button>
                 <Button
                   onClick={handleAssignEmployees}
-                  disabled={selectedEmployees.length === 0 || isSubmitting}
+                  disabled={
+                    selectedEmployees.length === 0 || 
+                    isSubmitting || 
+                    companyDetails.departments.length === 0 || 
+                    companyDetails.locations.length === 0
+                  }
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {isSubmitting ? (
@@ -2211,6 +2609,11 @@ export default function AdminDashboard() {
                   )}
                 </Button>
               </div>
+              {(companyDetails.departments.length === 0 || companyDetails.locations.length === 0) && (
+                <p className="text-xs text-center text-gray-600 mt-2">
+                  Add departments and locations to the company before assigning employees.
+                </p>
+              )}
             </div>
           </div>
         </div>
