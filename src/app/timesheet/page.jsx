@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Send, Download, Calendar, FolderOpen, CheckCircle, Eye, Search, Filter, ArrowLeft, Clock, XCircle, CheckCircle2, User, ChevronDown, FileText, Trash2, AlertTriangle } from 'lucide-react'
+import { Send, Download, Calendar, FolderOpen, CheckCircle, Eye, Search, Filter, ArrowLeft, Clock, XCircle, CheckCircle2, User, ChevronDown, FileText, Trash2, AlertTriangle, X } from 'lucide-react'
 import ExportModal from '@/components/timesheet/ExportModal'
 import { formatCyclePeriod } from '@/lib/cycleUtils'
 import PageHeader from '@/components/PageHeader'
@@ -437,8 +437,16 @@ function TimesheetContent() {
                 placeholder="Search by employee name, email, or department..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 pr-10"
               />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
             {/* Filters Row */}

@@ -22,7 +22,8 @@ import {
   Building,
   ChevronDown,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import { useSupabase } from '@/contexts/SupabaseContext';
@@ -454,8 +455,16 @@ export default function AdminTimesheetsPage() {
                     placeholder="Search by employee name, email, or department..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 pr-10"
                   />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Filters Row */}
