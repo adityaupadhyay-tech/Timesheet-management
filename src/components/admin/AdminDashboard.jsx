@@ -21,6 +21,8 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  Users,
+  Clock,
 } from "lucide-react";
 import {
   getCompaniesWithStats,
@@ -118,6 +120,12 @@ export default function AdminDashboard() {
   const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
   const [selectedCompanyData, setSelectedCompanyData] = useState(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+  // Employee assignment state
+  const [showAssignEmployee, setShowAssignEmployee] = useState(false);
+  const [availableEmployees, setAvailableEmployees] = useState([]);
+  const [selectedEmployees, setSelectedEmployees] = useState([]);
+  const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
 
   // Company detail view handler
   const handleCompanyClick = async (companyId) => {
@@ -397,6 +405,147 @@ export default function AdminDashboard() {
     } finally {
       setDetailsLoading(false);
     }
+  };
+
+  // Employee assignment functions
+  const loadAvailableEmployees = async () => {
+    try {
+      // Fetch all employees using the RPC function
+      const { data, error } = await supabase.rpc('get_all_employees_detailed');
+
+      if (error) {
+        console.error('Error loading employees:', error);
+        // If RPC doesn't exist, try direct query as fallback
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('employees')
+          .select('id, first_name, last_name, email, job_title')
+          .order('last_name', { ascending: true });
+        
+        if (fallbackError) {
+          console.error('Fallback query also failed:', fallbackError);
+          // Set empty array if both methods fail
+          setAvailableEmployees([]);
+          return;
+        }
+        
+        // Use fallback data
+        const companyEmployeeIds = companyDetails.employees.map(emp => emp.id);
+        const available = (fallbackData || []).filter(emp => !companyEmployeeIds.includes(emp.id));
+        setAvailableEmployees(available);
+        return;
+      }
+
+      // Filter out employees already assigned to this company
+      const companyEmployeeIds = companyDetails.employees.map(emp => emp.id);
+      const available = (data || []).filter(emp => !companyEmployeeIds.includes(emp.id));
+      
+      setAvailableEmployees(available);
+    } catch (err) {
+      console.error('Error loading available employees:', err);
+      setAvailableEmployees([]);
+    }
+  };
+
+  const handleOpenAssignEmployee = () => {
+    setShowAssignEmployee(true);
+    setSelectedEmployees([]);
+    setEmployeeSearchTerm('');
+    loadAvailableEmployees();
+  };
+
+  const handleAssignEmployees = async () => {
+    if (selectedEmployees.length === 0) {
+      alert('Please select at least one employee to assign');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Assign each selected employee to the company
+      const insertData = selectedEmployees.map(employeeId => ({
+        employee_id: employeeId,
+        company_id: editingCompany.id,
+        is_primary: false
+      }));
+
+      const { error } = await supabase
+        .from('employee_companies')
+        .insert(insertData);
+
+      if (error) {
+        console.error('Error assigning employees:', error);
+        alert('Failed to assign employees: ' + error.message);
+        return;
+      }
+
+      // Refresh company details
+      await fetchCompanyDetailsData(editingCompany.id);
+
+      // Close modal and reset
+      setShowAssignEmployee(false);
+      setSelectedEmployees([]);
+      setEmployeeSearchTerm('');
+      
+      alert(`Successfully assigned ${selectedEmployees.length} employee${selectedEmployees.length > 1 ? 's' : ''} to ${editingCompany.name}`);
+    } catch (err) {
+      console.error('Error assigning employees:', err);
+      alert('Failed to assign employees');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRemoveEmployee = async (employeeId) => {
+    const confirmed = window.confirm('Are you sure you want to remove this employee from the company?');
+    if (!confirmed) return;
+
+    try {
+      setDetailsLoading(true);
+
+      const { error } = await supabase
+        .from('employee_companies')
+        .delete()
+        .eq('employee_id', employeeId)
+        .eq('company_id', editingCompany.id);
+
+      if (error) {
+        console.error('Error removing employee:', error);
+        alert('Failed to remove employee: ' + error.message);
+        return;
+      }
+
+      // Refresh company details
+      await fetchCompanyDetailsData(editingCompany.id);
+      alert('Employee removed successfully');
+    } catch (err) {
+      console.error('Error removing employee:', err);
+      alert('Failed to remove employee');
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const toggleEmployeeSelection = (employeeId) => {
+    setSelectedEmployees(prev => {
+      if (prev.includes(employeeId)) {
+        return prev.filter(id => id !== employeeId);
+      } else {
+        return [...prev, employeeId];
+      }
+    });
+  };
+
+  const getFilteredAvailableEmployees = () => {
+    if (!employeeSearchTerm) return availableEmployees;
+    
+    const term = employeeSearchTerm.toLowerCase();
+    return availableEmployees.filter(emp => 
+      emp.first_name?.toLowerCase().includes(term) ||
+      emp.last_name?.toLowerCase().includes(term) ||
+      emp.email?.toLowerCase().includes(term) ||
+      emp.job_title?.toLowerCase().includes(term)
+    );
   };
 
   // Wizard functions
@@ -1518,10 +1667,11 @@ export default function AdminDashboard() {
                 value={editCompanyActiveTab}
                 onValueChange={setEditCompanyActiveTab}
               >
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="info">Company Info</TabsTrigger>
                   <TabsTrigger value="locations">Locations</TabsTrigger>
                   <TabsTrigger value="departments">Departments</TabsTrigger>
+                  <TabsTrigger value="employees">Employees</TabsTrigger>
                   <TabsTrigger
                     value="danger"
                     className="text-red-600 data-[state=active]:text-red-700"
@@ -1746,6 +1896,87 @@ export default function AdminDashboard() {
                     </Card>
                   </TabsContent>
 
+                  {/* Employees Tab */}
+                  <TabsContent value="employees" className="space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle>Company Employees</CardTitle>
+                          <Button
+                            onClick={handleOpenAssignEmployee}
+                            size="sm"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Assign Employees
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {detailsLoading ? (
+                          <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                            <p className="text-gray-500 mt-2">Loading employees...</p>
+                          </div>
+                        ) : companyDetails.employees.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                            <p>No employees assigned to this company yet</p>
+                            <Button
+                              onClick={handleOpenAssignEmployee}
+                              variant="outline"
+                              size="sm"
+                              className="mt-4"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Assign First Employee
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {companyDetails.employees.map((employee) => (
+                              <div
+                                key={employee.id}
+                                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <span className="text-blue-600 font-semibold text-sm">
+                                      {employee.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'N/A'}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-gray-900">
+                                      {employee.full_name || 'Unknown'}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                      {employee.email}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className="text-sm text-gray-600">
+                                    <p>{employee.job_title || 'No title'}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {employee.department_name || 'No department'}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleRemoveEmployee(employee.id)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
                   {/* Danger Zone Tab */}
                   <TabsContent value="danger" className="space-y-4">
                     <Card className="border-red-200">
@@ -1827,6 +2058,159 @@ export default function AdminDashboard() {
               >
                 Cancel
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Employee Modal */}
+      {showAssignEmployee && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold">Assign Employees</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Select employees to assign to {editingCompany?.name}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowAssignEmployee(false);
+                    setSelectedEmployees([]);
+                    setEmployeeSearchTerm('');
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="px-6 py-4 border-b bg-gray-50">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search by name, email, or job title..."
+                  value={employeeSearchTerm}
+                  onChange={(e) => setEmployeeSearchTerm(e.target.value)}
+                  className="pl-10 pr-10"
+                />
+                {employeeSearchTerm && (
+                  <button
+                    onClick={() => setEmployeeSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Employee List */}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              {getFilteredAvailableEmployees().length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                  <p>
+                    {employeeSearchTerm 
+                      ? 'No employees found matching your search'
+                      : 'No available employees to assign'
+                    }
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {getFilteredAvailableEmployees().map((employee) => (
+                    <div
+                      key={employee.id}
+                      onClick={() => toggleEmployeeSelection(employee.id)}
+                      className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                        selectedEmployees.includes(employee.id)
+                          ? 'bg-blue-50 border-blue-300'
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedEmployees.includes(employee.id)}
+                          onChange={() => {}}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                        />
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-blue-600 font-semibold text-sm">
+                            {`${employee.first_name?.[0] || ''}${employee.last_name?.[0] || ''}`.toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {employee.first_name} {employee.last_name}
+                          </p>
+                          <p className="text-sm text-gray-500">{employee.email}</p>
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {employee.job_title || 'No title'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t bg-gray-50">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-gray-600">
+                  {selectedEmployees.length} employee{selectedEmployees.length !== 1 ? 's' : ''} selected
+                </p>
+                {selectedEmployees.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedEmployees([])}
+                    className="text-blue-600"
+                  >
+                    Clear Selection
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAssignEmployee(false);
+                    setSelectedEmployees([]);
+                    setEmployeeSearchTerm('');
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAssignEmployees}
+                  disabled={selectedEmployees.length === 0 || isSubmitting}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                      Assigning...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Assign {selectedEmployees.length > 0 ? `${selectedEmployees.length} ` : ''}Employee{selectedEmployees.length !== 1 ? 's' : ''}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

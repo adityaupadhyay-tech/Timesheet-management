@@ -894,6 +894,15 @@ export default function TimeEntryGrid({
             <div className="flex-1 min-w-0">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-1">
                 <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{cycleTitle} Time Entry Grid</CardTitle>
+                {/* Cycle Allocated Badge */}
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-50 border border-purple-200 shadow-sm flex-shrink-0">
+                  <Clock className="h-3 w-3 text-purple-600" />
+                  <span className="text-xs font-semibold text-purple-800">
+                    Cycle: {cycleType === 'bi-weekly' ? 'Bi-weekly' : 
+                            cycleType === 'semi-monthly' ? 'Semi-monthly' :
+                            cycleType.charAt(0).toUpperCase() + cycleType.slice(1)}
+                  </span>
+                </div>
                 {/* Enhanced Status Indicator */}
                 {timesheet && (
                   <div className="flex items-center gap-3 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm flex-shrink-0">
@@ -917,12 +926,15 @@ export default function TimeEntryGrid({
                   </div>
                 )}
               </div>
-              {/* <p className="text-gray-600 text-xs sm:text-sm">
+              <p className="text-gray-600 text-xs sm:text-sm mt-1">
                 Select project, add description, then enter time in hh:mm format for each day
-                <span className="ml-2 text-xs text-blue-600 font-medium">
-                  ({cycleType === 'semi-monthly' ? 'Twice per month' : cycleType === 'weekly' ? '7 days' : cycleType === 'bi-weekly' ? '14 days' : 'Monthly view'})
+                <span className="ml-2 text-xs text-purple-600 font-medium">
+                  ({cycleType === 'semi-monthly' ? 'Semi-monthly view' : 
+                    cycleType === 'weekly' ? '5-day week (Mon-Fri)' : 
+                    cycleType === 'bi-weekly' ? '10-day view (2 weeks, Mon-Fri)' : 
+                    'Monthly view'})
                 </span>
-              </p> */}
+              </p>
             </div>
           </div>
           
@@ -1028,7 +1040,7 @@ export default function TimeEntryGrid({
 
         {/* Grid Table */}
         <div className="overflow-x-auto overflow-y-visible">
-          <table className="w-full border-collapse min-w-[800px]">
+          <table className={`w-full border-collapse ${cycleType === 'bi-weekly' ? 'min-w-[1400px]' : 'min-w-[800px]'}`}>
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/4 min-w-[150px] sm:min-w-[200px]">Project</th>

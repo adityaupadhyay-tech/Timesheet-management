@@ -37,7 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import {
+import { 
   Description as DescriptionIcon,
   Work as WorkIcon,
   Label as LabelIcon,
@@ -68,10 +68,10 @@ export default function ResourceAdminPage() {
   const [activeTab, setActiveTab] = useState("resource");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
+  
   // Documents state
   const [documents, setDocuments] = useState([]);
-
+  
   // Expanded categories state
   const [expandedCategories, setExpandedCategories] = useState({});
 
@@ -102,13 +102,13 @@ export default function ResourceAdminPage() {
   const [selectedPropertyForClientUsage, setSelectedPropertyForClientUsage] =
     useState(null);
   const [companiesUsingProperty, setCompaniesUsingProperty] = useState([]);
-
+  
   const [newCategory, setNewCategory] = useState({
     displayLabel: "",
     adminLabel: "",
     icon: "Folder",
   });
-
+  
   const [documentForm, setDocumentForm] = useState({
     adminLabel: "",
     displayLabel: "",
@@ -142,21 +142,21 @@ export default function ResourceAdminPage() {
     description: "",
     enabled: true,
   });
-
+  
   const documentTypes = [
     { value: "html_text", label: "HTML Text" },
     { value: "pdf_document", label: "PDF Document" },
     { value: "external_link", label: "External Link" },
     { value: "contact_info", label: "Contact Info" },
   ];
-
+  
   const menuAccessOptions = [
     "All Users",
     "Admin Only",
     "Managers",
     "Standard Users",
   ];
-
+  
   const [filePreview, setFilePreview] = useState(null);
 
   // Properties selection state
@@ -268,7 +268,7 @@ export default function ResourceAdminPage() {
             .select("*", { count: "exact", head: true })
             .eq("property_id", property.property_id);
 
-          return {
+        return {
             id: property.property_id,
             propertyName: property.property_label,
             description: property.description || "",
@@ -671,7 +671,7 @@ export default function ResourceAdminPage() {
       await fetchResourceData();
 
       // Close dialog and reset form
-      setIsDocumentDialogOpen(false);
+    setIsDocumentDialogOpen(false);
       resetDocumentForm();
       setEditingDocument(null);
     } catch (error) {
@@ -811,8 +811,8 @@ export default function ResourceAdminPage() {
         Upload: Upload,
         Plus: Plus,
         X: X,
-      }[iconName] || FolderIcon;
-
+    }[iconName] || FolderIcon;
+    
     return <IconComponent className="h-5 w-5" />;
   };
 
@@ -920,7 +920,7 @@ export default function ResourceAdminPage() {
 
       if (!existingPropsError && existingProps) {
         setSelectedProperties(existingProps.map((p) => p.property_id));
-      } else {
+    } else {
         setSelectedProperties([]);
       }
     } else {
@@ -1073,7 +1073,7 @@ export default function ResourceAdminPage() {
           setSaving(false);
           return;
         }
-      } else {
+    } else {
         // Add new property
         console.log("Creating new property with data:", propertyData);
 
@@ -1301,9 +1301,9 @@ export default function ResourceAdminPage() {
                       Manage document categories and types
                     </p>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
                     onClick={() => setIsCategoryDialogOpen(true)}
                     className="flex items-center gap-2"
                   >
@@ -1323,8 +1323,8 @@ export default function ResourceAdminPage() {
                     first category.
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {documentCategories.map((category) => (
+                <div className="space-y-6">
+                  {documentCategories.map((category) => (
                       <div
                         key={category.id}
                         className="border rounded-lg overflow-hidden"
@@ -1333,35 +1333,35 @@ export default function ResourceAdminPage() {
                           className="bg-gray-50 px-4 py-3 border-b flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors"
                           onClick={() => toggleCategory(category.id)}
                         >
-                          <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2">
                             {expandedCategories[category.id] ? (
                               <ChevronDown className="h-5 w-5 text-gray-500" />
                             ) : (
                               <ChevronRight className="h-5 w-5 text-gray-500" />
                             )}
-                            {getIconComponent(category.icon)}
+                          {getIconComponent(category.icon)}
                             <h3 className="font-medium text-gray-900">
                               {category.name}
                             </h3>
                             <span className="text-sm text-gray-500">
                               ({category.documents?.length || 0})
                             </span>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenDocumentDialog(category.id);
-                            }}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Document
-                          </Button>
                         </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDocumentDialog(category.id);
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Document
+                        </Button>
+                      </div>
                         {expandedCategories[category.id] && (
-                          <div className="divide-y">
-                            {category.documents.length > 0 ? (
+                      <div className="divide-y">
+                        {category.documents.length > 0 ? (
                               category.documents.map((doc) => {
                                 const displayInfo = getResourceDisplayInfo(doc);
                                 return (
@@ -1374,11 +1374,11 @@ export default function ResourceAdminPage() {
                                         {displayInfo.showAsLink ? (
                                           <a
                                             href={displayInfo.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                target="_blank" 
+                                rel="noopener noreferrer"
                                             className="text-blue-600 hover:underline font-medium"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                             {doc.displayLabel}
                                           </a>
                                         ) : (
@@ -1439,50 +1439,50 @@ export default function ResourceAdminPage() {
                                       )}
                                     </div>
                                     <div className="flex space-x-2 ml-4">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                           handleOpenDocumentDialog(
                                             category.id,
                                             doc
                                           );
-                                        }}
-                                      >
-                                        Edit
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-red-600 hover:text-red-700"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
+                                  }}
+                                >
+                                  Edit
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                           handleDeleteDocument(
                                             category.id,
                                             doc.id,
                                             doc.displayLabel
                                           );
-                                        }}
-                                      >
-                                        Delete
-                                      </Button>
-                                    </div>
-                                  </div>
+                                  }}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
                                 );
                               })
-                            ) : (
-                              <div className="px-4 py-6 text-center text-gray-500">
-                                No documents added yet
-                              </div>
-                            )}
+                        ) : (
+                          <div className="px-4 py-6 text-center text-gray-500">
+                            No documents added yet
                           </div>
                         )}
                       </div>
-                    ))}
-                  </div>
+                        )}
+                    </div>
+                  ))}
+                </div>
                 )}
-
+                
                 {/* Document Dialog */}
                 <Dialog
                   open={isDocumentDialogOpen}
@@ -1511,69 +1511,69 @@ export default function ResourceAdminPage() {
                       {/* General Settings Tab */}
                       <TabsContent value="general" className="mt-4">
                         <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-2">
-                          <div className="space-y-2">
-                            <Label htmlFor="adminLabel">Admin Label *</Label>
-                            <Input
-                              id="adminLabel"
-                              value={documentForm.adminLabel}
-                              onChange={(e) =>
+                      <div className="space-y-2">
+                        <Label htmlFor="adminLabel">Admin Label *</Label>
+                        <Input
+                          id="adminLabel"
+                          value={documentForm.adminLabel}
+                          onChange={(e) => 
                                 setDocumentForm({
                                   ...documentForm,
                                   adminLabel: e.target.value,
                                 })
-                              }
-                              placeholder="Enter admin label"
-                            />
-                          </div>
-
-                          <div className="space-y-2">
+                          }
+                          placeholder="Enter admin label"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
                             <Label htmlFor="displayLabel">
                               Display Label *
                             </Label>
-                            <Input
-                              id="displayLabel"
-                              value={documentForm.displayLabel}
-                              onChange={(e) =>
+                        <Input
+                          id="displayLabel"
+                          value={documentForm.displayLabel}
+                          onChange={(e) => 
                                 setDocumentForm({
                                   ...documentForm,
                                   displayLabel: e.target.value,
                                 })
-                              }
-                              placeholder="Enter display label"
-                            />
-                          </div>
-
-                          <div className="space-y-2">
+                          }
+                          placeholder="Enter display label"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
                             <Label htmlFor="documentType">Type *</Label>
-                            <Select
-                              value={documentForm.type}
-                              onValueChange={(value) =>
+                        <Select
+                          value={documentForm.type}
+                          onValueChange={(value) => 
                                 setDocumentForm({
                                   ...documentForm,
                                   type: value,
                                 })
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select document type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {documentTypes.map((type) => (
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select document type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {documentTypes.map((type) => (
                                   <SelectItem
                                     key={type.value}
                                     value={type.value}
                                   >
                                     {type.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
                           {/* HTML Text Fields */}
                           {documentForm.type === "html_text" && (
                             <div className="space-y-2 border-t pt-4">
-                              <Label>Image</Label>
+                        <Label>Image</Label>
                               <Tabs
                                 value={documentForm.imageInputType}
                                 onValueChange={(value) =>
@@ -1593,9 +1593,9 @@ export default function ResourceAdminPage() {
                                 </TabsList>
                                 <TabsContent value="upload" className="mt-2">
                                   <div className="space-y-2">
-                                    <Input
-                                      type="file"
-                                      accept="image/*"
+                          <Input
+                            type="file"
+                            accept="image/*"
                                       onChange={(e) => {
                                         const file = e.target.files[0];
                                         setDocumentForm({
@@ -1666,7 +1666,7 @@ export default function ResourceAdminPage() {
                                         Selected: {documentForm.pdfFile.name}
                                       </p>
                                     )}
-                                  </div>
+                              </div>
                                 </TabsContent>
                                 <TabsContent value="url" className="mt-2">
                                   <Input
@@ -1681,8 +1681,8 @@ export default function ResourceAdminPage() {
                                   />
                                 </TabsContent>
                               </Tabs>
-                            </div>
-                          )}
+                              </div>
+                            )}
 
                           {/* External Link Fields */}
                           {documentForm.type === "external_link" && (
@@ -1738,8 +1738,8 @@ export default function ResourceAdminPage() {
                                           Selected:{" "}
                                           {documentForm.externalImageFile.name}
                                         </p>
-                                      )}
-                                    </div>
+                          )}
+                        </div>
                                   </TabsContent>
                                   <TabsContent value="url" className="mt-2">
                                     <Input
@@ -1754,7 +1754,7 @@ export default function ResourceAdminPage() {
                                     />
                                   </TabsContent>
                                 </Tabs>
-                              </div>
+                      </div>
                             </>
                           )}
 
@@ -1781,7 +1781,7 @@ export default function ResourceAdminPage() {
                                     </TabsTrigger>
                                   </TabsList>
                                   <TabsContent value="upload" className="mt-2">
-                                    <div className="space-y-2">
+                      <div className="space-y-2">
                                       <Input
                                         type="file"
                                         accept="image/*"
@@ -1868,46 +1868,46 @@ export default function ResourceAdminPage() {
 
                           {/* Common Instructions Field */}
                           <div className="space-y-2 border-t pt-4">
-                            <Label htmlFor="instructions">Instructions</Label>
-                            <textarea
-                              id="instructions"
-                              value={documentForm.instructions}
-                              onChange={(e) =>
+                        <Label htmlFor="instructions">Instructions</Label>
+                        <textarea
+                          id="instructions"
+                          value={documentForm.instructions}
+                          onChange={(e) => 
                                 setDocumentForm({
                                   ...documentForm,
                                   instructions: e.target.value,
                                 })
-                              }
+                          }
                               placeholder="Enter instructions or additional notes"
-                              rows={3}
-                              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="menuAccess">Menu Access</Label>
-                            <Select
-                              value={documentForm.menuAccess}
-                              onValueChange={(value) =>
+                          rows={3}
+                          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="menuAccess">Menu Access</Label>
+                        <Select
+                          value={documentForm.menuAccess}
+                          onValueChange={(value) => 
                                 setDocumentForm({
                                   ...documentForm,
                                   menuAccess: value,
                                 })
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select menu access" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {menuAccessOptions.map((option) => (
-                                  <SelectItem key={option} value={option}>
-                                    {option}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select menu access" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {menuAccessOptions.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                       </TabsContent>
 
                       {/* Properties Tab */}
@@ -1988,14 +1988,14 @@ export default function ResourceAdminPage() {
                       </TabsContent>
                     </Tabs>
                     <DialogFooter>
-                      <Button
-                        variant="outline"
+                      <Button 
+                        variant="outline" 
                         onClick={() => setIsDocumentDialogOpen(false)}
                         disabled={saving}
                       >
                         Cancel
                       </Button>
-                      <Button
+                      <Button 
                         onClick={handleSaveDocument}
                         disabled={
                           !documentForm.adminLabel ||
@@ -2073,7 +2073,7 @@ export default function ResourceAdminPage() {
                     </DialogPrimitive.Close>
                   </div>
                 </DialogHeader>
-
+                
                 <div className="p-6 space-y-6">
                   <div className="space-y-2">
                     <Label
@@ -2085,7 +2085,7 @@ export default function ResourceAdminPage() {
                     <Input
                       id="displayLabel"
                       value={newCategory.displayLabel}
-                      onChange={(e) =>
+                      onChange={(e) => 
                         setNewCategory({
                           ...newCategory,
                           displayLabel: e.target.value,
@@ -2094,7 +2094,7 @@ export default function ResourceAdminPage() {
                       className="w-full"
                     />
                   </div>
-
+                  
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label
@@ -2124,7 +2124,7 @@ export default function ResourceAdminPage() {
                       Use lowercase letters, numbers, and underscores only
                     </p>
                   </div>
-
+                  
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Icon</Label>
                     <div className="grid grid-cols-4 gap-2">
@@ -2136,7 +2136,7 @@ export default function ResourceAdminPage() {
                             setNewCategory({ ...newCategory, icon: icon.value })
                           }
                           className={`flex flex-col items-center justify-center p-3 rounded-md border ${
-                            newCategory.icon === icon.value
+                            newCategory.icon === icon.value 
                               ? "border-blue-500 bg-blue-50"
                               : "border-gray-200 hover:bg-gray-50"
                           } transition-colors`}
@@ -2158,18 +2158,18 @@ export default function ResourceAdminPage() {
                     </div>
                   </div>
                 </div>
-
+                
                 <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end space-x-3">
-                  <Button
+                  <Button 
                     type="button"
-                    variant="outline"
+                    variant="outline" 
                     onClick={() => setIsCategoryDialogOpen(false)}
                     disabled={saving}
                     className="px-6"
                   >
                     Cancel
                   </Button>
-                  <Button
+                  <Button 
                     type="button"
                     onClick={handleAddCategory}
                     disabled={
