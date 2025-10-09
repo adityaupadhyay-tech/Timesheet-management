@@ -28,14 +28,22 @@ export function getCycleStartDate(date, cycleType) {
       return weekStart
       
     case 'bi-weekly':
-      // Start of bi-weekly period (every 2 weeks from a fixed reference point)
+      // Start of bi-weekly period (Sunday of the current or previous week, aligned to bi-weekly periods)
+      // Use a fixed reference date (Jan 1, 2024 - a Monday, so Dec 31, 2023 is Sunday)
+      const referenceDate = new Date('2023-12-31') // Sunday, December 31, 2023
       const biWeekStart = new Date(cycleDate)
-      const daysSinceEpoch = Math.floor(cycleDate.getTime() / (1000 * 60 * 60 * 24))
-      const biWeekNumber = Math.floor(daysSinceEpoch / 14)
-      const biWeekStartDays = biWeekNumber * 14
-      biWeekStart.setTime(biWeekStartDays * 1000 * 60 * 60 * 24)
-      biWeekStart.setDate(biWeekStart.getDate() - biWeekStart.getDay()) // Align to Sunday
-      return biWeekStart
+      
+      // Get days between reference and current date
+      const daysDiff = Math.floor((biWeekStart.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      // Find which bi-weekly period we're in (0, 1, 2, 3...)
+      const biWeekPeriod = Math.floor(daysDiff / 14)
+      
+      // Calculate the start of this bi-weekly period
+      const periodStartDate = new Date(referenceDate)
+      periodStartDate.setDate(referenceDate.getDate() + (biWeekPeriod * 14))
+      
+      return periodStartDate
       
     case 'monthly':
       // Start of month

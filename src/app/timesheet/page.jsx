@@ -46,11 +46,16 @@ function TimesheetContent() {
   // View mode state - 'list' or 'detail'
   const [viewMode, setViewMode] = useState('list')
   const [selectedTimesheetView, setSelectedTimesheetView] = useState(null)
+  const [originalCompany, setOriginalCompany] = useState(null)
   
   // Search and filter state for list view
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterCompany, setFilterCompany] = useState('all')
+  
+  // Selection state
+  const [selectedTimesheets, setSelectedTimesheets] = useState([])
+  const [isProcessing, setIsProcessing] = useState(false)
   
   // Sample timesheets data (for admin view)
   const [submittedTimesheets] = useState([
@@ -60,6 +65,7 @@ function TimesheetContent() {
       employeeEmail: 'john.doe@company.com',
       company: 'Acme Corporation',
       department: 'Engineering',
+      cycle: 'weekly',
       period: 'Dec 16 - Dec 22, 2024',
       submittedDate: '2024-12-22',
       totalHours: 40.0,
@@ -72,6 +78,7 @@ function TimesheetContent() {
       employeeEmail: 'jane.smith@company.com',
       company: 'Acme Corporation',
       department: 'Marketing',
+      cycle: 'weekly',
       period: 'Dec 16 - Dec 22, 2024',
       submittedDate: '2024-12-21',
       totalHours: 38.5,
@@ -84,9 +91,10 @@ function TimesheetContent() {
       employeeEmail: 'mike.j@company.com',
       company: 'Tech Solutions Inc',
       department: 'Sales',
-      period: 'Dec 16 - Dec 22, 2024',
-      submittedDate: '2024-12-20',
-      totalHours: 42.0,
+      cycle: 'bi-weekly',
+      period: 'Dec 16 - Dec 29, 2024',
+      submittedDate: '2024-12-29',
+      totalHours: 80.0,
       status: 'rejected',
       projects: 4
     },
@@ -96,6 +104,7 @@ function TimesheetContent() {
       employeeEmail: 'sarah.w@company.com',
       company: 'Acme Corporation',
       department: 'Engineering',
+      cycle: 'weekly',
       period: 'Dec 9 - Dec 15, 2024',
       submittedDate: '2024-12-15',
       totalHours: 40.0,
@@ -108,9 +117,10 @@ function TimesheetContent() {
       employeeEmail: 'david.b@company.com',
       company: 'Global Enterprises',
       department: 'Operations',
-      period: 'Dec 16 - Dec 22, 2024',
-      submittedDate: '2024-12-22',
-      totalHours: 37.5,
+      cycle: 'monthly',
+      period: 'December 2024',
+      submittedDate: '2024-12-31',
+      totalHours: 160.0,
       status: 'submitted',
       projects: 5
     },
@@ -202,16 +212,81 @@ function TimesheetContent() {
     setFilterCompany('all')
   }
 
+  // Selection handlers
+  const handleSelectTimesheet = (timesheetId) => {
+    setSelectedTimesheets(prev => {
+      if (prev.includes(timesheetId)) {
+        return prev.filter(id => id !== timesheetId)
+      } else {
+        return [...prev, timesheetId]
+      }
+    })
+  }
+
+  const handleSelectAll = () => {
+    const filteredIds = getFilteredTimesheets().map(ts => ts.id)
+    if (selectedTimesheets.length === filteredIds.length) {
+      setSelectedTimesheets([])
+    } else {
+      setSelectedTimesheets(filteredIds)
+    }
+  }
+
+  const isAllSelected = () => {
+    const filteredIds = getFilteredTimesheets().map(ts => ts.id)
+    return filteredIds.length > 0 && selectedTimesheets.length === filteredIds.length
+  }
+
+  // Process timesheets
+  const handleProcessTimesheets = () => {
+    if (selectedTimesheets.length === 0) {
+      alert('Please select at least one timesheet to process')
+      return
+    }
+    
+    setIsProcessing(true)
+    
+    // Simulate processing
+    setTimeout(() => {
+      const selectedCount = selectedTimesheets.length
+      alert(`Processing ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...`)
+      setSelectedTimesheets([])
+      setIsProcessing(false)
+    }, 1000)
+  }
+
   // View timesheet details
   const handleViewTimesheet = (timesheet) => {
     setSelectedTimesheetView(timesheet)
     setViewMode('detail')
+    
+    // Save original company before changing it
+    if (selectedCompany && !originalCompany) {
+      setOriginalCompany(selectedCompany)
+    }
+    
+    // Update selectedCompany to reflect the employee's cycle
+    if (timesheet.cycle) {
+      const viewCompany = {
+        ...selectedCompany,
+        id: timesheet.company || selectedCompany?.id,
+        name: timesheet.company || selectedCompany?.name,
+        timesheetCycle: timesheet.cycle
+      }
+      setSelectedCompany(viewCompany)
+    }
   }
 
   // Back to list view
   const handleBackToList = () => {
     setViewMode('list')
     setSelectedTimesheetView(null)
+    
+    // Restore original company
+    if (originalCompany) {
+      setSelectedCompany(originalCompany)
+      setOriginalCompany(null)
+    }
   }
 
   // Get status badge
@@ -335,8 +410,17 @@ function TimesheetContent() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
+                    <th className="px-4 py-3 text-center w-12">
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected()}
+                        onChange={handleSelectAll}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cycle Allocated</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hours</th>
@@ -346,7 +430,15 @@ function TimesheetContent() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {getFilteredTimesheets().map((timesheet) => (
-                    <tr key={timesheet.id} className="hover:bg-gray-50">
+                    <tr key={timesheet.id} className={`hover:bg-gray-50 ${selectedTimesheets.includes(timesheet.id) ? 'bg-blue-50' : ''}`}>
+                      <td className="px-4 py-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedTimesheets.includes(timesheet.id)}
+                          onChange={() => handleSelectTimesheet(timesheet.id)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600 font-medium">
@@ -361,6 +453,13 @@ function TimesheetContent() {
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900">{timesheet.company}</div>
                         <div className="text-xs text-gray-500">{timesheet.department}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          {timesheet.cycle === 'bi-weekly' ? 'Bi-weekly' : 
+                           timesheet.cycle === 'semi-monthly' ? 'Semi-monthly' :
+                           timesheet.cycle.charAt(0).toUpperCase() + timesheet.cycle.slice(1)}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2 text-sm text-gray-900">
@@ -498,11 +597,62 @@ function TimesheetContent() {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="mx-auto px-5 py-6">
-        <PageHeader 
-          title="Timesheet Management"
-          subtitle={viewMode === 'list' ? "Review and manage employee timesheets" : "Track and manage work hours and project time"}
-          icon={<ScheduleIcon />}
-        />
+        {viewMode === 'list' ? (
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <ScheduleIcon className="text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Timesheet Management</h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {selectedTimesheets.length > 0 
+                      ? `${selectedTimesheets.length} timesheet${selectedTimesheets.length > 1 ? 's' : ''} selected`
+                      : 'Review and manage employee timesheets'
+                    }
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedTimesheets.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedTimesheets([])}
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    Clear Selection
+                  </Button>
+                )}
+                <Button
+                  onClick={handleProcessTimesheets}
+                  disabled={isProcessing || selectedTimesheets.length === 0}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-300 disabled:text-blue-100 disabled:cursor-not-allowed disabled:opacity-75"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Process Timesheets
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <PageHeader 
+            title="Timesheet Management"
+            subtitle="Track and manage work hours and project time"
+            icon={<ScheduleIcon />}
+          />
+        )}
         
         {/* Conditional rendering based on view mode */}
         {viewMode === 'list' ? renderListView() : renderDetailView()}
