@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,10 @@ import {
   FileText,
   Calendar,
   User,
-  Building
+  Building,
+  ChevronDown,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import { useSupabase } from '@/contexts/SupabaseContext';
@@ -72,7 +75,7 @@ export default function AdminTimesheetsPage() {
       period: 'Dec 16 - Dec 29, 2024',
       submittedDate: '2024-12-29',
       totalHours: 80.0,
-      status: 'rejected',
+      status: 'response_awaited',
       projects: 4
     },
     {
@@ -113,6 +116,26 @@ export default function AdminTimesheetsPage() {
   // Selection state
   const [selectedTimesheets, setSelectedTimesheets] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showActionDropdown, setShowActionDropdown] = useState(false);
+  const [showRequestChangesModal, setShowRequestChangesModal] = useState(false);
+  const [showDisposeWarning, setShowDisposeWarning] = useState(false);
+  const [showDisposeModal, setShowDisposeModal] = useState(false);
+  const [requestedChanges, setRequestedChanges] = useState('');
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowActionDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Get unique companies
   const getUniqueCompanies = () => {
@@ -173,10 +196,24 @@ export default function AdminTimesheetsPage() {
     return filteredIds.length > 0 && selectedTimesheets.length === filteredIds.length;
   };
 
-  // Process timesheets
-  const handleProcessTimesheets = () => {
+  // Process timesheets with action
+  const handleTimesheetAction = (action) => {
     if (selectedTimesheets.length === 0) {
-      alert('Please select at least one timesheet to process');
+      alert('Please select at least one timesheet');
+      return;
+    }
+    
+    setShowActionDropdown(false);
+    
+    // Open modal for request changes
+    if (action === 'request_changes') {
+      setShowRequestChangesModal(true);
+      return;
+    }
+    
+    // Open warning for dispose
+    if (action === 'dispose') {
+      setShowDisposeWarning(true);
       return;
     }
     
@@ -185,16 +222,81 @@ export default function AdminTimesheetsPage() {
     // Simulate processing
     setTimeout(() => {
       const selectedCount = selectedTimesheets.length;
-      alert(`Processing ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...`);
       
-      // Update status of selected timesheets to approved
+      switch(action) {
+        case 'approve':
+          alert(`Approving ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...`);
+          setTimesheets(prev => prev.map(ts => 
+            selectedTimesheets.includes(ts.id) && ts.status === 'submitted'
+              ? { ...ts, status: 'approved' }
+              : ts
+          ));
+          break;
+          
+        case 'export':
+          alert(`Exporting ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...`);
+          // Export logic here
+          break;
+          
+        case 'download':
+          alert(`Downloading ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...`);
+          // Download logic here
+          break;
+          
+        default:
+          break;
+      }
+      
+      setSelectedTimesheets([]);
+      setIsProcessing(false);
+    }, 1000);
+  };
+
+  // Handle request changes submission
+  const handleRequestChanges = () => {
+    if (!requestedChanges.trim()) {
+      alert('Please specify what changes are needed');
+      return;
+    }
+    
+    setIsProcessing(true);
+    const selectedCount = selectedTimesheets.length;
+    
+    setTimeout(() => {
+      alert(`Requesting changes for ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...\n\nChanges requested: ${requestedChanges}`);
+      
       setTimesheets(prev => prev.map(ts => 
         selectedTimesheets.includes(ts.id) && ts.status === 'submitted'
-          ? { ...ts, status: 'approved' }
+          ? { ...ts, status: 'response_awaited' }
           : ts
       ));
       
       setSelectedTimesheets([]);
+      setRequestedChanges('');
+      setShowRequestChangesModal(false);
+      setIsProcessing(false);
+    }, 1000);
+  };
+
+  // Proceed from warning to dispose modal
+  const handleProceedToDispose = () => {
+    setShowDisposeWarning(false);
+    setShowDisposeModal(true);
+  };
+
+  // Handle dispose timesheets
+  const handleDisposeTimesheets = () => {
+    setIsProcessing(true);
+    const selectedCount = selectedTimesheets.length;
+    
+    setTimeout(() => {
+      alert(`Disposing ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...`);
+      
+      // Remove disposed timesheets from the list
+      setTimesheets(prev => prev.filter(ts => !selectedTimesheets.includes(ts.id)));
+      
+      setSelectedTimesheets([]);
+      setShowDisposeModal(false);
       setIsProcessing(false);
     }, 1000);
   };
@@ -212,19 +314,25 @@ export default function AdminTimesheetsPage() {
         text: 'text-green-800',
         icon: <CheckCircle2 className="h-3 w-3" />
       },
-      rejected: {
-        bg: 'bg-red-100',
-        text: 'text-red-800',
+      response_awaited: {
+        bg: 'bg-orange-100',
+        text: 'text-orange-800',
         icon: <XCircle className="h-3 w-3" />
       }
     };
 
     const config = statusConfig[status] || statusConfig.submitted;
     
+    const statusLabels = {
+      submitted: 'Submitted',
+      approved: 'Approved',
+      response_awaited: 'Response Awaited'
+    };
+
     return (
       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
         {config.icon}
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {statusLabels[status] || status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
   };
@@ -259,24 +367,70 @@ export default function AdminTimesheetsPage() {
                   Clear Selection
                 </Button>
               )}
-              <Button
-                onClick={handleProcessTimesheets}
-                disabled={isProcessing || selectedTimesheets.length === 0}
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-300 disabled:text-blue-100 disabled:cursor-not-allowed disabled:opacity-75"
-              >
-                {isProcessing ? (
-                  <>
-                    <Clock className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Process Timesheets
-                  </>
+              <div className="relative" ref={dropdownRef}>
+                <Button
+                  onClick={() => setShowActionDropdown(!showActionDropdown)}
+                  disabled={isProcessing || selectedTimesheets.length === 0}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-300 disabled:text-blue-100 disabled:cursor-not-allowed disabled:opacity-75"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      Actions
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+                
+                {showActionDropdown && !isProcessing && selectedTimesheets.length > 0 && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                    <div className="py-1">
+                      <button
+                        onClick={() => handleTimesheetAction('approve')}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 flex items-center gap-2"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Approve Timesheets
+                      </button>
+                      <button
+                        onClick={() => handleTimesheetAction('request_changes')}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 flex items-center gap-2"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Request Changes
+                      </button>
+                      <div className="border-t border-gray-200 my-1"></div>
+                      <button
+                        onClick={() => handleTimesheetAction('export')}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2"
+                      >
+                        <FileText className="h-4 w-4" />
+                        Export to Excel
+                      </button>
+                      <button
+                        onClick={() => handleTimesheetAction('download')}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Download PDF
+                      </button>
+                      <div className="border-t border-gray-200 my-1"></div>
+                      <button
+                        onClick={() => handleTimesheetAction('dispose')}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 flex items-center gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Dispose Timesheets
+                      </button>
+                    </div>
+                  </div>
                 )}
-              </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -318,7 +472,7 @@ export default function AdminTimesheetsPage() {
                       <option value="all">All Status</option>
                       <option value="submitted">Submitted</option>
                       <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
+                      <option value="response_awaited">Response Awaited</option>
                     </select>
                   </div>
 
@@ -413,8 +567,12 @@ export default function AdminTimesheetsPage() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {getFilteredTimesheets().map((timesheet) => (
-                        <tr key={timesheet.id} className={`hover:bg-gray-50 ${selectedTimesheets.includes(timesheet.id) ? 'bg-blue-50' : ''}`}>
-                          <td className="px-4 py-4 text-center">
+                        <tr 
+                          key={timesheet.id} 
+                          onClick={() => handleSelectTimesheet(timesheet.id)}
+                          className={`hover:bg-gray-50 cursor-pointer transition-colors ${selectedTimesheets.includes(timesheet.id) ? 'bg-blue-50' : ''}`}
+                        >
+                          <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                             <input
                               type="checkbox"
                               checked={selectedTimesheets.includes(timesheet.id)}
@@ -466,7 +624,7 @@ export default function AdminTimesheetsPage() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             {getStatusBadge(timesheet.status)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <td className="px-6 py-4 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -619,6 +777,220 @@ export default function AdminTimesheetsPage() {
               <Button onClick={() => alert('Download timesheet')}>
                 <Download className="h-4 w-4 mr-2" />
                 Download
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Request Changes Modal */}
+        <Dialog open={showRequestChangesModal} onOpenChange={setShowRequestChangesModal}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <XCircle className="h-5 w-5 text-orange-600" />
+                Request Changes
+              </DialogTitle>
+              <DialogDescription>
+                Specify what changes are needed for the selected timesheet{selectedTimesheets.length > 1 ? 's' : ''}.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="requestedChanges" className="text-sm font-medium mb-2 block">
+                  What changes do you need? <span className="text-red-500">*</span>
+                </Label>
+                <textarea
+                  id="requestedChanges"
+                  value={requestedChanges}
+                  onChange={(e) => setRequestedChanges(e.target.value)}
+                  placeholder="Please describe the changes needed in detail..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-h-[120px] resize-y"
+                  rows={5}
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Be specific about what needs to be corrected or updated.
+                </p>
+              </div>
+
+              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 text-orange-600 mt-0.5" />
+                  <div className="text-xs text-orange-800">
+                    <p className="font-medium">Selected timesheets will be marked as "Response Awaited"</p>
+                    <p className="mt-1">Employees will be notified to make the requested changes.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowRequestChangesModal(false);
+                  setRequestedChanges('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRequestChanges}
+                disabled={!requestedChanges.trim() || isProcessing}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                {isProcessing ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Requesting...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Request Changes
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dispose Warning Modal */}
+        <Dialog open={showDisposeWarning} onOpenChange={setShowDisposeWarning}>
+          <DialogContent className="sm:max-w-[450px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <div className="p-2 bg-red-100 rounded-full">
+                  <Trash2 className="h-6 w-6 text-red-600" />
+                </div>
+                Warning: Dispose Timesheets
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="py-6">
+              <div className="space-y-4">
+                <div className="p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <XCircle className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-base font-bold text-red-800 mb-2">
+                        ⚠️ CRITICAL ACTION
+                      </p>
+                      <p className="text-sm text-red-700">
+                        You are about to permanently delete <span className="font-bold">{selectedTimesheets.length} timesheet{selectedTimesheets.length > 1 ? 's' : ''}</span>.
+                      </p>
+                      <p className="text-sm text-red-700 mt-2 font-semibold">
+                        This action CANNOT be undone!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    <span className="font-semibold">Before proceeding:</span>
+                  </p>
+                  <ul className="list-disc list-inside text-sm text-yellow-700 mt-2 space-y-1">
+                    <li>All timesheet data will be permanently deleted</li>
+                    <li>Employee work records will be lost</li>
+                    <li>This action cannot be reversed</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDisposeWarning(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleProceedToDispose}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                I Understand, Proceed
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dispose Timesheets Modal */}
+        <Dialog open={showDisposeModal} onOpenChange={setShowDisposeModal}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-red-600" />
+                Dispose Timesheets
+              </DialogTitle>
+              <DialogDescription>
+                This action will permanently delete the selected timesheet{selectedTimesheets.length > 1 ? 's' : ''}.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="p-1 bg-red-100 rounded-full flex-shrink-0 mt-0.5">
+                    <XCircle className="h-4 w-4 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-red-800">Warning: This action cannot be undone!</p>
+                    <p className="text-sm text-red-700 mt-1">
+                      You are about to permanently delete {selectedTimesheets.length} timesheet{selectedTimesheets.length > 1 ? 's' : ''}. 
+                      This will remove all associated data and cannot be recovered.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-sm text-gray-700 font-medium mb-2">Selected Timesheets:</p>
+                <ul className="space-y-1">
+                  {getFilteredTimesheets()
+                    .filter(ts => selectedTimesheets.includes(ts.id))
+                    .slice(0, 5)
+                    .map((ts) => (
+                      <li key={ts.id} className="text-sm text-gray-600 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                        {ts.employeeName} - {ts.period}
+                      </li>
+                    ))}
+                  {selectedTimesheets.length > 5 && (
+                    <li className="text-sm text-gray-500 italic">
+                      ... and {selectedTimesheets.length - 5} more
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDisposeModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDisposeTimesheets}
+                disabled={isProcessing}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isProcessing ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Disposing...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Dispose Timesheets
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

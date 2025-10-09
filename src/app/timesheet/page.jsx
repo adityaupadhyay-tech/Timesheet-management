@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Layout from '@/components/Layout'
 import { TimesheetProvider, useTimesheet } from '@/contexts/TimesheetContext'
 import TimeEntryGrid from '@/components/timesheet/TimeEntryGrid'
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Send, Download, Calendar, FolderOpen, CheckCircle, Eye, Search, Filter, ArrowLeft, Clock, XCircle, CheckCircle2, User } from 'lucide-react'
+import { Send, Download, Calendar, FolderOpen, CheckCircle, Eye, Search, Filter, ArrowLeft, Clock, XCircle, CheckCircle2, User, ChevronDown, FileText, Trash2, AlertTriangle } from 'lucide-react'
 import ExportModal from '@/components/timesheet/ExportModal'
 import { formatCyclePeriod } from '@/lib/cycleUtils'
 import PageHeader from '@/components/PageHeader'
@@ -56,6 +56,26 @@ function TimesheetContent() {
   // Selection state
   const [selectedTimesheets, setSelectedTimesheets] = useState([])
   const [isProcessing, setIsProcessing] = useState(false)
+  const [showActionDropdown, setShowActionDropdown] = useState(false)
+  const [showRequestChangesModal, setShowRequestChangesModal] = useState(false)
+  const [showDisposeWarning, setShowDisposeWarning] = useState(false)
+  const [showDisposeModal, setShowDisposeModal] = useState(false)
+  const [requestedChanges, setRequestedChanges] = useState('')
+  const dropdownRef = useRef(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowActionDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
   
   // Sample timesheets data (for admin view)
   const [submittedTimesheets] = useState([
@@ -95,7 +115,7 @@ function TimesheetContent() {
       period: 'Dec 16 - Dec 29, 2024',
       submittedDate: '2024-12-29',
       totalHours: 80.0,
-      status: 'rejected',
+      status: 'response_awaited',
       projects: 4
     },
     {
@@ -237,10 +257,24 @@ function TimesheetContent() {
     return filteredIds.length > 0 && selectedTimesheets.length === filteredIds.length
   }
 
-  // Process timesheets
-  const handleProcessTimesheets = () => {
+  // Process timesheets with action
+  const handleTimesheetAction = (action) => {
     if (selectedTimesheets.length === 0) {
-      alert('Please select at least one timesheet to process')
+      alert('Please select at least one timesheet')
+      return
+    }
+    
+    setShowActionDropdown(false)
+    
+    // Open modal for request changes
+    if (action === 'request_changes') {
+      setShowRequestChangesModal(true)
+      return
+    }
+    
+    // Open warning for dispose
+    if (action === 'dispose') {
+      setShowDisposeWarning(true)
       return
     }
     
@@ -249,8 +283,65 @@ function TimesheetContent() {
     // Simulate processing
     setTimeout(() => {
       const selectedCount = selectedTimesheets.length
-      alert(`Processing ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...`)
+      
+      switch(action) {
+        case 'approve':
+          alert(`Approving ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...`)
+          break
+          
+        case 'export':
+          alert(`Exporting ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...`)
+          break
+          
+        case 'download':
+          alert(`Downloading ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...`)
+          break
+          
+        default:
+          break
+      }
+      
       setSelectedTimesheets([])
+      setIsProcessing(false)
+    }, 1000)
+  }
+
+  // Handle request changes submission
+  const handleRequestChanges = () => {
+    if (!requestedChanges.trim()) {
+      alert('Please specify what changes are needed')
+      return
+    }
+    
+    setIsProcessing(true)
+    const selectedCount = selectedTimesheets.length
+    
+    setTimeout(() => {
+      alert(`Requesting changes for ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...\n\nChanges requested: ${requestedChanges}`)
+      
+      setSelectedTimesheets([])
+      setRequestedChanges('')
+      setShowRequestChangesModal(false)
+      setIsProcessing(false)
+    }, 1000)
+  }
+
+  // Proceed from warning to dispose modal
+  const handleProceedToDispose = () => {
+    setShowDisposeWarning(false)
+    setShowDisposeModal(true)
+  }
+
+  // Handle dispose timesheets
+  const handleDisposeTimesheets = () => {
+    setIsProcessing(true)
+    const selectedCount = selectedTimesheets.length
+    
+    setTimeout(() => {
+      alert(`Disposing ${selectedCount} timesheet${selectedCount > 1 ? 's' : ''}...`)
+      
+      setSelectedTimesheets([])
+      setShowDisposeModal(false)
       setIsProcessing(false)
     }, 1000)
   }
@@ -302,19 +393,25 @@ function TimesheetContent() {
         text: 'text-green-800',
         icon: <CheckCircle2 className="h-3 w-3" />
       },
-      rejected: {
-        bg: 'bg-red-100',
-        text: 'text-red-800',
+      response_awaited: {
+        bg: 'bg-orange-100',
+        text: 'text-orange-800',
         icon: <XCircle className="h-3 w-3" />
       }
     }
 
     const config = statusConfig[status] || statusConfig.submitted
 
+    const statusLabels = {
+      submitted: 'Submitted',
+      approved: 'Approved',
+      response_awaited: 'Response Awaited'
+    }
+
   return (
       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
         {config.icon}
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {statusLabels[status] || status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     )
   }
@@ -358,7 +455,7 @@ function TimesheetContent() {
                   <option value="all">All Status</option>
                   <option value="submitted">Submitted</option>
                   <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="response_awaited">Response Awaited</option>
                 </select>
               </div>
 
@@ -430,8 +527,12 @@ function TimesheetContent() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {getFilteredTimesheets().map((timesheet) => (
-                    <tr key={timesheet.id} className={`hover:bg-gray-50 ${selectedTimesheets.includes(timesheet.id) ? 'bg-blue-50' : ''}`}>
-                      <td className="px-4 py-4 text-center">
+                    <tr 
+                      key={timesheet.id} 
+                      onClick={() => handleSelectTimesheet(timesheet.id)}
+                      className={`hover:bg-gray-50 cursor-pointer transition-colors ${selectedTimesheets.includes(timesheet.id) ? 'bg-blue-50' : ''}`}
+                    >
+                      <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={selectedTimesheets.includes(timesheet.id)}
@@ -476,7 +577,7 @@ function TimesheetContent() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(timesheet.status)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <td className="px-6 py-4 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -625,24 +726,70 @@ function TimesheetContent() {
                     Clear Selection
                   </Button>
                 )}
-                <Button
-                  onClick={handleProcessTimesheets}
-                  disabled={isProcessing || selectedTimesheets.length === 0}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-300 disabled:text-blue-100 disabled:cursor-not-allowed disabled:opacity-75"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Clock className="h-4 w-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Process Timesheets
-                    </>
+                <div className="relative" ref={dropdownRef}>
+                  <Button
+                    onClick={() => setShowActionDropdown(!showActionDropdown)}
+                    disabled={isProcessing || selectedTimesheets.length === 0}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-300 disabled:text-blue-100 disabled:cursor-not-allowed disabled:opacity-75"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        Actions
+                        <ChevronDown className="h-4 w-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                  
+                  {showActionDropdown && !isProcessing && selectedTimesheets.length > 0 && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                      <div className="py-1">
+                        <button
+                          onClick={() => handleTimesheetAction('approve')}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 flex items-center gap-2"
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          Approve Timesheets
+                        </button>
+                        <button
+                          onClick={() => handleTimesheetAction('request_changes')}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 flex items-center gap-2"
+                        >
+                          <XCircle className="h-4 w-4" />
+                          Request Changes
+                        </button>
+                        <div className="border-t border-gray-200 my-1"></div>
+                        <button
+                          onClick={() => handleTimesheetAction('export')}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2"
+                        >
+                          <FileText className="h-4 w-4" />
+                          Export to Excel
+                        </button>
+                        <button
+                          onClick={() => handleTimesheetAction('download')}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Download PDF
+                        </button>
+                        <div className="border-t border-gray-200 my-1"></div>
+                        <button
+                          onClick={() => handleTimesheetAction('dispose')}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 flex items-center gap-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Dispose Timesheets
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -760,6 +907,246 @@ function TimesheetContent() {
                 >
                   <Send className="h-4 w-4 mr-2" />
                   Submit Timesheet
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Request Changes Modal */}
+        {showRequestChangesModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-orange-50 to-yellow-50 px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 rounded-full">
+                    <XCircle className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Request Changes</h3>
+                    <p className="text-sm text-gray-600">Specify needed changes</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="px-6 py-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="requestedChanges" className="text-sm font-medium mb-2 block">
+                      What changes do you need? <span className="text-red-500">*</span>
+                    </Label>
+                    <textarea
+                      id="requestedChanges"
+                      value={requestedChanges}
+                      onChange={(e) => setRequestedChanges(e.target.value)}
+                      placeholder="Please describe the changes needed in detail..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-h-[120px] resize-y"
+                      rows={5}
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      Be specific about what needs to be corrected or updated.
+                    </p>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="p-1 bg-orange-100 rounded-full">
+                      <Clock className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-orange-800">Response Awaited</p>
+                      <p className="text-xs text-orange-700 mt-1">
+                        Selected timesheets will be marked as "Response Awaited" and employees will be notified.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
+                <Button
+                  onClick={() => {
+                    setShowRequestChangesModal(false)
+                    setRequestedChanges('')
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleRequestChanges}
+                  disabled={!requestedChanges.trim() || isProcessing}
+                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                      Requesting...
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Request Changes
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dispose Warning Modal */}
+        {showDisposeWarning && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-100 rounded-full">
+                    <Trash2 className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Warning: Dispose Timesheets</h3>
+                    <p className="text-sm text-gray-600">Critical action confirmation</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="px-6 py-6">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+                    <XCircle className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-base font-bold text-red-800 mb-2">
+                        ⚠️ CRITICAL ACTION
+                      </p>
+                      <p className="text-sm text-red-700">
+                        You are about to permanently delete <span className="font-bold">{selectedTimesheets.length} timesheet{selectedTimesheets.length > 1 ? 's' : ''}</span>.
+                      </p>
+                      <p className="text-sm text-red-700 mt-2 font-semibold">
+                        This action CANNOT be undone!
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      <span className="font-semibold">Before proceeding:</span>
+                    </p>
+                    <ul className="list-disc list-inside text-sm text-yellow-700 mt-2 space-y-1">
+                      <li>All timesheet data will be permanently deleted</li>
+                      <li>Employee work records will be lost</li>
+                      <li>This action cannot be reversed</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
+                <Button
+                  onClick={() => setShowDisposeWarning(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleProceedToDispose}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  I Understand, Proceed
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dispose Timesheets Modal */}
+        {showDisposeModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-100 rounded-full">
+                    <Trash2 className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Dispose Timesheets</h3>
+                    <p className="text-sm text-gray-600">Permanently delete selected timesheets</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="px-6 py-6">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="p-1 bg-red-100 rounded-full flex-shrink-0 mt-0.5">
+                      <XCircle className="h-4 w-4 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-red-800">Warning: This action cannot be undone!</p>
+                      <p className="text-sm text-red-700 mt-1">
+                        You are about to permanently delete {selectedTimesheets.length} timesheet{selectedTimesheets.length > 1 ? 's' : ''}. 
+                        This will remove all associated data and cannot be recovered.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="text-sm text-gray-700 font-medium mb-2">Selected Timesheets:</p>
+                    <ul className="space-y-1">
+                      {getFilteredTimesheets()
+                        .filter(ts => selectedTimesheets.includes(ts.id))
+                        .slice(0, 5)
+                        .map((ts) => (
+                          <li key={ts.id} className="text-sm text-gray-600 flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                            {ts.employeeName} - {ts.period}
+                          </li>
+                        ))}
+                      {selectedTimesheets.length > 5 && (
+                        <li className="text-sm text-gray-500 italic">
+                          ... and {selectedTimesheets.length - 5} more
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
+                <Button
+                  onClick={() => setShowDisposeModal(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleDisposeTimesheets}
+                  disabled={isProcessing}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                      Disposing...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Dispose Timesheets
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
