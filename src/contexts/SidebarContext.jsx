@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useMemo } from 'react'
 
 /**
  * @typedef {Object} SidebarContextType
@@ -18,12 +18,18 @@ const SidebarContext = createContext(undefined)
 export function SidebarProvider({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen)
-  }
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen(prev => !prev)
+  }, [])
+
+  const value = useMemo(() => ({
+    sidebarOpen,
+    toggleSidebar,
+    setSidebarOpen
+  }), [sidebarOpen, toggleSidebar])
 
   return (
-    <SidebarContext.Provider value={{ sidebarOpen, toggleSidebar, setSidebarOpen }}>
+    <SidebarContext.Provider value={value}>
       {children}
     </SidebarContext.Provider>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import Layout from '@/components/Layout'
 import PageHeader from '@/components/PageHeader'
 import Users from '@mui/icons-material/People'
@@ -9,13 +9,13 @@ import { useSupabase } from '@/contexts/SupabaseContext'
 
 export default function UserManagementPage() {
   const { user } = useSupabase()
-  const currentUser = user ? {
+  const currentUser = useMemo(() => user ? {
     name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin User',
     role: 'admin',
   } : {
     name: 'Admin User',
     role: 'admin',
-  }
+  }, [user])
 
   return (
     <Layout userRole={currentUser.role} userName={currentUser.name}>

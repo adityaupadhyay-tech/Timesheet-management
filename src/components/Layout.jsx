@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { memo } from 'react'
 import Sidebar from './Sidebar'
 import MenuIcon from '@mui/icons-material/Menu'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -11,22 +11,12 @@ import { useSidebar } from '@/contexts/SidebarContext'
  * @property {UserRole} userRole
  * @property {string} userName
  */
-export default function Layout({ children, userRole, userName }) {
+const Layout = memo(function Layout({ children, userRole, userName }) {
   const { sidebarOpen, toggleSidebar } = useSidebar()
 
 
-  // Only close sidebar when screen size changes to desktop (not on mobile)
-  useEffect(() => {
-    const handleResize = () => {
-      // Only auto-close on desktop if it was previously open on mobile
-      if (window.innerWidth >= 1024 && sidebarOpen) { // lg breakpoint
-        // Don't auto-close, let user control it
-      }
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [sidebarOpen])
+  // Sidebar state is controlled by user toggle
+  // No auto-close behavior on resize
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -69,4 +59,6 @@ export default function Layout({ children, userRole, userName }) {
       </div>
     </div>
   )
-}
+})
+
+export default Layout

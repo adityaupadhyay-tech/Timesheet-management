@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -23,16 +23,15 @@ import LogoutIcon from "@mui/icons-material/Logout";
  * @property {boolean} isOpen
  * @property {function(): void} onToggle
  */
-export default function Sidebar({ userRole, userName, isOpen, onToggle }) {
+const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     router.push("/login");
-  };
+  }, [router]);
 
-  const getMenuItems = () => {
-    return [
+  const menuItems = useMemo(() => [
       { href: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
       { href: "/my-stuff", label: "My stuff", icon: <PersonIcon /> },
       {
@@ -54,8 +53,7 @@ export default function Sidebar({ userRole, userName, isOpen, onToggle }) {
         label: "Administration",
         icon: <AdminPanelSettingsIcon />,
       },
-    ];
-  };
+    ], []);
 
   return (
     <>
@@ -107,7 +105,7 @@ export default function Sidebar({ userRole, userName, isOpen, onToggle }) {
 
         {/* Navigation Items */}
         <nav className="flex-1 px-2 py-4 space-y-1">
-          {getMenuItems().map((item) => {
+          {menuItems.map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
             return (
@@ -145,7 +143,6 @@ export default function Sidebar({ userRole, userName, isOpen, onToggle }) {
               <div className="flex justify-center">
                 <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                   <span className="text-primary-foreground text-sm font-medium">
-                    // After
                     {userName?.charAt(0).toUpperCase() || "?"}
                   </span>
                 </div>
@@ -175,4 +172,6 @@ export default function Sidebar({ userRole, userName, isOpen, onToggle }) {
       </div>
     </>
   );
-}
+});
+
+export default Sidebar

@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useCallback, useMemo } from 'react'
 
 const CompaniesContext = createContext()
 
@@ -296,38 +296,40 @@ export function CompaniesProvider({ children }) {
     }
   ])
 
-  const updateCompany = (companyId, updates) => {
+  const updateCompany = useCallback((companyId, updates) => {
     setCompanies(prev => prev.map(company => 
       company.id === companyId ? { ...company, ...updates } : company
     ))
-  }
+  }, [])
 
-  const addCompany = (company) => {
+  const addCompany = useCallback((company) => {
     setCompanies(prev => [...prev, company])
-  }
+  }, [])
 
-  const deleteCompany = (companyId) => {
+  const deleteCompany = useCallback((companyId) => {
     setCompanies(prev => prev.filter(company => company.id !== companyId))
-  }
+  }, [])
 
-  const getCompanyById = (companyId) => {
+  const getCompanyById = useCallback((companyId) => {
     return companies.find(company => company.id === companyId)
-  }
+  }, [companies])
 
-  const getActiveCompanies = () => {
+  const getActiveCompanies = useCallback(() => {
     return companies.filter(company => company.status === 'active')
-  }
+  }, [companies])
+
+  const value = useMemo(() => ({
+    companies,
+    setCompanies,
+    updateCompany,
+    addCompany,
+    deleteCompany,
+    getCompanyById,
+    getActiveCompanies
+  }), [companies, updateCompany, addCompany, deleteCompany, getCompanyById, getActiveCompanies])
 
   return (
-    <CompaniesContext.Provider value={{
-      companies,
-      setCompanies,
-      updateCompany,
-      addCompany,
-      deleteCompany,
-      getCompanyById,
-      getActiveCompanies
-    }}>
+    <CompaniesContext.Provider value={value}>
       {children}
     </CompaniesContext.Provider>
   )

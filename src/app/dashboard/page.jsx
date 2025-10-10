@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import Layout from '@/components/Layout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ScheduleIcon from '@mui/icons-material/Schedule'
 import BeachAccessIcon from '@mui/icons-material/BeachAccess'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
@@ -22,7 +21,7 @@ export default function DashboardPage() {
     email: 'john.doe@company.com'
   })
 
-  const getDashboardContent = () => {
+  const getDashboardContent = useCallback(() => {
     switch (currentUser.role) {
       case 'admin':
         return (
@@ -169,9 +168,9 @@ export default function DashboardPage() {
           </div>
         )
     }
-  }
+  }, [currentUser.role])
 
-  const getQuickActions = () => {
+  const getQuickActions = useCallback(() => {
     const baseActions = [
       { label: 'Log Time', href: '/timesheet/new', icon: <ScheduleIcon /> },
       { label: 'Request Leave', href: '/leave/new', icon: <BeachAccessIcon /> },
@@ -195,7 +194,7 @@ export default function DashboardPage() {
     }
 
     return baseActions
-  }
+  }, [currentUser.role])
 
   return (
     <Layout userRole={currentUser.role} userName={currentUser.name}>

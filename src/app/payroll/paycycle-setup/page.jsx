@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useCompanies } from "@/contexts/CompaniesContext";
 import { supabase } from "@/lib/supabase";
 import Settings from "@mui/icons-material/Settings";
@@ -77,6 +78,50 @@ export default function PaycycleSetupPage() {
       setLoadError(err?.message || "Failed to load companies");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Handler for updating company paycycle settings
+  const handleToggleCompanySetting = async (companyId, settingKey, currentValue) => {
+    try {
+      // Update locally first for immediate UI feedback
+      setCompanies(prevCompanies => 
+        prevCompanies.map(company => 
+          company.company_id === companyId
+            ? { ...company, [settingKey]: !currentValue }
+            : company
+        )
+      );
+
+      // Update in database
+      const { error } = await supabase
+        .from('companies')
+        .update({ [settingKey]: !currentValue })
+        .eq('id', companyId);
+
+      if (error) {
+        console.error('Error updating company setting:', error);
+        console.warn(`Database column '${settingKey}' may not exist in companies table. The setting will only persist in local state.`);
+        
+        // Show user-friendly message (optional - only on first error)
+        if (!window._paycycleSettingsWarningShown) {
+          window._paycycleSettingsWarningShown = true;
+          alert(`Note: Paycycle settings are updating locally. To persist to database, please ensure the following columns exist in the companies table:\n\n- allow_defaults (boolean)\n- auto_group_entry (boolean)\n- time_clock_imports (boolean)\n- use_all_departments (boolean)\n- email_notification (boolean)\n\nChanges will be saved in this session.`);
+        }
+        
+        // Don't revert - keep the local state change
+        // This allows the feature to work even without database columns
+      }
+    } catch (err) {
+      console.error('Error toggling setting:', err);
+      // Revert on unexpected error
+      setCompanies(prevCompanies => 
+        prevCompanies.map(company => 
+          company.company_id === companyId
+            ? { ...company, [settingKey]: currentValue }
+            : company
+        )
+      );
     }
   };
 
@@ -435,22 +480,37 @@ export default function PaycycleSetupPage() {
                   </div>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full table-fixed">
+                  <table className="w-full table-auto">
                     <thead>
                       <tr className="border-b bg-gray-50">
-                        <th className="text-left py-4 px-6 font-semibold text-sm text-gray-700 w-1/3">
+                        <th className="text-left py-4 px-4 font-semibold text-xs text-gray-700 whitespace-nowrap">
                           Company
                         </th>
-                        <th className="text-left py-4 px-6 font-semibold text-sm text-gray-700 w-1/6">
+                        <th className="text-left py-4 px-3 font-semibold text-xs text-gray-700 whitespace-nowrap">
                           Status
                         </th>
-                        <th className="text-left py-4 px-6 font-semibold text-sm text-gray-700 w-1/4">
-                          Paycycles
+                        <th className="text-center py-4 px-3 font-semibold text-xs text-gray-700 whitespace-nowrap">
+                          # Paycycles
                         </th>
-                        <th className="text-left py-4 px-6 font-semibold text-sm text-gray-700 w-1/6">
+                        <th className="text-center py-4 px-3 font-semibold text-xs text-gray-700 whitespace-nowrap">
+                          Allow<br/>Defaults
+                        </th>
+                        <th className="text-center py-4 px-3 font-semibold text-xs text-gray-700 whitespace-nowrap">
+                          Auto Group<br/>Entry
+                        </th>
+                        <th className="text-center py-4 px-3 font-semibold text-xs text-gray-700 whitespace-nowrap">
+                          Time Clock<br/>Imports
+                        </th>
+                        <th className="text-center py-4 px-3 font-semibold text-xs text-gray-700 whitespace-nowrap">
+                          Use All<br/>Departments
+                        </th>
+                        <th className="text-center py-4 px-3 font-semibold text-xs text-gray-700 whitespace-nowrap">
+                          Email<br/>Notification
+                        </th>
+                        <th className="text-left py-4 px-3 font-semibold text-xs text-gray-700 whitespace-nowrap">
                           Next Processing
                         </th>
-                        <th className="text-left py-4 px-6 font-semibold text-sm text-gray-700 w-1/8">
+                        <th className="text-left py-4 px-4 font-semibold text-xs text-gray-700 whitespace-nowrap">
                           Actions
                         </th>
                       </tr>
@@ -472,62 +532,69 @@ export default function PaycycleSetupPage() {
                             }`}
                             onClick={() => setSelectedCompany(company)}
                           >
-                            <td className="py-4 px-6">
-                              <div className="flex items-center space-x-3">
-                                <Business className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                                <span className="font-medium text-gray-900 truncate">
+                            <td className="py-4 px-4">
+                              <div className="flex items-center space-x-2">
+                                <Business className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <span className="font-medium text-sm text-gray-900">
                                   {company.company_name}
                                 </span>
                               </div>
                             </td>
-                            <td className="py-4 px-6">
-                              <div className="flex items-center space-x-2">
+                            <td className="py-4 px-3">
+                              <div className="flex items-center space-x-1">
                                 <StatusIcon
-                                  className={`w-4 h-4 flex-shrink-0 ${companyStatus.color}`}
+                                  className={`w-3 h-3 flex-shrink-0 ${companyStatus.color}`}
                                 />
                                 <span
-                                  className={`text-sm font-medium capitalize ${companyStatus.color}`}
+                                  className={`text-xs font-medium ${companyStatus.color}`}
                                 >
-                                  {companyStatus.status === "not-configured" &&
-                                    "Not configured"}
-                                  {companyStatus.status === "processing-soon" &&
-                                    "Processing soon"}
-                                  {companyStatus.status === "configured" &&
-                                    "Configured"}
+                                  {companyStatus.status === "not-configured" && "Not Set"}
+                                  {companyStatus.status === "processing-soon" && "Processing"}
+                                  {companyStatus.status === "configured" && "Active"}
                                 </span>
                               </div>
                             </td>
-                            <td className="py-4 px-6">
-                              <div className="flex flex-wrap gap-1.5">
-                                {company.paycycles
-                                  ?.slice(0, 3)
-                                  .map((paycycle) => (
-                                    <span
-                                      key={paycycle.id}
-                                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                                    >
-                                      {paycycle.name}
-                                    </span>
-                                  ))}
-                                {company.paycycles?.length > 3 && (
-                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                    +{company.paycycles.length - 3}
-                                  </span>
-                                )}
-                                {(!company.paycycles ||
-                                  company.paycycles.length === 0) && (
-                                  <span className="text-sm text-gray-400">
-                                    None
-                                  </span>
-                                )}
-                              </div>
+                            <td className="py-4 px-3 text-center">
+                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
+                                {company.paycycles?.length || 0}
+                              </span>
                             </td>
-                            <td className="py-4 px-6">
-                              <span className="text-sm text-gray-600">
+                            <td className="py-4 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <Switch
+                                checked={company.allow_defaults || false}
+                                onCheckedChange={() => handleToggleCompanySetting(company.company_id, 'allow_defaults', company.allow_defaults)}
+                              />
+                            </td>
+                            <td className="py-4 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <Switch
+                                checked={company.auto_group_entry || false}
+                                onCheckedChange={() => handleToggleCompanySetting(company.company_id, 'auto_group_entry', company.auto_group_entry)}
+                              />
+                            </td>
+                            <td className="py-4 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <Switch
+                                checked={company.time_clock_imports || false}
+                                onCheckedChange={() => handleToggleCompanySetting(company.company_id, 'time_clock_imports', company.time_clock_imports)}
+                              />
+                            </td>
+                            <td className="py-4 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <Switch
+                                checked={company.use_all_departments || false}
+                                onCheckedChange={() => handleToggleCompanySetting(company.company_id, 'use_all_departments', company.use_all_departments)}
+                              />
+                            </td>
+                            <td className="py-4 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <Switch
+                                checked={company.email_notification || false}
+                                onCheckedChange={() => handleToggleCompanySetting(company.company_id, 'email_notification', company.email_notification)}
+                              />
+                            </td>
+                            <td className="py-4 px-3">
+                              <span className="text-xs text-gray-600 whitespace-nowrap">
                                 {formatDate(nextProcessing)}
                               </span>
                             </td>
-                            <td className="py-4 px-6">
+                            <td className="py-4 px-4">
                               <Button
                                 variant="outline"
                                 size="sm"
