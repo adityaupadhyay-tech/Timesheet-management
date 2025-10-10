@@ -1,7 +1,4 @@
 import { Card, CardContent } from '@/components/ui/card'
-import { ReactNode } from 'react'
-
-
 
 export default function ComingSoon({ 
   title = "Coming Soon", 

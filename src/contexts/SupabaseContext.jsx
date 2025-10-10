@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 
 const SupabaseContext = createContext({})
@@ -38,35 +38,35 @@ export const SupabaseProvider = ({ children }) => {
     return () => subscription?.unsubscribe()
   }, [])
 
-  const signIn = async (email, password) => {
+  const signIn = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
     return { data, error }
-  }
+  }, [])
 
-  const signUp = async (email, password) => {
+  const signUp = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     })
     return { data, error }
-  }
+  }, [])
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut()
     return { error }
-  }
+  }, [])
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     loading,
     signIn,
     signUp,
     signOut,
     supabase,
-  }
+  }), [user, loading, signIn, signUp, signOut])
 
   return (
     <SupabaseContext.Provider value={value}>

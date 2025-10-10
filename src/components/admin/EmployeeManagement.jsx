@@ -26,6 +26,7 @@ import {
   getAllJobRoles,
   getLocationsByCompany,
   getDepartmentsByCompany,
+  getPaycyclesByCompany,
 } from "@/lib/adminHelpers";
 
 export default function EmployeeManagement() {
@@ -56,7 +57,7 @@ export default function EmployeeManagement() {
 
   // Assignment state
   const [assignments, setAssignments] = useState([
-    { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
+    { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""], paycycleId: "" },
   ]);
   const [assignmentDropdownData, setAssignmentDropdownData] = useState({});
   const [loadingDropdowns, setLoadingDropdowns] = useState(false);
@@ -154,6 +155,7 @@ export default function EmployeeManagement() {
         jobRoles: jobRolesResult.data || [],
         locations: [],
         departments: [],
+        paycycles: [],
       });
     } catch (err) {
       console.error("Error loading dropdown data:", err);
@@ -163,20 +165,24 @@ export default function EmployeeManagement() {
     }
   };
 
-  // Load locations and departments when company changes
+  // Load locations, departments, and paycycles when company changes
   const loadCompanyDependentData = async (companyId) => {
     if (!companyId) return;
 
     try {
-      const [locationsResult, departmentsResult] = await Promise.all([
+      const [locationsResult, departmentsResult, paycyclesResult] = await Promise.all([
         getLocationsByCompany(companyId),
         getDepartmentsByCompany(companyId),
+        getPaycyclesByCompany(companyId),
       ]);
+
+      console.log("Loaded paycycles for company:", companyId, paycyclesResult.data);
 
       setAssignmentDropdownData((prev) => ({
         ...prev,
         locations: locationsResult.data || [],
         departments: departmentsResult.data || [],
+        paycycles: paycyclesResult.data || [],
       }));
     } catch (err) {
       console.error("Error loading company dependent data:", err);
@@ -193,7 +199,7 @@ export default function EmployeeManagement() {
       phone: "",
     });
     setAssignments([
-      { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
+      { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""], paycycleId: "" },
     ]);
     setAssignmentDropdownData({});
     setEmployeeFormErrors({});
@@ -236,6 +242,7 @@ export default function EmployeeManagement() {
             jobRoleId: assignment.job_role_id || "",
             locationId: assignment.location_id || "",
             departmentIds: assignment.department_ids || [""],
+            paycycleId: assignment.paycycle_id || "",
           })
         );
         setAssignments(formattedAssignments);
@@ -246,7 +253,7 @@ export default function EmployeeManagement() {
         }
       } else {
         setAssignments([
-          { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
+          { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""], paycycleId: "" },
         ]);
       }
 
@@ -324,7 +331,7 @@ export default function EmployeeManagement() {
           phone: "",
         });
         setAssignments([
-          { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
+          { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""], paycycleId: "" },
         ]);
         setEmployeeFormErrors({});
         // Reload employees
@@ -348,7 +355,7 @@ export default function EmployeeManagement() {
       phone: "",
     });
     setAssignments([
-      { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
+      { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""], paycycleId: "" },
     ]);
     setEmployeeFormErrors({});
     setAssignmentDropdownData({});
@@ -359,10 +366,11 @@ export default function EmployeeManagement() {
     const newAssignments = [...assignments];
     newAssignments[index] = { ...newAssignments[index], [field]: value };
 
-    // If company changes, clear location and departments and load new ones
+    // If company changes, clear location, departments, and paycycle and load new ones
     if (field === "companyId") {
       newAssignments[index].locationId = "";
       newAssignments[index].departmentIds = [""];
+      newAssignments[index].paycycleId = "";
       loadCompanyDependentData(value);
     }
 
@@ -372,7 +380,7 @@ export default function EmployeeManagement() {
   const addAssignment = () => {
     setAssignments([
       ...assignments,
-      { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""] },
+      { companyId: "", jobRoleId: "", locationId: "", departmentIds: [""], paycycleId: "" },
     ]);
   };
 
@@ -925,6 +933,39 @@ export default function EmployeeManagement() {
                               <Add className="w-4 h-4 mr-2" />
                               Add Department
                             </Button>
+                          </div>
+
+                          <div>
+                            <Label htmlFor={`paycycle-${assignmentIndex}`}>
+                              Paycycle
+                            </Label>
+                            <select
+                              id={`paycycle-${assignmentIndex}`}
+                              value={assignment.paycycleId || ""}
+                              onChange={(e) =>
+                                updateAssignment(
+                                  assignmentIndex,
+                                  "paycycleId",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full p-2 border rounded"
+                              disabled={!assignment.companyId}
+                            >
+                              <option value="">Select Paycycle (Optional)</option>
+                              {assignmentDropdownData.paycycles?.map(
+                                (paycycle) => (
+                                  <option key={paycycle.id} value={paycycle.id}>
+                                    {paycycle.name} ({paycycle.frequency})
+                                  </option>
+                                )
+                              )}
+                            </select>
+                            {assignment.companyId && assignmentDropdownData.paycycles?.length === 0 && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                No paycycles available for this company
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>

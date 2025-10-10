@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { memo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { ChevronRight } from '@mui/icons-material'
 
@@ -12,7 +12,7 @@ import { ChevronRight } from '@mui/icons-material'
  * @property {Array<{label: string, href?: string}>} [breadcrumbs] - Optional breadcrumb navigation
  */
 
-export default function PageHeader({ title, subtitle, icon, breadcrumbs }) {
+const PageHeader = memo(function PageHeader({ title, subtitle, icon, breadcrumbs }) {
   return (
     <Card className="mb-6">
       <CardContent className="py-4">
@@ -59,4 +59,6 @@ export default function PageHeader({ title, subtitle, icon, breadcrumbs }) {
       </CardContent>
     </Card>
   )
-}
+})
+
+export default PageHeader

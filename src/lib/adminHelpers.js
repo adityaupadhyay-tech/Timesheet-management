@@ -175,11 +175,12 @@ export const fetchCompanyWithDetails = async (companyId) => {
     const employeeIds = employeeLinks ? employeeLinks.map(link => link.employee_id) : []
     console.log('Employee IDs for company:', employeeIds)
     
-    // Step 2: Fetch company, locations, departments, and employees
+    // Step 2: Fetch company, locations, departments, paycycles, and employees
     const fetchPromises = [
       supabase.from('companies').select('*').eq('id', companyId).single(),
       supabase.from('locations').select('*').eq('company_id', companyId),
-      supabase.from('departments').select('*').eq('company_id', companyId)
+      supabase.from('departments').select('*').eq('company_id', companyId),
+      supabase.from('paycycles').select('id, name, frequency, cycle_type').eq('company_id', companyId)
     ]
     
     // Only fetch employees if we have employee IDs
@@ -196,6 +197,7 @@ export const fetchCompanyWithDetails = async (companyId) => {
       companyRes,
       locationsRes,
       departmentsRes,
+      paycyclesRes,
       employeesRes
     ] = await Promise.all(fetchPromises)
 
@@ -203,6 +205,7 @@ export const fetchCompanyWithDetails = async (companyId) => {
       company: companyRes,
       locations: locationsRes,
       departments: departmentsRes,
+      paycycles: paycyclesRes,
       employees: employeesRes
     })
 
@@ -219,6 +222,10 @@ export const fetchCompanyWithDetails = async (companyId) => {
       console.error('Departments query error:', departmentsRes.error)
       return handleSupabaseError(departmentsRes.error, 'fetching company departments')
     }
+    if (paycyclesRes.error) {
+      console.error('Paycycles query error:', paycyclesRes.error)
+      return handleSupabaseError(paycyclesRes.error, 'fetching company paycycles')
+    }
     if (employeesRes.error) {
       console.error('Employees query error:', employeesRes.error)
       return handleSupabaseError(employeesRes.error, 'fetching company employees')
@@ -228,6 +235,7 @@ export const fetchCompanyWithDetails = async (companyId) => {
       company: companyRes.data,
       locations: locationsRes.data || [],
       departments: departmentsRes.data || [],
+      paycycles: paycyclesRes.data || [],
       employees: employeesRes.data || []
     }
 
@@ -730,7 +738,9 @@ export const createEmployeeWithStructuredAssignments = async (employeeData, assi
         // B) Convert an empty locationId to null, which the DB accepts
         locationId: assignment.locationId || null,
         // C) Remove any empty strings from the list of department IDs
-        departmentIds: assignment.departmentIds.filter(id => id)
+        departmentIds: assignment.departmentIds.filter(id => id),
+        // D) Include paycycle ID if provided
+        paycycleId: assignment.paycycleId || null
       }));
     
     // 3. Send the CLEANED data to the database
@@ -765,7 +775,9 @@ export const updateEmployeeWithStructuredAssignments = async (employeeId, employ
         // B) Convert an empty locationId to null, which the DB accepts
         locationId: assignment.locationId || null,
         // C) Remove any empty strings from the list of department IDs
-        departmentIds: assignment.departmentIds.filter(id => id)
+        departmentIds: assignment.departmentIds.filter(id => id),
+        // D) Include paycycle ID if provided
+        paycycleId: assignment.paycycleId || null
       }));
     
     // 3. Send the CLEANED data to the database
@@ -898,6 +910,27 @@ export const getLocationsByCompany = async (companyId) => {
 
 // Alias for getLocationsByCompany to match the import in UserManagement.jsx
 export const getLocationsForCompany = getLocationsByCompany
+
+// Get paycycles by company
+export const getPaycyclesByCompany = async (companyId) => {
+  try {
+    if (!companyId) {
+      return { data: [], error: null }
+    }
+    
+    const { data, error } = await supabase
+      .from('paycycles')
+      .select('id, name, frequency, cycle_type')
+      .eq('company_id', companyId)
+      .order('name')
+    
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching paycycles:', error)
+    return { data: [], error: error.message }
+  }
+}
 
 // Get employee details for editing with structured assignments
 export const getEmployeeDetailsForEdit = async (employeeId) => {

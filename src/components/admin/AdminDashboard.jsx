@@ -592,8 +592,9 @@ export default function AdminDashboard() {
           const assignment = employeeAssignments[employeeId] || {};
           const dept = companyDetails.departments.find(d => d.id === assignment.department_id);
           const loc = companyDetails.locations.find(l => l.id === assignment.location_id);
+          const paycycle = companyDetails.paycycles?.find(p => p.id === assignment.paycycle_id);
           
-          return `• ${employee.first_name} ${employee.last_name}${dept ? ` → ${dept.name}` : ''}${loc ? ` @ ${loc.name}` : ''}`;
+          return `• ${employee.first_name} ${employee.last_name}${dept ? ` → ${dept.name}` : ''}${loc ? ` @ ${loc.name}` : ''}${paycycle ? ` [${paycycle.name}]` : ''}`;
         }).join('\n');
         
         alert(`Successfully assigned ${selectedEmployees.length} employee${selectedEmployees.length !== 1 ? 's' : ''} to ${editingCompany.name}:\n\n${assignmentSummary}\n\nNote: Using mock data. Connect to Supabase to persist changes.`);
@@ -620,6 +621,7 @@ export default function AdminDashboard() {
           company_id: editingCompany.id,
           department_id: assignment.department_id,
           location_id: assignment.location_id,
+          paycycle_id: assignment.paycycle_id || null, // Optional paycycle
           is_primary: false // Can be made configurable if needed
         };
 
@@ -635,7 +637,8 @@ export default function AdminDashboard() {
           const updateData = {
             company_id: editingCompany.id,
             department_id: assignment.department_id,
-            location_id: assignment.location_id
+            location_id: assignment.location_id,
+            paycycle_id: assignment.paycycle_id || null
           };
 
           const { error: updateError } = await supabase
@@ -2544,6 +2547,29 @@ export default function AdminDashboard() {
                                 </option>
                               ))}
                             </select>
+                          </div>
+                          <div className="col-span-2">
+                            <Label className="text-xs text-gray-600 mb-1 block">
+                              Paycycle
+                            </Label>
+                            <select
+                              value={employeeAssignments[employeeId]?.paycycle_id || ''}
+                              onChange={(e) => updateEmployeeAssignment(employeeId, 'paycycle_id', e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 border-gray-300"
+                            >
+                              <option value="">Select Paycycle (Optional)</option>
+                              {companyDetails.paycycles?.map((paycycle) => (
+                                <option key={paycycle.id} value={paycycle.id}>
+                                  {paycycle.name} ({paycycle.frequency})
+                                </option>
+                              ))}
+                            </select>
+                            {companyDetails.paycycles?.length === 0 && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                No paycycles available for this company
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>

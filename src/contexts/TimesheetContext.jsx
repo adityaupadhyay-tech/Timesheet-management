@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { useCompanies } from './CompaniesContext'
 
 /**
@@ -138,7 +138,7 @@ export function TimesheetProvider({ children }) {
     }
   }, [trackingState.isTracking])
 
-  const addEntry = (entryData) => {
+  const addEntry = useCallback((entryData) => {
     if (!selectedCompany) {
       console.error('Cannot add entry: No company selected')
       return
@@ -154,9 +154,9 @@ export function TimesheetProvider({ children }) {
     }
 
     setAllEntries(prev => [...prev, newEntry])
-  }
+  }, [selectedCompany])
 
-  const updateEntry = (id, updates) => {
+  const updateEntry = useCallback((id, updates) => {
     if (!selectedCompany) {
       console.error('Cannot update entry: No company selected')
       return
@@ -167,26 +167,26 @@ export function TimesheetProvider({ children }) {
         ? { ...entry, ...updates, companyId: selectedCompany.id, updatedAt: new Date().toISOString() }
         : entry
     ))
-  }
+  }, [selectedCompany])
 
-  const deleteEntry = (id) => {
+  const deleteEntry = useCallback((id) => {
     setAllEntries(prev => prev.filter(entry => entry.id !== id))
-  }
+  }, [])
 
-  const startTimer = () => {
+  const startTimer = useCallback(() => {
     setTrackingState({
       isTracking: true,
       startTime: new Date(),
       elapsedTime: 0
     })
-  }
+  }, [])
 
-  const stopTimer = () => {
+  const stopTimer = useCallback(() => {
     setTrackingState({
       isTracking: false,
       elapsedTime: 0
     })
-  }
+  }, [])
 
   // Get or create current timesheet for the selected company and cycle
   const getCurrentTimesheet = () => {
@@ -215,7 +215,7 @@ export function TimesheetProvider({ children }) {
     }
   }
 
-  const submitTimesheet = () => {
+  const submitTimesheet = useCallback(() => {
     if (!selectedCompany) {
       console.error('Cannot submit timesheet: No company selected')
       return
@@ -230,9 +230,9 @@ export function TimesheetProvider({ children }) {
       }
       setCurrentTimesheet(updatedTimesheet)
     }
-  }
+  }, [selectedCompany]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const approveTimesheet = () => {
+  const approveTimesheet = useCallback(() => {
     if (currentTimesheet && currentTimesheet.status === 'submitted') {
       const updatedTimesheet = {
         ...currentTimesheet,
@@ -242,9 +242,9 @@ export function TimesheetProvider({ children }) {
       }
       setCurrentTimesheet(updatedTimesheet)
     }
-  }
+  }, [currentTimesheet])
 
-  const rejectTimesheet = (reason) => {
+  const rejectTimesheet = useCallback((reason) => {
     if (currentTimesheet && currentTimesheet.status === 'submitted') {
       const updatedTimesheet = {
         ...currentTimesheet,
@@ -255,17 +255,17 @@ export function TimesheetProvider({ children }) {
       }
       setCurrentTimesheet(updatedTimesheet)
     }
-  }
+  }, [currentTimesheet])
 
-  const getCurrentTime = () => {
+  const getCurrentTime = useCallback(() => {
     const hours = Math.floor(trackingState.elapsedTime / 3600)
     const minutes = Math.floor((trackingState.elapsedTime % 3600) / 60)
     const seconds = trackingState.elapsedTime % 60
 
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-  }
+  }, [trackingState.elapsedTime])
 
-  const value = {
+  const value = useMemo(() => ({
     entries,
     projects,
     companies,
@@ -282,7 +282,7 @@ export function TimesheetProvider({ children }) {
     getCurrentTime,
     approveTimesheet,
     rejectTimesheet
-  }
+  }), [entries, projects, companies, selectedCompany, trackingState, addEntry, updateEntry, deleteEntry, startTimer, stopTimer, submitTimesheet, getCurrentTime, approveTimesheet, rejectTimesheet]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <TimesheetContext.Provider value={value}>

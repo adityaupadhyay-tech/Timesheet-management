@@ -28,6 +28,7 @@ This guide will help you set up Supabase integration for the Timesheet Managemen
 ## Step 3: Configure Environment Variables
 
 1. Copy `.env.example` to `.env.local`:
+
    ```bash
    cp .env.example .env.local
    ```
@@ -49,6 +50,13 @@ CREATE TABLE companies (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   status VARCHAR(50) DEFAULT 'active',
+  -- Paycycle settings columns
+  allow_defaults BOOLEAN DEFAULT false,
+  auto_group_entry BOOLEAN DEFAULT false,
+  time_clock_imports BOOLEAN DEFAULT false,
+  use_all_departments BOOLEAN DEFAULT false,
+  email_notification BOOLEAN DEFAULT false,
+  -- Timestamps
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -119,7 +127,7 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
   RETURN QUERY
-  SELECT 
+  SELECT
     c.id,
     c.name,
     c.description,
@@ -165,7 +173,7 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
   RETURN QUERY
-  SELECT 
+  SELECT
     e.id,
     e.first_name,
     e.last_name,
@@ -213,7 +221,7 @@ INSERT INTO job_roles (company_id, department_id, title, description) VALUES
 
 -- Insert sample employees
 INSERT INTO employees (company_id, department_id, job_role_id, location_id, first_name, last_name, email, phone) VALUES
-((SELECT id FROM companies WHERE name = 'Acme Corporation'), 
+((SELECT id FROM companies WHERE name = 'Acme Corporation'),
  (SELECT id FROM departments WHERE name = 'Engineering' AND company_id = (SELECT id FROM companies WHERE name = 'Acme Corporation')),
  (SELECT id FROM job_roles WHERE title = 'Software Engineer'),
  (SELECT id FROM locations WHERE name = 'SF Headquarters'),
@@ -228,6 +236,7 @@ INSERT INTO employees (company_id, department_id, job_role_id, location_id, firs
 ## Step 6: Test the Connection
 
 1. Start your development server:
+
    ```bash
    npm run dev
    ```
@@ -235,18 +244,29 @@ INSERT INTO employees (company_id, department_id, job_role_id, location_id, firs
 2. Navigate to `/administration` in your browser
 3. You should see the companies and employees data loaded from Supabase
 
+## Step 7: Apply Additional Migrations (If Updating Existing Database)
+
+If you already have a database set up and need to add new features, see [DATABASE_MIGRATIONS.md](./DATABASE_MIGRATIONS.md) for migration scripts.
+
+Current available migrations:
+
+- **Paycycle Settings Columns** - Adds toggle settings to companies table for paycycle management
+
 ## Troubleshooting
 
 ### Common Issues:
 
 1. **"Missing Supabase environment variables" error**
+
    - Make sure `.env.local` exists and contains the correct values
    - Restart your development server after adding environment variables
 
 2. **"Module not found: @supabase/supabase-js" error**
+
    - Run `npm install @supabase/supabase-js`
 
 3. **Database connection errors**
+
    - Verify your Supabase URL and anon key are correct
    - Check that your Supabase project is active
 
