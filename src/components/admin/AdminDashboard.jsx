@@ -139,7 +139,7 @@ export default function AdminDashboard() {
   const [availableEmployees, setAvailableEmployees] = useState([]);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [employeeSearchTerm, setEmployeeSearchTerm] = useState("");
-  const [employeeAssignments, setEmployeeAssignments] = useState({}); // Maps employee_id to {job_role_id, department_id, location_id}
+  const [employeeAssignments, setEmployeeAssignments] = useState({}); // Maps employee_id to {job_role_id, department_id, location_id, paycycle_id (UI only)}
 
   // Company detail view handler
   const handleCompanyClick = async (companyId) => {
@@ -668,10 +668,15 @@ export default function AdminDashboard() {
             const loc = companyDetails.locations.find(
               (l) => l.id === assignment.location_id
             );
+            const paycycle = companyDetails.paycycles?.find(
+              (p) => p.id === assignment.paycycle_id
+            );
 
             return `• ${employee.first_name} ${employee.last_name}${
               jobRole ? ` as ${jobRole.title}` : ""
-            }${dept ? ` → ${dept.name}` : ""}${loc ? ` @ ${loc.name}` : ""}`;
+            }${dept ? ` → ${dept.name}` : ""}${loc ? ` @ ${loc.name}` : ""}${
+              paycycle ? ` (${paycycle.name})` : ""
+            }`;
           })
           .join("\n");
 
@@ -872,6 +877,7 @@ export default function AdminDashboard() {
             job_role_id: "",
             department_id: "",
             location_id: "",
+            paycycle_id: "", // UI display only, not sent to backend
           },
         }));
         return [...prev, employeeId];
@@ -2716,7 +2722,7 @@ export default function AdminDashboard() {
                         <p className="text-sm font-medium text-gray-900 mb-2">
                           {employee.first_name} {employee.last_name}
                         </p>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                           <div>
                             <Label className="text-xs text-gray-600 mb-1 block">
                               Job Role <span className="text-red-500">*</span>
@@ -2809,6 +2815,40 @@ export default function AdminDashboard() {
                                 </option>
                               ))}
                             </select>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-gray-600 mb-1 block">
+                              Pay Cycle
+                            </Label>
+                            <select
+                              value={
+                                employeeAssignments[employeeId]?.paycycle_id ||
+                                ""
+                              }
+                              onChange={(e) =>
+                                updateEmployeeAssignment(
+                                  employeeId,
+                                  "paycycle_id",
+                                  e.target.value
+                                )
+                              }
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 border-gray-300"
+                            >
+                              <option value="">
+                                Select Pay Cycle (Optional)
+                              </option>
+                              {companyDetails.paycycles?.map((paycycle) => (
+                                <option key={paycycle.id} value={paycycle.id}>
+                                  {paycycle.name} ({paycycle.frequency})
+                                </option>
+                              ))}
+                            </select>
+                            {companyDetails.paycycles?.length === 0 && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                No pay cycles available for this company
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
