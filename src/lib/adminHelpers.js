@@ -832,20 +832,17 @@ export const getAllJobRoles = async () => {
 
 export const getJobRolesByCompany = async (companyId) => {
   try {
-    if (!companyId) {
-      return { data: [], error: null }
-    }
-    
+    // Job roles are now global and not filtered by company
+    // This function now returns all job roles regardless of companyId parameter
     const { data, error } = await supabase
       .from('job_roles')
       .select('id, title')
-      .eq('company_id', companyId)
       .order('title')
     
     if (error) throw error
     return { data, error: null }
   } catch (error) {
-    console.error('Error fetching job roles by company:', error)
+    console.error('Error fetching job roles:', error)
     return { data: [], error: error.message }
   }
 }
