@@ -34,9 +34,15 @@ export default function PayrollPage() {
     router.push('/payroll/paycycle-setup')
   }
 
+  const navigateToPaycodeAccess = () => {
+    router.push('/payroll/paycode-access')
+  }
+
   const handleCardClick = (cardName) => {
     if (cardName === 'Paycycle Setup') {
       navigateToPaycycleSetup()
+    } else if (cardName === 'Paycode Access') {
+      navigateToPaycodeAccess()
     } else {
       alert(`${cardName} - Coming Soon!`)
     }
@@ -60,7 +66,7 @@ export default function PayrollPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card 
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => handleCardClick('Paycode Access')}
+                onClick={navigateToPaycodeAccess}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center">

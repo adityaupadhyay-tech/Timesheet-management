@@ -2,7 +2,7 @@
 
 import { memo, lazy, Suspense } from 'react'
 import PageWrapper from '@/components/PageWrapper'
-import OptimizedIcon from '@/components/ui/OptimizedIcon'
+import Assignment from '@mui/icons-material/Assignment'
 
 // Lazy load heavy components
 const ComingSoon = lazy(() => import('@/components/ComingSoon'))
@@ -20,7 +20,7 @@ function ProjectsPage() {
                 <p className="mt-2 text-gray-600">Create and manage projects, assign team members, and track project progress</p>
               </div>
               <div className="flex items-center gap-3">
-                <OptimizedIcon name="assignment" className="h-8 w-8 text-blue-600" />
+                <Assignment className="h-8 w-8 text-blue-600" />
               </div>
             </div>
           </div>
@@ -37,7 +37,7 @@ function ProjectsPage() {
                 <ComingSoon 
                   title="Project Management"
                   subtitle="Create and manage projects, assign team members, and track project progress. This feature will include project creation, task assignment, milestone tracking, and project analytics."
-                  icon={<OptimizedIcon name="assignment" className="h-20 w-20 text-blue-600" />}
+                  icon={<Assignment className="h-20 w-20 text-blue-600" />}
                 />
               </Suspense>
             </div>

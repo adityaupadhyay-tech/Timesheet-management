@@ -1,11 +1,21 @@
 'use client'
 
 import React from 'react'
+import dynamic from 'next/dynamic'
 import Layout from '@/components/Layout'
 import PageHeader from '@/components/PageHeader'
 import Building from '@mui/icons-material/Business'
-import AdminDashboard from '@/components/admin/AdminDashboard'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 import { useSupabase } from '@/contexts/SupabaseContext'
+
+// Dynamically import AdminDashboard for better performance
+const AdminDashboard = dynamic(
+  () => import('@/components/admin/AdminDashboard'),
+  { 
+    loading: () => <LoadingSpinner message="Loading Company Dashboard..." />,
+    ssr: false 
+  }
+)
 
 export default function CompanySetupPage() {
   const { user } = useSupabase()

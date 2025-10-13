@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import Layout from '@/components/Layout'
 import { TimesheetProvider, useTimesheet } from '@/contexts/TimesheetContext'
 import TimeEntryGrid from '@/components/timesheet/TimeEntryGrid'
@@ -12,10 +13,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Send, Download, Calendar, FolderOpen, CheckCircle, Eye, Search, Filter, ArrowLeft, Clock, XCircle, CheckCircle2, User, ChevronDown, FileText, Trash2, AlertTriangle, X } from 'lucide-react'
-import ExportModal from '@/components/timesheet/ExportModal'
 import { formatCyclePeriod } from '@/lib/cycleUtils'
 import PageHeader from '@/components/PageHeader'
 import ScheduleIcon from '@mui/icons-material/Schedule'
+
+// Dynamically import ExportModal since it's only shown conditionally
+const ExportModal = dynamic(
+  () => import('@/components/timesheet/ExportModal'),
+  { ssr: false }
+)
 
 function TimesheetContent() {
   const {

@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "analyze": "cross-env ANALYZE=true next build",
+    "analyze:browser": "cross-env ANALYZE=true BUNDLE_ANALYZE=browser next build",
+    "analyze:server": "cross-env ANALYZE=true BUNDLE_ANALYZE=server next build"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -47,5 +50,9 @@
     "tailwind"
   ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.4",
+    "cross-env": "^10.1.0"
+  }
 }

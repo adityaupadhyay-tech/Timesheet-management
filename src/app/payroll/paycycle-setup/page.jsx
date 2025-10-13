@@ -100,13 +100,35 @@ export default function PaycycleSetupPage() {
         .eq('id', companyId);
 
       if (error) {
-        console.error('Error updating company setting:', error);
-        console.warn(`Database column '${settingKey}' may not exist in companies table. The setting will only persist in local state.`);
+        // Suppress error if it's just a missing column (expected in dev)
+        const isMissingColumn = error.code === '42703' || error.message?.includes('column') || error.message?.includes('does not exist');
         
-        // Show user-friendly message (optional - only on first error)
-        if (!window._paycycleSettingsWarningShown) {
-          window._paycycleSettingsWarningShown = true;
-          alert(`Note: Paycycle settings are updating locally. To persist to database, please ensure the following columns exist in the companies table:\n\n- allow_defaults (boolean)\n- auto_group_entry (boolean)\n- time_clock_imports (boolean)\n- use_all_departments (boolean)\n- email_notification (boolean)\n\nChanges will be saved in this session.`);
+        if (isMissingColumn) {
+          console.info(`ℹ️ Database column '${settingKey}' not found. Setting saved locally only. Run migrations from DATABASE_MIGRATIONS.md to persist.`);
+          
+          // Show user-friendly message (optional - only on first error)
+          if (!window._paycycleSettingsWarningShown) {
+            window._paycycleSettingsWarningShown = true;
+            const notification = document.createElement('div');
+            notification.className = 'fixed bottom-4 right-4 bg-yellow-50 border border-yellow-300 rounded-lg shadow-lg p-4 max-w-md z-50';
+            notification.innerHTML = `
+              <div class="flex items-start">
+                <svg class="w-5 h-5 text-yellow-600 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-yellow-900">Database Setup Required</p>
+                  <p class="text-xs text-yellow-700 mt-1">Settings are saved locally. See DATABASE_MIGRATIONS.md to persist to database.</p>
+                  <button onclick="this.parentElement.parentElement.parentElement.remove()" class="mt-2 text-xs text-yellow-800 underline">Dismiss</button>
+                </div>
+              </div>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 10000);
+          }
+        } else {
+          // Unexpected error - log it properly
+          console.error('Unexpected error updating company setting:', error);
         }
         
         // Don't revert - keep the local state change
