@@ -1,11 +1,21 @@
 'use client'
 
 import React, { useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import Layout from '@/components/Layout'
 import PageHeader from '@/components/PageHeader'
 import Users from '@mui/icons-material/People'
-import EmployeeManagement from '@/components/admin/EmployeeManagement'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 import { useSupabase } from '@/contexts/SupabaseContext'
+
+// Dynamically import EmployeeManagement for better performance
+const EmployeeManagement = dynamic(
+  () => import('@/components/admin/EmployeeManagement'),
+  { 
+    loading: () => <LoadingSpinner message="Loading Employee Management..." />,
+    ssr: false 
+  }
+)
 
 export default function UserManagementPage() {
   const { user } = useSupabase()

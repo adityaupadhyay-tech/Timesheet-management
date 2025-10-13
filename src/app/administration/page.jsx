@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Layout from "@/components/Layout";
 import {
   Card,
@@ -28,10 +29,26 @@ import Security from "@mui/icons-material/Security";
 import Assignment from "@mui/icons-material/Assignment";
 import Logout from "@mui/icons-material/Logout";
 import Upgrade from "@mui/icons-material/Upgrade";
-import AdminDashboard from "@/components/admin/AdminDashboard";
-import EmployeeManagement from "@/components/admin/EmployeeManagement";
 import PageHeader from "@/components/PageHeader";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 import { useSupabase } from "@/contexts/SupabaseContext";
+
+// Dynamically import heavy components with loading states
+const AdminDashboard = dynamic(
+  () => import("@/components/admin/AdminDashboard"),
+  { 
+    loading: () => <LoadingSpinner message="Loading Company Dashboard..." />,
+    ssr: false 
+  }
+);
+
+const EmployeeManagement = dynamic(
+  () => import("@/components/admin/EmployeeManagement"),
+  { 
+    loading: () => <LoadingSpinner message="Loading Employee Management..." />,
+    ssr: false 
+  }
+);
 
 export default function AdministrationPage() {
   const { user, loading } = useSupabase();
