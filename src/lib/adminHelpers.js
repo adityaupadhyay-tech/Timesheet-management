@@ -830,6 +830,26 @@ export const getAllJobRoles = async () => {
   }
 }
 
+export const getJobRolesByCompany = async (companyId) => {
+  try {
+    if (!companyId) {
+      return { data: [], error: null }
+    }
+    
+    const { data, error } = await supabase
+      .from('job_roles')
+      .select('id, title')
+      .eq('company_id', companyId)
+      .order('title')
+    
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching job roles by company:', error)
+    return { data: [], error: error.message }
+  }
+}
+
 export const getDepartmentsByCompany = async (companyId) => {
   try {
     if (!companyId) {

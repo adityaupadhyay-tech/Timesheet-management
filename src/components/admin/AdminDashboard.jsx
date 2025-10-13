@@ -46,6 +46,8 @@ import {
   getDepartmentsByCompany,
   getLocationsByCompany,
   getAllEmployeesWithAssignments,
+  getAllJobRoles,
+  getJobRolesByCompany,
 } from "../../lib/adminHelpers";
 
 export default function AdminDashboard() {
@@ -60,14 +62,14 @@ export default function AdminDashboard() {
   // UI state
   const [activeTab, setActiveTab] = useState("companies");
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   // Manage tab filters
   const [manageFilters, setManageFilters] = useState({
-    name: '',
-    status: 'all',
-    minLocations: '',
-    minDepartments: '',
-    minEmployees: ''
+    name: "",
+    status: "all",
+    minLocations: "",
+    minDepartments: "",
+    minEmployees: "",
   });
 
   // Manage tab state
@@ -100,6 +102,7 @@ export default function AdminDashboard() {
     locations: [],
     departments: [],
     employees: [],
+    jobRoles: [], // Available job roles for assignment
   });
   const [detailsLoading, setDetailsLoading] = useState(false);
 
@@ -135,8 +138,8 @@ export default function AdminDashboard() {
   const [showAssignEmployee, setShowAssignEmployee] = useState(false);
   const [availableEmployees, setAvailableEmployees] = useState([]);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
-  const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
-  const [employeeAssignments, setEmployeeAssignments] = useState({}); // Maps employee_id to {department_id, location_id}
+  const [employeeSearchTerm, setEmployeeSearchTerm] = useState("");
+  const [employeeAssignments, setEmployeeAssignments] = useState({}); // Maps employee_id to {job_role_id, department_id, location_id, paycycle_id (UI only)}
 
   // Company detail view handler
   const handleCompanyClick = async (companyId) => {
@@ -218,48 +221,63 @@ export default function AdminDashboard() {
   const getFilteredManageCompanies = () => {
     return companies.filter((company) => {
       // Name filter
-      if (manageFilters.name && !company.name.toLowerCase().includes(manageFilters.name.toLowerCase())) {
+      if (
+        manageFilters.name &&
+        !company.name.toLowerCase().includes(manageFilters.name.toLowerCase())
+      ) {
         return false;
       }
-      
+
       // Status filter
-      if (manageFilters.status !== 'all' && company.status !== manageFilters.status) {
+      if (
+        manageFilters.status !== "all" &&
+        company.status !== manageFilters.status
+      ) {
         return false;
       }
-      
+
       // Min locations filter
-      if (manageFilters.minLocations && company.location_count < parseInt(manageFilters.minLocations)) {
+      if (
+        manageFilters.minLocations &&
+        company.location_count < parseInt(manageFilters.minLocations)
+      ) {
         return false;
       }
-      
+
       // Min departments filter
-      if (manageFilters.minDepartments && company.department_count < parseInt(manageFilters.minDepartments)) {
+      if (
+        manageFilters.minDepartments &&
+        company.department_count < parseInt(manageFilters.minDepartments)
+      ) {
         return false;
       }
-      
+
       // Min employees filter
-      if (manageFilters.minEmployees && company.employee_count < parseInt(manageFilters.minEmployees)) {
+      if (
+        manageFilters.minEmployees &&
+        company.employee_count < parseInt(manageFilters.minEmployees)
+      ) {
         return false;
       }
-      
+
       return true;
     });
   };
 
   const updateManageFilter = (field, value) => {
-    setManageFilters(prev => ({
+    setManageFilters((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const clearManageFilters = () => {
     setManageFilters({
-      name: '',
-      status: 'all',
-      minLocations: '',
-      minDepartments: '',
-      minEmployees: ''
+      name: "",
+      status: "all",
+      minLocations: "",
+      minDepartments: "",
+      minEmployees: "",
     });
   };
 
@@ -432,6 +450,7 @@ export default function AdminDashboard() {
       locations: [],
       departments: [],
       employees: [],
+      jobRoles: [],
     });
 
     // Fetch company details with locations, departments, and employees
@@ -470,112 +489,159 @@ export default function AdminDashboard() {
   // Employee assignment functions
   const loadAvailableEmployees = async () => {
     try {
-      // Fetch all employees from user management system
-      const result = await getAllEmployeesWithAssignments();
+      if (!editingCompany || !editingCompany.id) {
+        console.error("No company selected for employee assignment");
+        setAvailableEmployees([]);
+        return;
+      }
 
-      if (result.error) {
-        console.warn('Database not configured or employees table not found. Using mock data for development.');
-        console.log('To use real data, ensure your Supabase database is set up. Go to Administration > User Management to add employees.');
-        
+      // Step 1: Fetch ALL employees from the database
+      const { data: allEmployees, error: employeesError } = await supabase
+        .from("employees")
+        .select("id, first_name, last_name, email")
+        .order("first_name");
+
+      if (employeesError) {
+        console.warn(
+          "Database not configured or employees table not found. Using mock data for development."
+        );
+        console.log(
+          "To use real data, ensure your Supabase database is set up. Go to Administration > User Management to add employees."
+        );
+
         // Use mock data if database is not set up
         const mockEmployees = [
           {
-            id: 'emp-1',
-            first_name: 'Alice',
-            last_name: 'Johnson',
-            email: 'alice.johnson@example.com',
-            job_title: 'Software Engineer',
-            company_name: null,
-            assignments: []
+            id: "emp-1",
+            first_name: "Alice",
+            last_name: "Johnson",
+            email: "alice.johnson@example.com",
           },
           {
-            id: 'emp-2',
-            first_name: 'Bob',
-            last_name: 'Smith',
-            email: 'bob.smith@example.com',
-            job_title: 'Product Manager',
-            company_name: null,
-            assignments: []
+            id: "emp-2",
+            first_name: "Bob",
+            last_name: "Smith",
+            email: "bob.smith@example.com",
           },
           {
-            id: 'emp-3',
-            first_name: 'Carol',
-            last_name: 'Williams',
-            email: 'carol.williams@example.com',
-            job_title: 'Designer',
-            company_name: null,
-            assignments: []
+            id: "emp-3",
+            first_name: "Carol",
+            last_name: "Williams",
+            email: "carol.williams@example.com",
           },
           {
-            id: 'emp-4',
-            first_name: 'David',
-            last_name: 'Brown',
-            email: 'david.brown@example.com',
-            job_title: 'Sales Representative',
-            company_name: null,
-            assignments: []
+            id: "emp-4",
+            first_name: "David",
+            last_name: "Brown",
+            email: "david.brown@example.com",
           },
           {
-            id: 'emp-5',
-            first_name: 'Emma',
-            last_name: 'Davis',
-            email: 'emma.davis@example.com',
-            job_title: 'Marketing Specialist',
-            company_name: null,
-            assignments: []
-          }
+            id: "emp-5",
+            first_name: "Emma",
+            last_name: "Davis",
+            email: "emma.davis@example.com",
+          },
         ];
-        
+
         setAvailableEmployees(mockEmployees);
         return;
       }
 
-      // Get all employees from user management
-      const allEmployees = result.data || [];
-      
-      // Filter to only show employees not already assigned to this company
-      const available = allEmployees.filter(emp => {
-        // Check if employee has any assignment to the current company
-        const hasAssignment = emp.assignments?.some(
-          assignment => assignment.company_name === editingCompany.name
-        );
-        return !hasAssignment;
-      });
-      
-      setAvailableEmployees(available);
+      // Step 2: Fetch employee IDs that are ALREADY assigned to THIS specific company
+      const { data: assignedEmployees, error: assignedError } = await supabase
+        .from("employee_companies")
+        .select("employee_id")
+        .eq("company_id", editingCompany.id);
+
+      if (assignedError) {
+        console.error("Error fetching assigned employees:", assignedError);
+        // If we can't get assigned employees, show all to avoid blocking workflow
+        setAvailableEmployees(allEmployees || []);
+        return;
+      }
+
+      // Step 3: Create a Set of already-assigned employee IDs for O(1) lookup
+      const assignedEmployeeIds = new Set(
+        (assignedEmployees || []).map((ae) => ae.employee_id)
+      );
+
+      // Step 4: Filter OUT employees who are already assigned to this company
+      // This is the critical step that prevents duplicate key errors
+      const availableEmployees = (allEmployees || []).filter(
+        (emp) => !assignedEmployeeIds.has(emp.id)
+      );
+
+      console.log(
+        `[Employee Filter] Total: ${allEmployees?.length || 0}, ` +
+          `Already assigned to "${editingCompany.name}": ${assignedEmployeeIds.size}, ` +
+          `Available for assignment: ${availableEmployees.length}`
+      );
+
+      setAvailableEmployees(availableEmployees);
     } catch (err) {
-      console.error('Error loading available employees:', err);
+      console.error("Error loading available employees:", err);
       setAvailableEmployees([]);
     }
   };
 
-  const handleOpenAssignEmployee = () => {
+  const handleOpenAssignEmployee = async () => {
     setShowAssignEmployee(true);
     setSelectedEmployees([]);
-    setEmployeeSearchTerm('');
+    setEmployeeSearchTerm("");
     setEmployeeAssignments({});
-    loadAvailableEmployees();
+
+    // Load available employees and job roles for this company
+    await Promise.all([loadAvailableEmployees(), loadJobRolesForCompany()]);
+  };
+
+  const loadJobRolesForCompany = async () => {
+    try {
+      if (!editingCompany || !editingCompany.id) {
+        console.warn("No company selected for loading job roles");
+        setCompanyDetails((prev) => ({ ...prev, jobRoles: [] }));
+        return;
+      }
+
+      const result = await getJobRolesByCompany(editingCompany.id);
+      if (result.error) {
+        console.error("Error loading job roles:", result.error);
+        setCompanyDetails((prev) => ({ ...prev, jobRoles: [] }));
+      } else {
+        setCompanyDetails((prev) => ({ ...prev, jobRoles: result.data || [] }));
+      }
+    } catch (err) {
+      console.error("Error loading job roles:", err);
+      setCompanyDetails((prev) => ({ ...prev, jobRoles: [] }));
+    }
   };
 
   const handleAssignEmployees = async () => {
     if (selectedEmployees.length === 0) {
-      alert('Please select at least one employee to assign');
+      alert("Please select at least one employee to assign");
       return;
     }
 
-    // Validate that all selected employees have department and location assigned
-    const missingAssignments = selectedEmployees.filter(employeeId => {
+    // Validate that all selected employees have job role, department, and location assigned
+    const missingAssignments = selectedEmployees.filter((employeeId) => {
       const assignment = employeeAssignments[employeeId] || {};
-      return !assignment.department_id || !assignment.location_id;
+      return (
+        !assignment.job_role_id ||
+        !assignment.department_id ||
+        !assignment.location_id
+      );
     });
 
     if (missingAssignments.length > 0) {
-      const employees = missingAssignments.map(id => {
-        const emp = availableEmployees.find(e => e.id === id);
-        return emp ? `${emp.first_name} ${emp.last_name}` : 'Unknown';
-      }).join(', ');
-      
-      alert(`Please assign both department and location for:\n${employees}`);
+      const employees = missingAssignments
+        .map((id) => {
+          const emp = availableEmployees.find((e) => e.id === id);
+          return emp ? `${emp.first_name} ${emp.last_name}` : "Unknown";
+        })
+        .join(", ");
+
+      alert(
+        `Please assign job role, department, and location for:\n${employees}`
+      );
       return;
     }
 
@@ -583,26 +649,49 @@ export default function AdminDashboard() {
       setIsSubmitting(true);
 
       // Check if using mock data (employee IDs start with 'emp-')
-      const isMockData = selectedEmployees.some(id => id.startsWith('emp-'));
-      
+      const isMockData = selectedEmployees.some((id) => id.startsWith("emp-"));
+
       if (isMockData) {
         // Simulate assignment for mock data
-        const assignmentSummary = selectedEmployees.map(employeeId => {
-          const employee = availableEmployees.find(e => e.id === employeeId);
-          const assignment = employeeAssignments[employeeId] || {};
-          const dept = companyDetails.departments.find(d => d.id === assignment.department_id);
-          const loc = companyDetails.locations.find(l => l.id === assignment.location_id);
-          const paycycle = companyDetails.paycycles?.find(p => p.id === assignment.paycycle_id);
-          
-          return `• ${employee.first_name} ${employee.last_name}${dept ? ` → ${dept.name}` : ''}${loc ? ` @ ${loc.name}` : ''}${paycycle ? ` [${paycycle.name}]` : ''}`;
-        }).join('\n');
-        
-        alert(`Successfully assigned ${selectedEmployees.length} employee${selectedEmployees.length !== 1 ? 's' : ''} to ${editingCompany.name}:\n\n${assignmentSummary}\n\nNote: Using mock data. Connect to Supabase to persist changes.`);
-        
+        const assignmentSummary = selectedEmployees
+          .map((employeeId) => {
+            const employee = availableEmployees.find(
+              (e) => e.id === employeeId
+            );
+            const assignment = employeeAssignments[employeeId] || {};
+            const jobRole = companyDetails.jobRoles?.find(
+              (j) => j.id === assignment.job_role_id
+            );
+            const dept = companyDetails.departments.find(
+              (d) => d.id === assignment.department_id
+            );
+            const loc = companyDetails.locations.find(
+              (l) => l.id === assignment.location_id
+            );
+            const paycycle = companyDetails.paycycles?.find(
+              (p) => p.id === assignment.paycycle_id
+            );
+
+            return `• ${employee.first_name} ${employee.last_name}${
+              jobRole ? ` as ${jobRole.title}` : ""
+            }${dept ? ` → ${dept.name}` : ""}${loc ? ` @ ${loc.name}` : ""}${
+              paycycle ? ` (${paycycle.name})` : ""
+            }`;
+          })
+          .join("\n");
+
+        alert(
+          `Successfully assigned ${selectedEmployees.length} employee${
+            selectedEmployees.length !== 1 ? "s" : ""
+          } to ${
+            editingCompany.name
+          }:\n\n${assignmentSummary}\n\nNote: Using mock data. Connect to Supabase to persist changes.`
+        );
+
         // Close modal and reset
         setShowAssignEmployee(false);
         setSelectedEmployees([]);
-        setEmployeeSearchTerm('');
+        setEmployeeSearchTerm("");
         setEmployeeAssignments({});
         setIsSubmitting(false);
         return;
@@ -614,46 +703,74 @@ export default function AdminDashboard() {
 
       for (const employeeId of selectedEmployees) {
         const assignment = employeeAssignments[employeeId] || {};
-        
-        // Prepare the assignment data (department and location are now required)
-        const assignmentData = {
-          employee_id: employeeId,
-          company_id: editingCompany.id,
-          department_id: assignment.department_id,
-          location_id: assignment.location_id,
-          paycycle_id: assignment.paycycle_id || null, // Optional paycycle
-          is_primary: false // Can be made configurable if needed
-        };
+        let employeeSuccess = true;
 
-        // Insert into employee_company_assignments table (many-to-many)
-        const { error: assignmentError } = await supabase
-          .from('employee_company_assignments')
-          .insert(assignmentData);
-
-        if (assignmentError) {
-          // If junction table doesn't exist, fall back to updating employee directly
-          console.warn('employee_company_assignments table not found, updating employee directly');
-          
-          const updateData = {
+        try {
+          // Step 1: Insert into employee_companies (links employee to company with job role)
+          const companyAssignmentData = {
+            employee_id: employeeId,
             company_id: editingCompany.id,
-            department_id: assignment.department_id,
-            location_id: assignment.location_id,
-            paycycle_id: assignment.paycycle_id || null
+            job_role_id: assignment.job_role_id,
           };
 
-          const { error: updateError } = await supabase
-            .from('employees')
-            .update(updateData)
-            .eq('id', employeeId);
+          const { error: companyError } = await supabase
+            .from("employee_companies")
+            .insert(companyAssignmentData);
 
-          if (updateError) {
-            console.error(`Error assigning employee ${employeeId}:`, updateError);
-            errorCount++;
-          } else {
+          if (companyError) {
+            console.error(
+              `Error inserting into employee_companies for ${employeeId}:`,
+              companyError
+            );
+            employeeSuccess = false;
+            throw companyError;
+          }
+
+          // Step 2: Insert into employee_departments (links employee to department)
+          const departmentAssignmentData = {
+            employee_id: employeeId,
+            department_id: assignment.department_id,
+          };
+
+          const { error: departmentError } = await supabase
+            .from("employee_departments")
+            .insert(departmentAssignmentData);
+
+          if (departmentError) {
+            console.error(
+              `Error inserting into employee_departments for ${employeeId}:`,
+              departmentError
+            );
+            employeeSuccess = false;
+            throw departmentError;
+          }
+
+          // Step 3: Insert into employee_locations (links employee to location)
+          const locationAssignmentData = {
+            employee_id: employeeId,
+            location_id: assignment.location_id,
+          };
+
+          const { error: locationError } = await supabase
+            .from("employee_locations")
+            .insert(locationAssignmentData);
+
+          if (locationError) {
+            console.error(
+              `Error inserting into employee_locations for ${employeeId}:`,
+              locationError
+            );
+            employeeSuccess = false;
+            throw locationError;
+          }
+
+          // If all inserts succeeded
+          if (employeeSuccess) {
             successCount++;
           }
-        } else {
-          successCount++;
+        } catch (err) {
+          errorCount++;
+          console.error(`Failed to assign employee ${employeeId}:`, err);
         }
       }
 
@@ -663,76 +780,105 @@ export default function AdminDashboard() {
       // Close modal and reset
       setShowAssignEmployee(false);
       setSelectedEmployees([]);
-      setEmployeeSearchTerm('');
+      setEmployeeSearchTerm("");
       setEmployeeAssignments({});
-      
+
       if (errorCount > 0) {
-        alert(`Assigned ${successCount} employee${successCount !== 1 ? 's' : ''} successfully. ${errorCount} failed.`);
+        alert(
+          `Assigned ${successCount} employee${
+            successCount !== 1 ? "s" : ""
+          } successfully. ${errorCount} failed.`
+        );
       } else {
-        alert(`Successfully assigned ${successCount} employee${successCount !== 1 ? 's' : ''} to ${editingCompany.name}`);
+        alert(
+          `Successfully assigned ${successCount} employee${
+            successCount !== 1 ? "s" : ""
+          } to ${editingCompany.name}`
+        );
       }
     } catch (err) {
-      console.error('Error assigning employees:', err);
-      alert('Failed to assign employees: ' + err.message);
+      console.error("Error assigning employees:", err);
+      alert("Failed to assign employees: " + err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleRemoveEmployee = async (employeeId) => {
-    const confirmed = window.confirm('Are you sure you want to remove this employee from the company?');
+    const confirmed = window.confirm(
+      "Are you sure you want to remove this employee from the company?"
+    );
     if (!confirmed) return;
 
     try {
       setDetailsLoading(true);
 
-      // Try to delete from employee_company_assignments table first
-      const { error: assignmentError } = await supabase
-        .from('employee_company_assignments')
-        .delete()
-        .eq('employee_id', employeeId)
-        .eq('company_id', editingCompany.id);
+      // Delete from all three join tables
+      const deletePromises = [
+        // Delete from employee_companies
+        supabase
+          .from("employee_companies")
+          .delete()
+          .eq("employee_id", employeeId)
+          .eq("company_id", editingCompany.id),
 
-      if (assignmentError) {
-        // If junction table doesn't exist, fall back to updating employee directly
-        console.warn('employee_company_assignments table not found, updating employee directly');
-        
-        const { error } = await supabase
-          .from('employees')
-          .update({ company_id: null, department_id: null, location_id: null })
-          .eq('id', employeeId);
+        // Delete from employee_departments
+        supabase
+          .from("employee_departments")
+          .delete()
+          .eq("employee_id", employeeId),
 
-        if (error) {
-          console.error('Error removing employee:', error);
-          alert('Failed to remove employee: ' + error.message);
-          return;
-        }
+        // Delete from employee_locations
+        supabase
+          .from("employee_locations")
+          .delete()
+          .eq("employee_id", employeeId),
+      ];
+
+      const results = await Promise.allSettled(deletePromises);
+
+      // Check if any deletions failed
+      const errors = results
+        .filter((result) => result.status === "rejected" || result.value?.error)
+        .map((result) => result.reason || result.value?.error);
+
+      if (errors.length > 0) {
+        console.error("Error removing employee from join tables:", errors);
+        alert("Failed to remove employee: " + errors[0].message);
+        return;
       }
 
       // Refresh company details
       await fetchCompanyDetailsData(editingCompany.id);
-      alert('Employee removed successfully');
+      alert(
+        "Employee removed successfully from company, department, and location"
+      );
     } catch (err) {
-      console.error('Error removing employee:', err);
-      alert('Failed to remove employee: ' + err.message);
+      console.error("Error removing employee:", err);
+      alert("Failed to remove employee: " + err.message);
     } finally {
       setDetailsLoading(false);
     }
   };
 
   const toggleEmployeeSelection = (employeeId) => {
-    setSelectedEmployees(prev => {
+    setSelectedEmployees((prev) => {
       if (prev.includes(employeeId)) {
         // Remove from selection and clear assignment data
         const newAssignments = { ...employeeAssignments };
         delete newAssignments[employeeId];
         setEmployeeAssignments(newAssignments);
-        return prev.filter(id => id !== employeeId);
+        return prev.filter((id) => id !== employeeId);
       } else {
         // Add to selection and initialize assignment data
-        setEmployeeAssignments(prev => ({
+        setEmployeeAssignments((prev) => ({
           ...prev,
-          [employeeId]: { department_id: '', location_id: '' }
+          [employeeId]: {
+            job_role_id: "",
+            department_id: "",
+            location_id: "",
+            paycycle_id: "", // UI display only, not sent to backend
+          },
         }));
         return [...prev, employeeId];
       }
@@ -740,24 +886,25 @@ export default function AdminDashboard() {
   };
 
   const updateEmployeeAssignment = (employeeId, field, value) => {
-    setEmployeeAssignments(prev => ({
+    setEmployeeAssignments((prev) => ({
       ...prev,
       [employeeId]: {
         ...(prev[employeeId] || {}),
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
   const getFilteredAvailableEmployees = () => {
     if (!employeeSearchTerm) return availableEmployees;
-    
+
     const term = employeeSearchTerm.toLowerCase();
-    return availableEmployees.filter(emp => 
-      emp.first_name?.toLowerCase().includes(term) ||
-      emp.last_name?.toLowerCase().includes(term) ||
-      emp.email?.toLowerCase().includes(term) ||
-      emp.job_title?.toLowerCase().includes(term)
+    return availableEmployees.filter(
+      (emp) =>
+        emp.first_name?.toLowerCase().includes(term) ||
+        emp.last_name?.toLowerCase().includes(term) ||
+        emp.email?.toLowerCase().includes(term) ||
+        emp.job_title?.toLowerCase().includes(term)
     );
   };
 
@@ -1484,7 +1631,11 @@ export default function AdminDashboard() {
                     <Edit className="mr-2" />
                     Manage Companies
                   </CardTitle>
-                  {(manageFilters.name || manageFilters.status !== 'all' || manageFilters.minLocations || manageFilters.minDepartments || manageFilters.minEmployees) && (
+                  {(manageFilters.name ||
+                    manageFilters.status !== "all" ||
+                    manageFilters.minLocations ||
+                    manageFilters.minDepartments ||
+                    manageFilters.minEmployees) && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1498,7 +1649,8 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600">
-                    Showing {getFilteredManageCompanies().length} of {companies.length}
+                    Showing {getFilteredManageCompanies().length} of{" "}
+                    {companies.length}
                   </span>
                   <Button onClick={startAddCompanyWizard}>Add Company</Button>
                 </div>
@@ -1519,22 +1671,30 @@ export default function AdminDashboard() {
                       <tr className="border-b bg-gray-50">
                         <th className="text-left p-3">
                           <div className="space-y-2">
-                            <div className="font-medium text-gray-700">Company Name</div>
+                            <div className="font-medium text-gray-700">
+                              Company Name
+                            </div>
                             <Input
                               type="text"
                               placeholder="Filter by name..."
                               value={manageFilters.name}
-                              onChange={(e) => updateManageFilter('name', e.target.value)}
+                              onChange={(e) =>
+                                updateManageFilter("name", e.target.value)
+                              }
                               className="h-8 text-xs"
                             />
                           </div>
                         </th>
                         <th className="text-left p-3">
                           <div className="space-y-2">
-                            <div className="font-medium text-gray-700">Status</div>
+                            <div className="font-medium text-gray-700">
+                              Status
+                            </div>
                             <select
                               value={manageFilters.status}
-                              onChange={(e) => updateManageFilter('status', e.target.value)}
+                              onChange={(e) =>
+                                updateManageFilter("status", e.target.value)
+                              }
                               className="h-8 text-xs w-full px-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                               <option value="all">All</option>
@@ -1546,12 +1706,19 @@ export default function AdminDashboard() {
                         </th>
                         <th className="text-left p-3">
                           <div className="space-y-2">
-                            <div className="font-medium text-gray-700">Locations</div>
+                            <div className="font-medium text-gray-700">
+                              Locations
+                            </div>
                             <Input
                               type="number"
                               placeholder="Min..."
                               value={manageFilters.minLocations}
-                              onChange={(e) => updateManageFilter('minLocations', e.target.value)}
+                              onChange={(e) =>
+                                updateManageFilter(
+                                  "minLocations",
+                                  e.target.value
+                                )
+                              }
                               className="h-8 text-xs w-20"
                               min="0"
                             />
@@ -1559,12 +1726,19 @@ export default function AdminDashboard() {
                         </th>
                         <th className="text-left p-3">
                           <div className="space-y-2">
-                            <div className="font-medium text-gray-700">Departments</div>
+                            <div className="font-medium text-gray-700">
+                              Departments
+                            </div>
                             <Input
                               type="number"
                               placeholder="Min..."
                               value={manageFilters.minDepartments}
-                              onChange={(e) => updateManageFilter('minDepartments', e.target.value)}
+                              onChange={(e) =>
+                                updateManageFilter(
+                                  "minDepartments",
+                                  e.target.value
+                                )
+                              }
                               className="h-8 text-xs w-20"
                               min="0"
                             />
@@ -1572,28 +1746,42 @@ export default function AdminDashboard() {
                         </th>
                         <th className="text-left p-3">
                           <div className="space-y-2">
-                            <div className="font-medium text-gray-700">Employees</div>
+                            <div className="font-medium text-gray-700">
+                              Employees
+                            </div>
                             <Input
                               type="number"
                               placeholder="Min..."
                               value={manageFilters.minEmployees}
-                              onChange={(e) => updateManageFilter('minEmployees', e.target.value)}
+                              onChange={(e) =>
+                                updateManageFilter(
+                                  "minEmployees",
+                                  e.target.value
+                                )
+                              }
                               className="h-8 text-xs w-20"
                               min="0"
                             />
                           </div>
                         </th>
                         <th className="text-left p-3">
-                          <div className="font-medium text-gray-700">Actions</div>
+                          <div className="font-medium text-gray-700">
+                            Actions
+                          </div>
                         </th>
                       </tr>
                     </thead>
                     <tbody>
                       {getFilteredManageCompanies().length === 0 ? (
                         <tr>
-                          <td colSpan="6" className="p-8 text-center text-gray-500">
+                          <td
+                            colSpan="6"
+                            className="p-8 text-center text-gray-500"
+                          >
                             <FilterList className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                            <p className="mb-2">No companies match your filters</p>
+                            <p className="mb-2">
+                              No companies match your filters
+                            </p>
                             <Button
                               variant="outline"
                               size="sm"
@@ -1964,6 +2152,7 @@ export default function AdminDashboard() {
                       locations: [],
                       departments: [],
                       employees: [],
+                      jobRoles: [],
                     });
                     setFormErrors({});
                     setEditCompanyActiveTab("info");
@@ -2212,10 +2401,7 @@ export default function AdminDashboard() {
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle>Company Employees</CardTitle>
-                          <Button
-                            onClick={handleOpenAssignEmployee}
-                            size="sm"
-                          >
+                          <Button onClick={handleOpenAssignEmployee} size="sm">
                             <Plus className="h-4 w-4 mr-2" />
                             Assign Employees
                           </Button>
@@ -2225,7 +2411,9 @@ export default function AdminDashboard() {
                         {detailsLoading ? (
                           <div className="text-center py-8">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                            <p className="text-gray-500 mt-2">Loading employees...</p>
+                            <p className="text-gray-500 mt-2">
+                              Loading employees...
+                            </p>
                           </div>
                         ) : companyDetails.employees.length === 0 ? (
                           <div className="text-center py-8 text-gray-500">
@@ -2251,12 +2439,16 @@ export default function AdminDashboard() {
                                 <div className="flex items-center gap-3">
                                   <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                                     <span className="text-blue-600 font-semibold text-sm">
-                                      {employee.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'N/A'}
+                                      {employee.full_name
+                                        ?.split(" ")
+                                        .map((n) => n[0])
+                                        .join("")
+                                        .toUpperCase() || "N/A"}
                                     </span>
                                   </div>
                                   <div>
                                     <p className="font-medium text-gray-900">
-                                      {employee.full_name || 'Unknown'}
+                                      {employee.full_name || "Unknown"}
                                     </p>
                                     <p className="text-sm text-gray-500">
                                       {employee.email}
@@ -2265,15 +2457,18 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="flex items-center gap-3">
                                   <div className="text-sm text-gray-600">
-                                    <p>{employee.job_title || 'No title'}</p>
+                                    <p>{employee.job_title || "No title"}</p>
                                     <p className="text-xs text-gray-500">
-                                      {employee.department_name || 'No department'}
+                                      {employee.department_name ||
+                                        "No department"}
                                     </p>
                                   </div>
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleRemoveEmployee(employee.id)}
+                                    onClick={() =>
+                                      handleRemoveEmployee(employee.id)
+                                    }
                                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -2392,7 +2587,7 @@ export default function AdminDashboard() {
                   onClick={() => {
                     setShowAssignEmployee(false);
                     setSelectedEmployees([]);
-                    setEmployeeSearchTerm('');
+                    setEmployeeSearchTerm("");
                     setEmployeeAssignments({});
                   }}
                 >
@@ -2414,7 +2609,7 @@ export default function AdminDashboard() {
                 />
                 {employeeSearchTerm && (
                   <button
-                    onClick={() => setEmployeeSearchTerm('')}
+                    onClick={() => setEmployeeSearchTerm("")}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     <X className="h-4 w-4" />
@@ -2429,10 +2624,9 @@ export default function AdminDashboard() {
                 <div className="text-center py-8 text-gray-500">
                   <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
                   <p>
-                    {employeeSearchTerm 
-                      ? 'No employees found matching your search'
-                      : 'No available employees to assign'
-                    }
+                    {employeeSearchTerm
+                      ? "No employees found matching your search"
+                      : "No available employees to assign"}
                   </p>
                 </div>
               ) : (
@@ -2443,8 +2637,8 @@ export default function AdminDashboard() {
                       onClick={() => toggleEmployeeSelection(employee.id)}
                       className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
                         selectedEmployees.includes(employee.id)
-                          ? 'bg-blue-50 border-blue-300'
-                          : 'hover:bg-gray-50'
+                          ? "bg-blue-50 border-blue-300"
+                          : "hover:bg-gray-50"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -2456,18 +2650,22 @@ export default function AdminDashboard() {
                         />
                         <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                           <span className="text-blue-600 font-semibold text-sm">
-                            {`${employee.first_name?.[0] || ''}${employee.last_name?.[0] || ''}`.toUpperCase()}
+                            {`${employee.first_name?.[0] || ""}${
+                              employee.last_name?.[0] || ""
+                            }`.toUpperCase()}
                           </span>
                         </div>
                         <div>
                           <p className="font-medium text-gray-900">
                             {employee.first_name} {employee.last_name}
                           </p>
-                          <p className="text-sm text-gray-500">{employee.email}</p>
+                          <p className="text-sm text-gray-500">
+                            {employee.email}
+                          </p>
                         </div>
                       </div>
                       <div className="text-sm text-gray-600">
-                        {employee.job_title || 'No title'}
+                        {employee.job_title || "No title"}
                       </div>
                     </div>
                   ))}
@@ -2482,40 +2680,101 @@ export default function AdminDashboard() {
                   <h4 className="text-sm font-semibold text-gray-900">
                     Assign Details for Selected Employees
                   </h4>
-                  <span className="text-xs text-red-600 font-medium">* Required</span>
+                  <span className="text-xs text-red-600 font-medium">
+                    * Required
+                  </span>
                 </div>
-                {(companyDetails.departments.length === 0 || companyDetails.locations.length === 0) && (
+                {(companyDetails.jobRoles?.length === 0 ||
+                  companyDetails.departments.length === 0 ||
+                  companyDetails.locations.length === 0) && (
                   <div className="mb-3 p-2 bg-yellow-50 border border-yellow-300 rounded text-xs text-yellow-800">
-                    ⚠️ {companyDetails.departments.length === 0 && companyDetails.locations.length === 0 
-                      ? 'No departments or locations available. Please add them first in the Locations and Departments tabs.'
-                      : companyDetails.departments.length === 0
-                      ? 'No departments available. Please add them first in the Departments tab.'
-                      : 'No locations available. Please add them first in the Locations tab.'}
+                    ⚠️{" "}
+                    {[
+                      companyDetails.jobRoles?.length === 0 && "job roles",
+                      companyDetails.departments.length === 0 && "departments",
+                      companyDetails.locations.length === 0 && "locations",
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || ""}{" "}
+                    {[
+                      companyDetails.jobRoles?.length === 0,
+                      companyDetails.departments.length === 0,
+                      companyDetails.locations.length === 0,
+                    ].filter(Boolean).length > 1
+                      ? "are"
+                      : "is"}{" "}
+                    not available. Please configure them before assigning
+                    employees.
                   </div>
                 )}
                 <div className="space-y-3 max-h-60 overflow-y-auto">
                   {selectedEmployees.map((employeeId) => {
-                    const employee = availableEmployees.find(e => e.id === employeeId);
+                    const employee = availableEmployees.find(
+                      (e) => e.id === employeeId
+                    );
                     if (!employee) return null;
-                    
+
                     return (
-                      <div key={employeeId} className="bg-white p-3 rounded-lg border border-blue-200">
+                      <div
+                        key={employeeId}
+                        className="bg-white p-3 rounded-lg border border-blue-200"
+                      >
                         <p className="text-sm font-medium text-gray-900 mb-2">
                           {employee.first_name} {employee.last_name}
                         </p>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <Label className="text-xs text-gray-600 mb-1 block">
+                              Job Role <span className="text-red-500">*</span>
+                            </Label>
+                            <select
+                              value={
+                                employeeAssignments[employeeId]?.job_role_id ||
+                                ""
+                              }
+                              onChange={(e) =>
+                                updateEmployeeAssignment(
+                                  employeeId,
+                                  "job_role_id",
+                                  e.target.value
+                                )
+                              }
+                              onClick={(e) => e.stopPropagation()}
+                              className={`w-full px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                !employeeAssignments[employeeId]?.job_role_id
+                                  ? "border-red-300 bg-red-50"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              <option value="">Select Job Role</option>
+                              {companyDetails.jobRoles?.map((role) => (
+                                <option key={role.id} value={role.id}>
+                                  {role.title}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-gray-600 mb-1 block">
                               Department <span className="text-red-500">*</span>
                             </Label>
                             <select
-                              value={employeeAssignments[employeeId]?.department_id || ''}
-                              onChange={(e) => updateEmployeeAssignment(employeeId, 'department_id', e.target.value)}
+                              value={
+                                employeeAssignments[employeeId]
+                                  ?.department_id || ""
+                              }
+                              onChange={(e) =>
+                                updateEmployeeAssignment(
+                                  employeeId,
+                                  "department_id",
+                                  e.target.value
+                                )
+                              }
                               onClick={(e) => e.stopPropagation()}
                               className={`w-full px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                !employeeAssignments[employeeId]?.department_id 
-                                  ? 'border-red-300 bg-red-50' 
-                                  : 'border-gray-300'
+                                !employeeAssignments[employeeId]?.department_id
+                                  ? "border-red-300 bg-red-50"
+                                  : "border-gray-300"
                               }`}
                             >
                               <option value="">Select Department</option>
@@ -2531,13 +2790,22 @@ export default function AdminDashboard() {
                               Location <span className="text-red-500">*</span>
                             </Label>
                             <select
-                              value={employeeAssignments[employeeId]?.location_id || ''}
-                              onChange={(e) => updateEmployeeAssignment(employeeId, 'location_id', e.target.value)}
+                              value={
+                                employeeAssignments[employeeId]?.location_id ||
+                                ""
+                              }
+                              onChange={(e) =>
+                                updateEmployeeAssignment(
+                                  employeeId,
+                                  "location_id",
+                                  e.target.value
+                                )
+                              }
                               onClick={(e) => e.stopPropagation()}
                               className={`w-full px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                !employeeAssignments[employeeId]?.location_id 
-                                  ? 'border-red-300 bg-red-50' 
-                                  : 'border-gray-300'
+                                !employeeAssignments[employeeId]?.location_id
+                                  ? "border-red-300 bg-red-50"
+                                  : "border-gray-300"
                               }`}
                             >
                               <option value="">Select Location</option>
@@ -2548,17 +2816,28 @@ export default function AdminDashboard() {
                               ))}
                             </select>
                           </div>
-                          <div className="col-span-2">
+                          <div>
                             <Label className="text-xs text-gray-600 mb-1 block">
-                              Paycycle
+                              Pay Cycle
                             </Label>
                             <select
-                              value={employeeAssignments[employeeId]?.paycycle_id || ''}
-                              onChange={(e) => updateEmployeeAssignment(employeeId, 'paycycle_id', e.target.value)}
+                              value={
+                                employeeAssignments[employeeId]?.paycycle_id ||
+                                ""
+                              }
+                              onChange={(e) =>
+                                updateEmployeeAssignment(
+                                  employeeId,
+                                  "paycycle_id",
+                                  e.target.value
+                                )
+                              }
                               onClick={(e) => e.stopPropagation()}
                               className="w-full px-2 py-1.5 text-xs border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 border-gray-300"
                             >
-                              <option value="">Select Paycycle (Optional)</option>
+                              <option value="">
+                                Select Pay Cycle (Optional)
+                              </option>
                               {companyDetails.paycycles?.map((paycycle) => (
                                 <option key={paycycle.id} value={paycycle.id}>
                                   {paycycle.name} ({paycycle.frequency})
@@ -2567,7 +2846,7 @@ export default function AdminDashboard() {
                             </select>
                             {companyDetails.paycycles?.length === 0 && (
                               <p className="text-xs text-gray-500 mt-1">
-                                No paycycles available for this company
+                                No pay cycles available for this company
                               </p>
                             )}
                           </div>
@@ -2583,7 +2862,8 @@ export default function AdminDashboard() {
             <div className="px-6 py-4 border-t bg-gray-50">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm text-gray-600">
-                  {selectedEmployees.length} employee{selectedEmployees.length !== 1 ? 's' : ''} selected
+                  {selectedEmployees.length} employee
+                  {selectedEmployees.length !== 1 ? "s" : ""} selected
                 </p>
                 {selectedEmployees.length > 0 && (
                   <Button
@@ -2605,7 +2885,7 @@ export default function AdminDashboard() {
                   onClick={() => {
                     setShowAssignEmployee(false);
                     setSelectedEmployees([]);
-                    setEmployeeSearchTerm('');
+                    setEmployeeSearchTerm("");
                     setEmployeeAssignments({});
                   }}
                   className="flex-1"
@@ -2615,9 +2895,10 @@ export default function AdminDashboard() {
                 <Button
                   onClick={handleAssignEmployees}
                   disabled={
-                    selectedEmployees.length === 0 || 
-                    isSubmitting || 
-                    companyDetails.departments.length === 0 || 
+                    selectedEmployees.length === 0 ||
+                    isSubmitting ||
+                    companyDetails.jobRoles?.length === 0 ||
+                    companyDetails.departments.length === 0 ||
                     companyDetails.locations.length === 0
                   }
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
@@ -2630,14 +2911,21 @@ export default function AdminDashboard() {
                   ) : (
                     <>
                       <Plus className="h-4 w-4 mr-2" />
-                      Assign {selectedEmployees.length > 0 ? `${selectedEmployees.length} ` : ''}Employee{selectedEmployees.length !== 1 ? 's' : ''}
+                      Assign{" "}
+                      {selectedEmployees.length > 0
+                        ? `${selectedEmployees.length} `
+                        : ""}
+                      Employee{selectedEmployees.length !== 1 ? "s" : ""}
                     </>
                   )}
                 </Button>
               </div>
-              {(companyDetails.departments.length === 0 || companyDetails.locations.length === 0) && (
+              {(companyDetails.jobRoles?.length === 0 ||
+                companyDetails.departments.length === 0 ||
+                companyDetails.locations.length === 0) && (
                 <p className="text-xs text-center text-gray-600 mt-2">
-                  Add departments and locations to the company before assigning employees.
+                  Ensure job roles, departments, and locations are configured
+                  before assigning employees.
                 </p>
               )}
             </div>

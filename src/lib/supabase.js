@@ -144,3 +144,92 @@ export const fetchCompanyDetails = async (companyId) => {
     return handleSupabaseError(error, 'fetch company details')
   }
 }
+
+// Paycode-related helper functions
+export const fetchPaycodesForCompany = async (companyId, paycodeType) => {
+  try {
+    const { data, error } = await supabase.rpc('get_paycodes_for_company', {
+      selected_company_id: companyId,
+      selected_type: paycodeType
+    })
+    
+    if (error) {
+      return handleSupabaseError(error, 'fetch paycodes for company')
+    }
+    
+    return handleSupabaseSuccess(data, 'fetch paycodes for company')
+  } catch (error) {
+    return handleSupabaseError(error, 'fetch paycodes for company')
+  }
+}
+
+export const savePaycodeConfiguration = async (companyId, paycodeStates) => {
+  try {
+    // Build records to upsert
+    const recordsToUpsert = paycodeStates.map(pc => ({
+      company_id: companyId,
+      paycode_id: pc.paycode_id,
+      is_enabled: pc.is_enabled
+    }))
+
+    const { data, error } = await supabase
+      .from('company_paycodes')
+      .upsert(recordsToUpsert, {
+        onConflict: 'company_id,paycode_id'
+      })
+      .select()
+    
+    if (error) {
+      return handleSupabaseError(error, 'save paycode configuration')
+    }
+    
+    return handleSupabaseSuccess(data, 'save paycode configuration')
+  } catch (error) {
+    return handleSupabaseError(error, 'save paycode configuration')
+  }
+}
+
+export const updateAutoRestrictNewCodes = async (companyId, autoRestrict) => {
+  try {
+    // This updates the auto_restrict_new setting for all paycodes of a company
+    // You might want to store this as a company-level setting instead
+    const { data, error } = await supabase
+      .from('company_paycodes')
+      .update({ auto_restrict_new: autoRestrict })
+      .eq('company_id', companyId)
+      .select()
+    
+    if (error) {
+      return handleSupabaseError(error, 'update auto-restrict setting')
+    }
+    
+    return handleSupabaseSuccess(data, 'update auto-restrict setting')
+  } catch (error) {
+    return handleSupabaseError(error, 'update auto-restrict setting')
+  }
+}
+
+export const createGlobalPaycode = async (paycodeData) => {
+  try {
+    // This creates a new paycode in the MASTER paycodes table
+    // The paycode will be available to all companies but NOT automatically assigned
+    // Companies must explicitly enable it via the company_paycodes table
+    const { data, error } = await supabase
+      .from('paycodes')
+      .insert([{
+        code: paycodeData.code,
+        name: paycodeData.name,
+        description: paycodeData.description,
+        type: paycodeData.type
+      }])
+      .select()
+    
+    if (error) {
+      return handleSupabaseError(error, 'create global paycode')
+    }
+    
+    return handleSupabaseSuccess(data, 'create global paycode')
+  } catch (error) {
+    return handleSupabaseError(error, 'create global paycode')
+  }
+}
