@@ -4,11 +4,83 @@
 
 This guide sets up the complete integration between timesheet management and the administration module (companies, employees, departments, locations).
 
+**Based on your current database schema**, this will add:
+
+- Paycycles table (if not exists)
+- Projects table
+- Project assignments
+- Timesheets table
+- Time entries table
+- Timesheet comments/notes
+- Helper functions and views
+
 ---
 
-## Database Schema for Timesheets
+## ✅ Pre-flight Check
 
-### Step 1: Create Timesheet Tables
+Your database already has these tables:
+
+- ✅ `companies` (with paycycle settings columns)
+- ✅ `locations`
+- ✅ `departments`
+- ✅ `job_roles`
+- ✅ `employees`
+
+We will now add:
+
+- 📦 `paycycles` (for pay cycle definitions)
+- 📦 `projects` (for time tracking)
+- 📦 `project_assignments` (employee-to-project assignments)
+- 📦 `timesheets` (main timesheet records)
+- 📦 `time_entries` (individual time entries)
+- 📦 `timesheet_comments` (notes and revision requests)
+
+---
+
+## Step 1: Create Paycycles Table
+
+This table stores pay cycle definitions for each company.
+
+```sql
+-- =====================================================
+-- PAYCYCLES TABLE
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS paycycles (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  company_id UUID REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+
+  -- Paycycle information
+  name VARCHAR(255) NOT NULL,
+  frequency VARCHAR(50) DEFAULT 'weekly' CHECK (frequency IN ('daily', 'weekly', 'bi-weekly', 'semi-monthly', 'monthly')),
+  cycle_type VARCHAR(50) DEFAULT 'regular' CHECK (cycle_type IN ('regular', 'special', 'bonus')),
+
+  -- Period configuration
+  period_end_date DATE,
+  period_end_day_1 VARCHAR(20), -- e.g., 'Monday', 'Friday', '15', '30'
+  period_end_day_2 VARCHAR(20), -- For semi-monthly (2 dates per month)
+
+  -- Status
+  status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'archived')),
+  is_default BOOLEAN DEFAULT false,
+
+  -- Metadata
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_by UUID REFERENCES employees(id) ON DELETE SET NULL,
+
+  -- Constraints
+  UNIQUE(company_id, name)
+);
+
+-- Create index for faster queries
+CREATE INDEX IF NOT EXISTS idx_paycycles_company ON paycycles(company_id);
+CREATE INDEX IF NOT EXISTS idx_paycycles_status ON paycycles(status);
+```
+
+---
+
+## Step 2: Create Timesheet Tables
 
 Run this SQL in your Supabase SQL Editor:
 
@@ -128,23 +200,87 @@ CREATE TABLE IF NOT EXISTS timesheet_comments (
 );
 
 -- Create indexes for better performance
-CREATE INDEX idx_timesheets_employee ON timesheets(employee_id);
-CREATE INDEX idx_timesheets_company ON timesheets(company_id);
-CREATE INDEX idx_timesheets_status ON timesheets(status);
-CREATE INDEX idx_timesheets_cycle_dates ON timesheets(cycle_start_date, cycle_end_date);
-CREATE INDEX idx_time_entries_timesheet ON time_entries(timesheet_id);
-CREATE INDEX idx_time_entries_employee ON time_entries(employee_id);
-CREATE INDEX idx_time_entries_project ON time_entries(project_id);
-CREATE INDEX idx_time_entries_date ON time_entries(entry_date);
-CREATE INDEX idx_project_assignments_employee ON project_assignments(employee_id);
-CREATE INDEX idx_project_assignments_project ON project_assignments(project_id);
+CREATE INDEX IF NOT EXISTS idx_timesheets_employee ON timesheets(employee_id);
+CREATE INDEX IF NOT EXISTS idx_timesheets_company ON timesheets(company_id);
+CREATE INDEX IF NOT EXISTS idx_timesheets_status ON timesheets(status);
+CREATE INDEX IF NOT EXISTS idx_timesheets_cycle_dates ON timesheets(cycle_start_date, cycle_end_date);
+CREATE INDEX IF NOT EXISTS idx_time_entries_timesheet ON time_entries(timesheet_id);
+CREATE INDEX IF NOT EXISTS idx_time_entries_employee ON time_entries(employee_id);
+CREATE INDEX IF NOT EXISTS idx_time_entries_project ON time_entries(project_id);
+CREATE INDEX IF NOT EXISTS idx_time_entries_date ON time_entries(entry_date);
+CREATE INDEX IF NOT EXISTS idx_project_assignments_employee ON project_assignments(employee_id);
+CREATE INDEX IF NOT EXISTS idx_project_assignments_project ON project_assignments(project_id);
+CREATE INDEX IF NOT EXISTS idx_projects_company ON projects(company_id);
+CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 ```
 
 ---
 
-## Step 2: Create Helper Functions
+## Step 3: Create Helper Functions
 
-### Get Employee Timesheets
+### Function: Get Companies with Paycycle Details
+
+```sql
+-- Function to get companies with their paycycles
+CREATE OR REPLACE FUNCTION get_companies_with_paycycle_details()
+RETURNS TABLE (
+  company_id UUID,
+  company_name VARCHAR(255),
+  company_description TEXT,
+  company_status VARCHAR(50),
+  allow_defaults BOOLEAN,
+  auto_group_entry BOOLEAN,
+  time_clock_imports BOOLEAN,
+  use_all_departments BOOLEAN,
+  email_notification BOOLEAN,
+  paycycles JSON,
+  employee_count BIGINT,
+  department_count BIGINT,
+  location_count BIGINT
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    c.id as company_id,
+    c.name as company_name,
+    c.description as company_description,
+    c.status as company_status,
+    c.allow_defaults,
+    c.auto_group_entry,
+    c.time_clock_imports,
+    c.use_all_departments,
+    c.email_notification,
+    COALESCE(
+      (
+        SELECT json_agg(
+          json_build_object(
+            'id', pc.id,
+            'name', pc.name,
+            'frequency', pc.frequency,
+            'cycle_type', pc.cycle_type,
+            'period_end_date', pc.period_end_date,
+            'period_end_day_1', pc.period_end_day_1,
+            'period_end_day_2', pc.period_end_day_2,
+            'status', pc.status,
+            'is_default', pc.is_default
+          )
+        )
+        FROM paycycles pc
+        WHERE pc.company_id = c.id AND pc.status = 'active'
+        ORDER BY pc.is_default DESC, pc.name
+      ),
+      '[]'::json
+    ) as paycycles,
+    (SELECT COUNT(*) FROM employees e WHERE e.company_id = c.id) as employee_count,
+    (SELECT COUNT(*) FROM departments d WHERE d.company_id = c.id) as department_count,
+    (SELECT COUNT(*) FROM locations l WHERE l.company_id = c.id) as location_count
+  FROM companies c
+  ORDER BY c.name;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Function: Get Employee Timesheets
 
 ```sql
 -- Function to get all timesheets for an employee
@@ -192,7 +328,7 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-### Get Company Timesheets (for managers/admins)
+### Function: Get Company Timesheets (for managers/admins)
 
 ```sql
 -- Function to get all timesheets for a company
@@ -243,7 +379,7 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-### Get Timesheet with Entries
+### Function: Get Timesheet with Entries
 
 ```sql
 -- Function to get a timesheet with all its time entries
@@ -308,7 +444,7 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-### Submit Timesheet Function
+### Function: Submit Timesheet
 
 ```sql
 -- Function to submit a timesheet
@@ -333,10 +469,10 @@ BEGIN
     );
   END IF;
 
-  IF v_timesheet_status != 'draft' AND v_timesheet_status != 'rejected' THEN
+  IF v_timesheet_status != 'draft' AND v_timesheet_status != 'rejected' AND v_timesheet_status != 'response_awaited' THEN
     RETURN json_build_object(
       'success', false,
-      'error', 'Can only submit draft or rejected timesheets'
+      'error', 'Can only submit draft, rejected, or revision-requested timesheets'
     );
   END IF;
 
@@ -370,7 +506,7 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-### Approve Timesheet Function
+### Function: Approve Timesheet
 
 ```sql
 -- Function to approve a timesheet (manager/admin action)
@@ -423,7 +559,7 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-### Request Revision Function
+### Function: Request Revision
 
 ```sql
 -- Function to request revision on a timesheet
@@ -458,7 +594,7 @@ $$ LANGUAGE plpgsql;
 
 ---
 
-## Step 3: Create Views for Easy Querying
+## Step 4: Create Views for Easy Querying
 
 ```sql
 -- View for timesheet overview with employee details
@@ -531,7 +667,7 @@ LEFT JOIN departments d ON te.department_id = d.id;
 
 ---
 
-## Step 4: Create Triggers for Auto-Updates
+## Step 5: Create Triggers for Auto-Updates
 
 ```sql
 -- Trigger to update timesheet total when entries change
@@ -558,6 +694,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_timesheet_totals ON time_entries;
 CREATE TRIGGER trigger_update_timesheet_totals
 AFTER INSERT OR UPDATE OR DELETE ON time_entries
 FOR EACH ROW
@@ -572,25 +709,34 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_timesheets_updated_at ON timesheets;
 CREATE TRIGGER trigger_timesheets_updated_at
 BEFORE UPDATE ON timesheets
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
+DROP TRIGGER IF EXISTS trigger_time_entries_updated_at ON time_entries;
 CREATE TRIGGER trigger_time_entries_updated_at
 BEFORE UPDATE ON time_entries
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
+DROP TRIGGER IF EXISTS trigger_projects_updated_at ON projects;
 CREATE TRIGGER trigger_projects_updated_at
 BEFORE UPDATE ON projects
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trigger_paycycles_updated_at ON paycycles;
+CREATE TRIGGER trigger_paycycles_updated_at
+BEFORE UPDATE ON paycycles
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 ```
 
 ---
 
-## Step 5: Row Level Security (RLS) Policies
+## Step 6: Row Level Security (RLS) Policies (Optional)
 
 ```sql
 -- Enable RLS
@@ -598,6 +744,7 @@ ALTER TABLE timesheets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE time_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE paycycles ENABLE ROW LEVEL SECURITY;
 
 -- Timesheets policies
 -- Employees can view their own timesheets
@@ -642,48 +789,150 @@ CREATE POLICY "Employees can view company projects"
 CREATE POLICY "Employees can view own project assignments"
   ON project_assignments FOR SELECT
   USING (auth.uid()::uuid = employee_id);
+
+-- Paycycles policies
+CREATE POLICY "Employees can view company paycycles"
+  ON paycycles FOR SELECT
+  USING (
+    company_id IN (
+      SELECT company_id FROM employees WHERE id = auth.uid()::uuid
+    )
+  );
 ```
 
 ---
 
-## Step 6: Sample Data (Optional)
+## Step 7: Sample Data (Optional)
 
 ```sql
--- Insert sample projects
-INSERT INTO projects (company_id, name, description, status, color) VALUES
-((SELECT id FROM companies WHERE name = 'Acme Corporation'), 'Website Redesign', 'Redesigning the company website', 'active', '#3B82F6'),
-((SELECT id FROM companies WHERE name = 'Acme Corporation'), 'Mobile App Development', 'Building a new mobile application', 'active', '#10B981'),
-((SELECT id FROM companies WHERE name = 'TechFlow Systems'), 'Payment Gateway', 'Implementing new payment system', 'active', '#8B5CF6');
+-- Insert sample paycycles
+INSERT INTO paycycles (company_id, name, frequency, cycle_type, status, is_default)
+SELECT
+  c.id,
+  'Weekly Pay Cycle',
+  'weekly',
+  'regular',
+  'active',
+  true
+FROM companies c
+WHERE c.name = 'Acme Corporation'
+ON CONFLICT (company_id, name) DO NOTHING;
 
--- Assign projects to employees
-INSERT INTO project_assignments (project_id, employee_id, role, hourly_rate) VALUES
-((SELECT id FROM projects WHERE name = 'Website Redesign'), (SELECT id FROM employees WHERE email = 'john.doe@acme.com'), 'Developer', 75.00),
-((SELECT id FROM projects WHERE name = 'Payment Gateway'), (SELECT id FROM employees WHERE email = 'jane.smith@techflow.com'), 'Lead Developer', 95.00);
+INSERT INTO paycycles (company_id, name, frequency, cycle_type, status, is_default)
+SELECT
+  c.id,
+  'Bi-Weekly Pay Cycle',
+  'bi-weekly',
+  'regular',
+  'active',
+  true
+FROM companies c
+WHERE c.name = 'TechFlow Systems'
+ON CONFLICT (company_id, name) DO NOTHING;
+
+-- Insert sample projects
+INSERT INTO projects (company_id, name, description, status, color)
+SELECT
+  c.id,
+  'Website Redesign',
+  'Redesigning the company website',
+  'active',
+  '#3B82F6'
+FROM companies c
+WHERE c.name = 'Acme Corporation'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO projects (company_id, name, description, status, color)
+SELECT
+  c.id,
+  'Mobile App Development',
+  'Building a new mobile application',
+  'active',
+  '#10B981'
+FROM companies c
+WHERE c.name = 'Acme Corporation'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO projects (company_id, name, description, status, color)
+SELECT
+  c.id,
+  'Payment Gateway',
+  'Implementing new payment system',
+  'active',
+  '#8B5CF6'
+FROM companies c
+WHERE c.name = 'TechFlow Systems'
+ON CONFLICT DO NOTHING;
+
+-- Assign projects to employees (adjust employee emails based on your data)
+INSERT INTO project_assignments (project_id, employee_id, role, hourly_rate)
+SELECT
+  p.id,
+  e.id,
+  'Developer',
+  75.00
+FROM projects p
+CROSS JOIN employees e
+WHERE p.name = 'Website Redesign'
+  AND e.email = 'john.doe@acme.com'
+ON CONFLICT (project_id, employee_id) DO NOTHING;
+
+INSERT INTO project_assignments (project_id, employee_id, role, hourly_rate)
+SELECT
+  p.id,
+  e.id,
+  'Lead Developer',
+  95.00
+FROM projects p
+CROSS JOIN employees e
+WHERE p.name = 'Payment Gateway'
+  AND e.email = 'jane.smith@techflow.com'
+ON CONFLICT (project_id, employee_id) DO NOTHING;
 ```
 
 ---
 
-## Step 7: Verify Installation
+## Step 8: Verify Installation
 
 Run this query to verify tables were created:
 
 ```sql
+-- Verify all tables exist
 SELECT table_name
 FROM information_schema.tables
 WHERE table_schema = 'public'
-AND table_name IN ('timesheets', 'time_entries', 'projects', 'project_assignments', 'timesheet_comments')
+AND table_name IN ('paycycles', 'timesheets', 'time_entries', 'projects', 'project_assignments', 'timesheet_comments')
 ORDER BY table_name;
 ```
 
-You should see all 5 tables listed.
+You should see all 6 tables listed.
+
+Verify functions exist:
+
+```sql
+-- Verify functions
+SELECT routine_name
+FROM information_schema.routines
+WHERE routine_schema = 'public'
+AND routine_name LIKE '%timesheet%' OR routine_name LIKE '%paycycle%'
+ORDER BY routine_name;
+```
+
+Test the paycycle function:
+
+```sql
+-- Test the function
+SELECT * FROM get_companies_with_paycycle_details();
+```
 
 ---
 
 ## Integration Points
 
-### 1. **Company → Timesheets**
+### 1. **Company → Paycycles → Timesheets**
 
-- Each timesheet is linked to a company via `company_id`
+- Each company has multiple paycycles
+- Each timesheet is linked to a company and optionally a paycycle
 - Managers can view all timesheets for their company
 
 ### 2. **Employee → Timesheets**
@@ -704,7 +953,7 @@ You should see all 5 tables listed.
 
 ### 5. **Department/Location → Time Entries**
 
-- Time entries capture department and location
+- Time entries capture department and location from employee record
 - Enables cost allocation and reporting
 
 ---
@@ -713,13 +962,59 @@ You should see all 5 tables listed.
 
 After running this SQL:
 
-1. ✅ Create timesheet helper functions (see `TIMESHEET_HELPERS.md`)
-2. ✅ Update TimesheetContext to use real data
-3. ✅ Connect admin section to timesheet management
-4. ✅ Enable timesheet approval workflow
+1. ✅ Test the `get_companies_with_paycycle_details()` function
+2. ✅ Use the helper functions in your code (see `src/lib/timesheetHelpers.js`)
+3. ✅ Update TimesheetContext to use real data
+4. ✅ Connect admin section to timesheet management
+5. ✅ Enable timesheet approval workflow
 
 ---
 
-**Status:** Ready for implementation  
+## 🎯 Quick Setup Script (Run All at Once)
+
+If you want to run everything at once, copy this entire block:
+
+```sql
+-- Run all setup in one go
+BEGIN;
+
+-- 1. Paycycles
+CREATE TABLE IF NOT EXISTS paycycles (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  company_id UUID REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  frequency VARCHAR(50) DEFAULT 'weekly',
+  cycle_type VARCHAR(50) DEFAULT 'regular',
+  period_end_date DATE,
+  period_end_day_1 VARCHAR(20),
+  period_end_day_2 VARCHAR(20),
+  status VARCHAR(50) DEFAULT 'active',
+  is_default BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_by UUID REFERENCES employees(id) ON DELETE SET NULL,
+  UNIQUE(company_id, name)
+);
+
+-- 2. Projects & related tables (copy from Step 2 above)
+-- 3. Functions (copy from Step 3 above)
+-- 4. Views (copy from Step 4 above)
+-- 5. Triggers (copy from Step 5 above)
+
+COMMIT;
+
+-- Verify
+SELECT 'Setup complete! Tables created:' as status;
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public'
+AND table_name IN ('paycycles', 'timesheets', 'time_entries', 'projects', 'project_assignments', 'timesheet_comments')
+ORDER BY table_name;
+```
+
+---
+
+**Status:** ✅ Ready for implementation  
 **Estimated Time:** 30-60 minutes to run and verify  
 **Impact:** Full integration between timesheets and administration
+
+**Your existing paycycle-setup page will now work with real database data!** 🎉
