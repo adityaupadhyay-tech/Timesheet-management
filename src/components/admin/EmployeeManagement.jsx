@@ -495,29 +495,35 @@ export default function EmployeeManagement() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <CardTitle className="flex items-center">
               <People className="mr-2" />
               All Employees ({getFilteredEmployees().length})
             </CardTitle>
-            <div className="flex gap-2">
-              <Button onClick={openAddEmployeeForm}>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={openAddEmployeeForm} className="flex-shrink-0">
                 <Add className="w-4 h-4 mr-2" />
                 Add Employee
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setShowEmployeeFilters(!showEmployeeFilters)}
+                className="flex-shrink-0"
               >
                 {showEmployeeFilters ? (
                   <Clear className="w-4 h-4 mr-2" />
                 ) : (
                   <FilterList className="w-4 h-4 mr-2" />
                 )}
-                {showEmployeeFilters ? "Hide Filters" : "Show Filters"}
+                <span className="hidden sm:inline">
+                  {showEmployeeFilters ? "Hide Filters" : "Show Filters"}
+                </span>
+                <span className="sm:hidden">
+                  {showEmployeeFilters ? "Hide" : "Filters"}
+                </span>
               </Button>
               {(companyFilter || jobRoleFilter || departmentFilter) && (
-                <Button variant="outline" onClick={clearFilters}>
+                <Button variant="outline" onClick={clearFilters} className="flex-shrink-0">
                   Clear Filters
                 </Button>
               )}

@@ -212,7 +212,7 @@ export default function SiteBrandingPage() {
           {/* Global Site Branding */}
           <Card>
             <CardHeader className="border-b">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Globe className="h-5 w-5" />
@@ -222,9 +222,10 @@ export default function SiteBrandingPage() {
                     Default branding applied to all companies unless customized individually
                   </CardDescription>
                 </div>
-                <Button onClick={handleEditGlobal} size="sm">
+                <Button onClick={handleEditGlobal} size="sm" className="flex-shrink-0 w-full sm:w-auto">
                   <Edit2 className="h-4 w-4 mr-2" />
-                  Edit Global Settings
+                  <span className="hidden sm:inline">Edit Global Settings</span>
+                  <span className="sm:hidden">Edit Settings</span>
                 </Button>
               </div>
             </CardHeader>
@@ -297,9 +298,9 @@ export default function SiteBrandingPage() {
               <div className="space-y-4">
                 {companies.map((company) => (
                   <div key={company.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <h3 className="font-medium text-gray-900">{company.name}</h3>
                           {company.hasCustomBranding ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -312,17 +313,18 @@ export default function SiteBrandingPage() {
                           )}
                         </div>
                         {company.hasCustomBranding && company.branding && (
-                          <div className="mt-2 text-sm text-gray-600">
-                            <span className="font-medium">Title:</span> {company.branding.siteTitle} | 
-                            <span className="font-medium ml-2">App:</span> {company.branding.appTitle}
+                          <div className="mt-2 text-sm text-gray-600 flex flex-wrap gap-x-3">
+                            <span><span className="font-medium">Title:</span> {company.branding.siteTitle}</span>
+                            <span><span className="font-medium">App:</span> {company.branding.appTitle}</span>
                           </div>
                         )}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleEditCompany(company)}
+                          className="flex-shrink-0"
                         >
                           <Edit2 className="h-4 w-4 mr-2" />
                           {company.hasCustomBranding ? 'Edit' : 'Customize'}
@@ -332,10 +334,11 @@ export default function SiteBrandingPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleResetToGlobal(company.id)}
-                            className="text-gray-600"
+                            className="text-gray-600 flex-shrink-0"
                           >
                             <RefreshCw className="h-4 w-4 mr-2" />
-                            Reset to Global
+                            <span className="hidden sm:inline">Reset to Global</span>
+                            <span className="sm:hidden">Reset</span>
                           </Button>
                         )}
                       </div>
@@ -349,7 +352,7 @@ export default function SiteBrandingPage() {
           {/* Information Card */}
           <Card className="bg-blue-50 border-blue-200">
             <CardContent className="p-4">
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-sm font-medium text-blue-900 mb-1">Mobile App Icon Requirements</h4>

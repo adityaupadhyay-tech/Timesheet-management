@@ -1627,8 +1627,8 @@ export default function AdminDashboard() {
         <TabsContent value="manage" className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-3">
                   <CardTitle className="flex items-center">
                     <Edit className="mr-2" />
                     Manage Companies
@@ -1642,19 +1642,23 @@ export default function AdminDashboard() {
                       variant="ghost"
                       size="sm"
                       onClick={clearManageFilters}
-                      className="text-gray-600 hover:text-gray-900"
+                      className="text-gray-600 hover:text-gray-900 flex-shrink-0"
                     >
                       <Clear className="mr-1" />
-                      Clear Filters
+                      <span className="hidden sm:inline">Clear Filters</span>
+                      <span className="sm:hidden">Clear</span>
                     </Button>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-gray-600 whitespace-nowrap">
                     Showing {getFilteredManageCompanies().length} of{" "}
                     {companies.length}
                   </span>
-                  <Button onClick={startAddCompanyWizard}>Add Company</Button>
+                  <Button onClick={startAddCompanyWizard} className="flex-shrink-0">
+                    <span className="hidden sm:inline">Add Company</span>
+                    <span className="sm:hidden">Add</span>
+                  </Button>
                 </div>
               </div>
             </CardHeader>
