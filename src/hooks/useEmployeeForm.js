@@ -73,9 +73,18 @@ export function useEmployeeForm() {
 
       setDropdownData((prev) => ({
         ...prev,
-        locations: locationsResult.data || [],
-        departments: departmentsResult.data || [],
-        paycycles: paycyclesResult.data || [],
+        locationsByCompany: {
+          ...(prev.locationsByCompany || {}),
+          [companyId]: locationsResult.data || [],
+        },
+        departmentsByCompany: {
+          ...(prev.departmentsByCompany || {}),
+          [companyId]: departmentsResult.data || [],
+        },
+        paycyclesByCompany: {
+          ...(prev.paycyclesByCompany || {}),
+          [companyId]: paycyclesResult.data || [],
+        },
       }));
     } catch (err) {
       console.error('Error loading company dependent data:', err);

@@ -155,13 +155,6 @@ export default function EmployeeManagement() {
         getAllJobRoles(),
       ]);
 
-      console.log(
-        "Loading initial dropdown data - Companies:",
-        companiesResult.data?.length,
-        "Job Roles:",
-        jobRolesResult.data?.length
-      );
-
       setAssignmentDropdownData((prev) => ({
         ...prev,
         companies: companiesResult.data || [],
@@ -177,6 +170,15 @@ export default function EmployeeManagement() {
   const loadCompanyDependentData = async (companyId) => {
     if (!companyId) return;
 
+    // Check if we already have data for this company
+    if (
+      assignmentDropdownData.locationsByCompany?.[companyId] &&
+      assignmentDropdownData.departmentsByCompany?.[companyId] &&
+      assignmentDropdownData.paycyclesByCompany?.[companyId]
+    ) {
+      return;
+    }
+
     try {
       const [locationsResult, departmentsResult, paycyclesResult] =
         await Promise.all([
@@ -185,27 +187,21 @@ export default function EmployeeManagement() {
           getPaycyclesByCompany(companyId),
         ]);
 
-      console.log(
-        "Loading company-dependent data for company:",
-        companyId,
-        "- Locations:",
-        locationsResult.data?.length,
-        "- Departments:",
-        departmentsResult.data?.length,
-        "- Paycycles:",
-        paycyclesResult.data?.length
-      );
-
-      setAssignmentDropdownData((prev) => {
-        const newData = {
-          ...prev,
-          locations: locationsResult.data || [],
-          departments: departmentsResult.data || [],
-          paycycles: paycyclesResult.data || [],
-        };
-        console.log("Updated assignmentDropdownData:", newData);
-        return newData;
-      });
+      setAssignmentDropdownData((prev) => ({
+        ...prev,
+        locationsByCompany: {
+          ...(prev.locationsByCompany || {}),
+          [companyId]: locationsResult.data || [],
+        },
+        departmentsByCompany: {
+          ...(prev.departmentsByCompany || {}),
+          [companyId]: departmentsResult.data || [],
+        },
+        paycyclesByCompany: {
+          ...(prev.paycyclesByCompany || {}),
+          [companyId]: paycyclesResult.data || [],
+        },
+      }));
     } catch (err) {
       console.error("Error loading company dependent data:", err);
     }
@@ -253,13 +249,6 @@ export default function EmployeeManagement() {
         employee.id
       );
 
-      console.log("=== EDIT EMPLOYEE DEBUG ===");
-      console.log("Raw employee details:", employeeDetails);
-      console.log(
-        "Employee details assignments:",
-        employeeDetails?.assignments
-      );
-
       if (error) {
         console.error("Error fetching employee details:", error);
         setError("Failed to load employee details");
@@ -283,35 +272,25 @@ export default function EmployeeManagement() {
         employeeDetails.assignments.length > 0
       ) {
         const formattedAssignments = employeeDetails.assignments.map(
-          (assignment) => {
-            console.log("Processing assignment:", assignment);
-            return {
-              companyId: assignment.companyId || assignment.company_id || "",
-              jobRoleId: assignment.jobRoleId || assignment.job_role_id || "",
-              locationId: assignment.locationId || assignment.location_id || "",
-              departmentIds: assignment.departmentIds ||
-                assignment.department_ids || [""],
-              paycycleId: assignment.paycycleId || assignment.paycycle_id || "",
-            };
-          }
+          (assignment) => ({
+            companyId: assignment.companyId || assignment.company_id || "",
+            jobRoleId: assignment.jobRoleId || assignment.job_role_id || "",
+            locationId: assignment.locationId || assignment.location_id || "",
+            departmentIds: assignment.departmentIds ||
+              assignment.department_ids || [""],
+            paycycleId: assignment.paycycleId || assignment.paycycle_id || "",
+          })
         );
 
-        console.log("Formatted assignments:", formattedAssignments);
-        console.log(
-          "First assignment companyId:",
-          formattedAssignments[0]?.companyId
-        );
         setAssignments(formattedAssignments);
 
         // Load company-dependent data for ALL assignments that have a company
         for (const assignment of formattedAssignments) {
           if (assignment.companyId) {
-            console.log("Loading company data for:", assignment.companyId);
             await loadCompanyDependentData(assignment.companyId);
           }
         }
       } else {
-        console.log("No assignments found, setting empty assignment");
         setAssignments([
           {
             companyId: "",
@@ -949,13 +928,13 @@ export default function EmployeeManagement() {
                               disabled={!assignment.companyId}
                             >
                               <option value="">Select Location</option>
-                              {assignmentDropdownData.locations?.map(
-                                (location) => (
-                                  <option key={location.id} value={location.id}>
-                                    {location.name}
-                                  </option>
-                                )
-                              )}
+                              {assignmentDropdownData.locationsByCompany?.[
+                                assignment.companyId
+                              ]?.map((location) => (
+                                <option key={location.id} value={location.id}>
+                                  {location.name}
+                                </option>
+                              ))}
                             </select>
                           </div>
 
@@ -980,13 +959,13 @@ export default function EmployeeManagement() {
                                     disabled={!assignment.companyId}
                                   >
                                     <option value="">Select Department</option>
-                                    {assignmentDropdownData.departments?.map(
-                                      (dept) => (
-                                        <option key={dept.id} value={dept.id}>
-                                          {dept.name}
-                                        </option>
-                                      )
-                                    )}
+                                    {assignmentDropdownData.departmentsByCompany?.[
+                                      assignment.companyId
+                                    ]?.map((dept) => (
+                                      <option key={dept.id} value={dept.id}>
+                                        {dept.name}
+                                      </option>
+                                    ))}
                                   </select>
                                   {assignment.departmentIds.length > 1 && (
                                     <Button
@@ -1036,17 +1015,18 @@ export default function EmployeeManagement() {
                               <option value="">
                                 Select Paycycle (Optional)
                               </option>
-                              {assignmentDropdownData.paycycles?.map(
-                                (paycycle) => (
-                                  <option key={paycycle.id} value={paycycle.id}>
-                                    {paycycle.name} ({paycycle.frequency})
-                                  </option>
-                                )
-                              )}
+                              {assignmentDropdownData.paycyclesByCompany?.[
+                                assignment.companyId
+                              ]?.map((paycycle) => (
+                                <option key={paycycle.id} value={paycycle.id}>
+                                  {paycycle.name} ({paycycle.frequency})
+                                </option>
+                              ))}
                             </select>
                             {assignment.companyId &&
-                              assignmentDropdownData.paycycles?.length ===
-                                0 && (
+                              assignmentDropdownData.paycyclesByCompany?.[
+                                assignment.companyId
+                              ]?.length === 0 && (
                                 <p className="text-xs text-gray-500 mt-1">
                                   No paycycles available for this company
                                 </p>

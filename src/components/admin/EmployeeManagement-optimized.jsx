@@ -469,7 +469,9 @@ export default function EmployeeManagement() {
                               disabled={!assignment.companyId}
                             >
                               <option value="">Select Location</option>
-                              {dropdownData.locations?.map((location) => (
+                              {dropdownData.locationsByCompany?.[
+                                assignment.companyId
+                              ]?.map((location) => (
                                 <option key={location.id} value={location.id}>
                                   {location.name}
                                 </option>
@@ -494,7 +496,9 @@ export default function EmployeeManagement() {
                               <option value="">
                                 Select Paycycle (Optional)
                               </option>
-                              {dropdownData.paycycles?.map((paycycle) => (
+                              {dropdownData.paycyclesByCompany?.[
+                                assignment.companyId
+                              ]?.map((paycycle) => (
                                 <option key={paycycle.id} value={paycycle.id}>
                                   {paycycle.name} ({paycycle.frequency})
                                 </option>
@@ -521,7 +525,9 @@ export default function EmployeeManagement() {
                                 disabled={!assignment.companyId}
                               >
                                 <option value="">Select Department</option>
-                                {dropdownData.departments?.map((dept) => (
+                                {dropdownData.departmentsByCompany?.[
+                                  assignment.companyId
+                                ]?.map((dept) => (
                                   <option key={dept.id} value={dept.id}>
                                     {dept.name}
                                   </option>
