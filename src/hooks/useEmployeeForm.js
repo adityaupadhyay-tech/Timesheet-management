@@ -47,13 +47,11 @@ export function useEmployeeForm() {
         getAllJobRoles(),
       ]);
 
-      setDropdownData({
+      setDropdownData((prev) => ({
+        ...prev,
         companies: companiesResult.data || [],
         jobRoles: jobRolesResult.data || [],
-        locations: [],
-        departments: [],
-        paycycles: [],
-      });
+      }));
     } catch (err) {
       console.error('Error loading dropdown data:', err);
     } finally {
@@ -222,11 +220,11 @@ export function useEmployeeForm() {
     if (employeeDetails.assignments && employeeDetails.assignments.length > 0) {
       const formattedAssignments = employeeDetails.assignments.map(
         (assignment) => ({
-          companyId: assignment.company_id || '',
-          jobRoleId: assignment.job_role_id || '',
-          locationId: assignment.location_id || '',
-          departmentIds: assignment.department_ids || [''],
-          paycycleId: assignment.paycycle_id || '',
+          companyId: assignment.companyId || assignment.company_id || '',
+          jobRoleId: assignment.jobRoleId || assignment.job_role_id || '',
+          locationId: assignment.locationId || assignment.location_id || '',
+          departmentIds: assignment.departmentIds || assignment.department_ids || [''],
+          paycycleId: assignment.paycycleId || assignment.paycycle_id || '',
         })
       );
       setAssignments(formattedAssignments);

@@ -3,12 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  People,
-  Add,
-  FilterList,
-  Clear,
-} from "@mui/icons-material";
+import { People, Add, FilterList, Clear } from "@mui/icons-material";
 
 // Import custom hooks
 import { useEmployeeData } from "@/hooks/useEmployeeData";
@@ -22,12 +17,12 @@ import EmployeePagination from "@/components/admin/employee-management/EmployeeP
 
 /**
  * OPTIMIZED Employee Management Component
- * 
+ *
  * This is a refactored version of EmployeeManagement.jsx that uses:
  * - Custom hooks for data, filters, and form management
  * - Split components for better organization
  * - Reduced from 1,010 lines to ~250 lines
- * 
+ *
  * To use: Rename EmployeeManagement.jsx to EmployeeManagement-old.jsx
  *         Then rename this file to EmployeeManagement.jsx
  */
@@ -122,14 +117,21 @@ export default function EmployeeManagement() {
         return;
       }
 
+      // Load initial dropdown data FIRST (companies and job roles)
+      await loadInitialDropdownData();
+
+      // Populate form with employee data
       populateForm(result.data);
 
-      // Load company-dependent data if available
-      if (result.data.assignments?.[0]?.company_id) {
-        await loadCompanyDependentData(result.data.assignments[0].company_id);
+      // Load company-dependent data for ALL assignments
+      if (result.data.assignments && result.data.assignments.length > 0) {
+        for (const assignment of result.data.assignments) {
+          const companyId = assignment.companyId || assignment.company_id;
+          if (companyId) {
+            await loadCompanyDependentData(companyId);
+          }
+        }
       }
-
-      await loadInitialDropdownData();
     } catch (err) {
       console.error("Error opening edit form:", err);
       alert("Failed to open employee form");
@@ -146,7 +148,11 @@ export default function EmployeeManagement() {
 
       let result;
       if (editingEmployee) {
-        result = await updateEmployee(editingEmployee.id, formData, assignments);
+        result = await updateEmployee(
+          editingEmployee.id,
+          formData,
+          assignments
+        );
       } else {
         result = await createEmployee(formData, assignments);
       }
@@ -173,7 +179,7 @@ export default function EmployeeManagement() {
 
   // Handle company change in assignment
   const handleAssignmentCompanyChange = (index, companyId) => {
-    updateAssignment(index, 'companyId', companyId);
+    updateAssignment(index, "companyId", companyId);
     if (companyId) {
       loadCompanyDependentData(companyId);
     }
@@ -298,13 +304,20 @@ export default function EmployeeManagement() {
                   {/* Basic Information */}
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <label className="text-sm font-medium">First Name *</label>
+                      <label className="text-sm font-medium">
+                        First Name *
+                      </label>
                       <input
                         value={formData.firstName}
                         onChange={(e) =>
-                          setFormData({ ...formData, firstName: e.target.value })
+                          setFormData({
+                            ...formData,
+                            firstName: e.target.value,
+                          })
                         }
-                        className={`w-full p-2 border rounded ${formErrors.firstName ? "border-red-500" : ""}`}
+                        className={`w-full p-2 border rounded ${
+                          formErrors.firstName ? "border-red-500" : ""
+                        }`}
                       />
                       {formErrors.firstName && (
                         <p className="text-red-500 text-sm mt-1">
@@ -320,7 +333,9 @@ export default function EmployeeManagement() {
                         onChange={(e) =>
                           setFormData({ ...formData, lastName: e.target.value })
                         }
-                        className={`w-full p-2 border rounded ${formErrors.lastName ? "border-red-500" : ""}`}
+                        className={`w-full p-2 border rounded ${
+                          formErrors.lastName ? "border-red-500" : ""
+                        }`}
                       />
                       {formErrors.lastName && (
                         <p className="text-red-500 text-sm mt-1">
@@ -338,10 +353,14 @@ export default function EmployeeManagement() {
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
-                      className={`w-full p-2 border rounded ${formErrors.email ? "border-red-500" : ""}`}
+                      className={`w-full p-2 border rounded ${
+                        formErrors.email ? "border-red-500" : ""
+                      }`}
                     />
                     {formErrors.email && (
-                      <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {formErrors.email}
+                      </p>
                     )}
                   </div>
 
@@ -361,7 +380,11 @@ export default function EmployeeManagement() {
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <label className="font-medium">Assignments *</label>
-                      <Button variant="outline" size="sm" onClick={addAssignment}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={addAssignment}
+                      >
                         <Add className="w-4 h-4 mr-2" />
                         Add Assignment
                       </Button>
@@ -393,7 +416,10 @@ export default function EmployeeManagement() {
                             <select
                               value={assignment.companyId}
                               onChange={(e) =>
-                                handleAssignmentCompanyChange(assignmentIndex, e.target.value)
+                                handleAssignmentCompanyChange(
+                                  assignmentIndex,
+                                  e.target.value
+                                )
                               }
                               className="w-full p-2 border rounded"
                             >
@@ -411,7 +437,11 @@ export default function EmployeeManagement() {
                             <select
                               value={assignment.jobRoleId}
                               onChange={(e) =>
-                                updateAssignment(assignmentIndex, "jobRoleId", e.target.value)
+                                updateAssignment(
+                                  assignmentIndex,
+                                  "jobRoleId",
+                                  e.target.value
+                                )
                               }
                               className="w-full p-2 border rounded"
                             >
@@ -429,7 +459,11 @@ export default function EmployeeManagement() {
                             <select
                               value={assignment.locationId}
                               onChange={(e) =>
-                                updateAssignment(assignmentIndex, "locationId", e.target.value)
+                                updateAssignment(
+                                  assignmentIndex,
+                                  "locationId",
+                                  e.target.value
+                                )
                               }
                               className="w-full p-2 border rounded"
                               disabled={!assignment.companyId}
@@ -448,12 +482,18 @@ export default function EmployeeManagement() {
                             <select
                               value={assignment.paycycleId || ""}
                               onChange={(e) =>
-                                updateAssignment(assignmentIndex, "paycycleId", e.target.value)
+                                updateAssignment(
+                                  assignmentIndex,
+                                  "paycycleId",
+                                  e.target.value
+                                )
                               }
                               className="w-full p-2 border rounded"
                               disabled={!assignment.companyId}
                             >
-                              <option value="">Select Paycycle (Optional)</option>
+                              <option value="">
+                                Select Paycycle (Optional)
+                              </option>
                               {dropdownData.paycycles?.map((paycycle) => (
                                 <option key={paycycle.id} value={paycycle.id}>
                                   {paycycle.name} ({paycycle.frequency})
@@ -471,7 +511,11 @@ export default function EmployeeManagement() {
                               <select
                                 value={deptId}
                                 onChange={(e) =>
-                                  updateDepartmentIds(assignmentIndex, deptIndex, e.target.value)
+                                  updateDepartmentIds(
+                                    assignmentIndex,
+                                    deptIndex,
+                                    e.target.value
+                                  )
                                 }
                                 className="flex-1 p-2 border rounded"
                                 disabled={!assignment.companyId}
@@ -488,7 +532,10 @@ export default function EmployeeManagement() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() =>
-                                    removeDepartmentId(assignmentIndex, deptIndex)
+                                    removeDepartmentId(
+                                      assignmentIndex,
+                                      deptIndex
+                                    )
                                   }
                                 >
                                   ×
@@ -518,7 +565,10 @@ export default function EmployeeManagement() {
 
                   {/* Form Actions */}
                   <div className="flex justify-end gap-3 pt-4 border-t">
-                    <Button onClick={handleEmployeeSubmit} disabled={isSubmitting}>
+                    <Button
+                      onClick={handleEmployeeSubmit}
+                      disabled={isSubmitting}
+                    >
                       {isSubmitting
                         ? "Saving..."
                         : editingEmployee
@@ -542,4 +592,3 @@ export default function EmployeeManagement() {
     </div>
   );
 }
-

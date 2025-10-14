@@ -150,24 +150,26 @@ export default function EmployeeManagement() {
   // Load dropdown data for assignments
   const loadInitialDropdownData = async () => {
     try {
-      setLoadingDropdowns(true);
       const [companiesResult, jobRolesResult] = await Promise.all([
         getAllCompanies(),
         getAllJobRoles(),
       ]);
 
-      setAssignmentDropdownData({
+      console.log(
+        "Loading initial dropdown data - Companies:",
+        companiesResult.data?.length,
+        "Job Roles:",
+        jobRolesResult.data?.length
+      );
+
+      setAssignmentDropdownData((prev) => ({
+        ...prev,
         companies: companiesResult.data || [],
         jobRoles: jobRolesResult.data || [],
-        locations: [],
-        departments: [],
-        paycycles: [],
-      });
+      }));
     } catch (err) {
       console.error("Error loading dropdown data:", err);
       setError("Failed to load form data");
-    } finally {
-      setLoadingDropdowns(false);
     }
   };
 
@@ -184,17 +186,26 @@ export default function EmployeeManagement() {
         ]);
 
       console.log(
-        "Loaded paycycles for company:",
+        "Loading company-dependent data for company:",
         companyId,
-        paycyclesResult.data
+        "- Locations:",
+        locationsResult.data?.length,
+        "- Departments:",
+        departmentsResult.data?.length,
+        "- Paycycles:",
+        paycyclesResult.data?.length
       );
 
-      setAssignmentDropdownData((prev) => ({
-        ...prev,
-        locations: locationsResult.data || [],
-        departments: departmentsResult.data || [],
-        paycycles: paycyclesResult.data || [],
-      }));
+      setAssignmentDropdownData((prev) => {
+        const newData = {
+          ...prev,
+          locations: locationsResult.data || [],
+          departments: departmentsResult.data || [],
+          paycycles: paycyclesResult.data || [],
+        };
+        console.log("Updated assignmentDropdownData:", newData);
+        return newData;
+      });
     } catch (err) {
       console.error("Error loading company dependent data:", err);
     }
@@ -218,10 +229,18 @@ export default function EmployeeManagement() {
         paycycleId: "",
       },
     ]);
-    setAssignmentDropdownData({});
+    setAssignmentDropdownData({
+      companies: [],
+      jobRoles: [],
+      locations: [],
+      departments: [],
+      paycycles: [],
+    });
     setEmployeeFormErrors({});
     setShowEmployeeForm(true);
+    setLoadingDropdowns(true);
     await loadInitialDropdownData();
+    setLoadingDropdowns(false);
   };
 
   const openEditEmployeeForm = async (employee) => {
@@ -232,6 +251,13 @@ export default function EmployeeManagement() {
 
       const { data: employeeDetails, error } = await getEmployeeDetailsForEdit(
         employee.id
+      );
+
+      console.log("=== EDIT EMPLOYEE DEBUG ===");
+      console.log("Raw employee details:", employeeDetails);
+      console.log(
+        "Employee details assignments:",
+        employeeDetails?.assignments
       );
 
       if (error) {
@@ -248,27 +274,44 @@ export default function EmployeeManagement() {
         phone: employeeDetails.phone || "",
       });
 
+      // Load initial dropdown data (companies and job roles) FIRST
+      await loadInitialDropdownData();
+
       // Set assignments from the fetched data
       if (
         employeeDetails.assignments &&
         employeeDetails.assignments.length > 0
       ) {
         const formattedAssignments = employeeDetails.assignments.map(
-          (assignment) => ({
-            companyId: assignment.company_id || "",
-            jobRoleId: assignment.job_role_id || "",
-            locationId: assignment.location_id || "",
-            departmentIds: assignment.department_ids || [""],
-            paycycleId: assignment.paycycle_id || "",
-          })
+          (assignment) => {
+            console.log("Processing assignment:", assignment);
+            return {
+              companyId: assignment.companyId || assignment.company_id || "",
+              jobRoleId: assignment.jobRoleId || assignment.job_role_id || "",
+              locationId: assignment.locationId || assignment.location_id || "",
+              departmentIds: assignment.departmentIds ||
+                assignment.department_ids || [""],
+              paycycleId: assignment.paycycleId || assignment.paycycle_id || "",
+            };
+          }
+        );
+
+        console.log("Formatted assignments:", formattedAssignments);
+        console.log(
+          "First assignment companyId:",
+          formattedAssignments[0]?.companyId
         );
         setAssignments(formattedAssignments);
 
-        // Load company-dependent data for the first assignment
-        if (formattedAssignments[0]?.companyId) {
-          await loadCompanyDependentData(formattedAssignments[0].companyId);
+        // Load company-dependent data for ALL assignments that have a company
+        for (const assignment of formattedAssignments) {
+          if (assignment.companyId) {
+            console.log("Loading company data for:", assignment.companyId);
+            await loadCompanyDependentData(assignment.companyId);
+          }
         }
       } else {
+        console.log("No assignments found, setting empty assignment");
         setAssignments([
           {
             companyId: "",
@@ -279,9 +322,6 @@ export default function EmployeeManagement() {
           },
         ]);
       }
-
-      // Load initial dropdown data (companies and job roles)
-      await loadInitialDropdownData();
     } catch (err) {
       console.error("Error opening edit form:", err);
       setError("Failed to open employee form");
