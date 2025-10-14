@@ -173,7 +173,7 @@ export function CompaniesProvider({ children }) {
       name: 'HealthTech Partners',
       description: 'Medical technology innovations and healthcare management systems',
       logo: '',
-      status: 'on-hold',
+      status: 'inactive',
       locations: [
         {
           id: 'loc5',

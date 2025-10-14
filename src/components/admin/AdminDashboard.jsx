@@ -13,6 +13,9 @@ import Building from "@mui/icons-material/Business";
 import Edit from "@mui/icons-material/Edit";
 import Search from "@mui/icons-material/Search";
 import Clear from "@mui/icons-material/Clear";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import FilterList from "@mui/icons-material/FilterList";
 import {
   ChevronLeft,
   ChevronRight,
@@ -87,6 +90,7 @@ export default function AdminDashboard() {
 
   // Edit Company Tabs
   const [editCompanyActiveTab, setEditCompanyActiveTab] = useState("info");
+  const [showDeleteSection, setShowDeleteSection] = useState(false);
 
   // Add Company Wizard
   const [wizardStep, setWizardStep] = useState(1);
@@ -285,8 +289,6 @@ export default function AdminDashboard() {
     switch (status) {
       case "active":
         return "bg-green-100 text-green-800";
-      case "on-hold":
-        return "bg-yellow-100 text-yellow-800";
       case "inactive":
         return "bg-red-100 text-red-800";
       default:
@@ -1699,7 +1701,6 @@ export default function AdminDashboard() {
                             >
                               <option value="all">All</option>
                               <option value="active">Active</option>
-                              <option value="on-hold">On Hold</option>
                               <option value="inactive">Inactive</option>
                             </select>
                           </div>
@@ -1989,7 +1990,6 @@ export default function AdminDashboard() {
                       >
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
-                        <option value="on-hold">On Hold</option>
                       </select>
                     </div>
                   </CardContent>
@@ -2156,6 +2156,7 @@ export default function AdminDashboard() {
                     });
                     setFormErrors({});
                     setEditCompanyActiveTab("info");
+                    setShowDeleteSection(false);
                   }}
                 >
                   Close
@@ -2166,17 +2167,11 @@ export default function AdminDashboard() {
                 value={editCompanyActiveTab}
                 onValueChange={setEditCompanyActiveTab}
               >
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="info">Company Info</TabsTrigger>
                   <TabsTrigger value="locations">Locations</TabsTrigger>
                   <TabsTrigger value="departments">Departments</TabsTrigger>
                   <TabsTrigger value="employees">Employees</TabsTrigger>
-                  <TabsTrigger
-                    value="danger"
-                    className="text-red-600 data-[state=active]:text-red-700"
-                  >
-                    ⚠️ Danger Zone
-                  </TabsTrigger>
                 </TabsList>
 
                 <div className="min-h-[600px]">
@@ -2248,7 +2243,6 @@ export default function AdminDashboard() {
                           >
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
-                            <option value="on-hold">On Hold</option>
                           </select>
                         </div>
                         <Button
@@ -2259,6 +2253,52 @@ export default function AdminDashboard() {
                           {isSubmitting ? "Updating..." : "Update Company"}
                         </Button>
                       </CardContent>
+                    </Card>
+
+                    {/* Delete Company Section - Collapsible */}
+                    <Card className="border-red-200">
+                      <CardHeader 
+                        className="bg-red-50 cursor-pointer hover:bg-red-100 transition-colors"
+                        onClick={() => setShowDeleteSection(!showDeleteSection)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-red-800 flex items-center">
+                            ⚠️ Delete Company
+                          </CardTitle>
+                          <div className="text-red-600">
+                            {showDeleteSection ? (
+                              <ExpandLess className="h-5 w-5" />
+                            ) : (
+                              <ExpandMore className="h-5 w-5" />
+                            )}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      {showDeleteSection && (
+                        <CardContent className="space-y-4 pt-6">
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <h4 className="text-lg font-semibold text-red-800 mb-2">
+                              Delete this Company
+                            </h4>
+                            <p className="text-red-700 mb-4">
+                              Once you delete a company, there is no going back.
+                              This will permanently delete the company and all
+                              associated data including locations, departments,
+                              and employee assignments.
+                            </p>
+                            <p className="text-sm text-red-600 mb-4">
+                              <strong>This action cannot be undone.</strong>
+                            </p>
+                            <Button
+                              variant="destructive"
+                              onClick={() => openDeleteModal(editingCompany)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Delete Company
+                            </Button>
+                          </div>
+                        </CardContent>
+                      )}
                     </Card>
                   </TabsContent>
 
@@ -2482,39 +2522,6 @@ export default function AdminDashboard() {
                     </Card>
                   </TabsContent>
 
-                  {/* Danger Zone Tab */}
-                  <TabsContent value="danger" className="space-y-4">
-                    <Card className="border-red-200">
-                      <CardHeader className="bg-red-50">
-                        <CardTitle className="text-red-800 flex items-center">
-                          ⚠️ Danger Zone
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-6 pt-6">
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                          <h4 className="text-lg font-semibold text-red-800 mb-2">
-                            Delete this Company
-                          </h4>
-                          <p className="text-red-700 mb-4">
-                            Once you delete a company, there is no going back.
-                            This will permanently delete the company and all
-                            associated data including locations, departments,
-                            and employee assignments.
-                          </p>
-                          <p className="text-sm text-red-600 mb-4">
-                            <strong>This action cannot be undone.</strong>
-                          </p>
-                          <Button
-                            variant="destructive"
-                            onClick={() => openDeleteModal(editingCompany)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Delete Company
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
                 </div>
               </Tabs>
             </div>
