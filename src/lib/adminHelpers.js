@@ -952,26 +952,13 @@ export const getPaycyclesByCompany = async (companyId) => {
 // Get employee details for editing with structured assignments
 export const getEmployeeDetailsForEdit = async (employeeId) => {
   try {
-    console.log('Calling get_employee_details_for_edit with ID:', employeeId)
     const { data, error } = await supabase
       .rpc('get_employee_details_for_edit', { p_employee_id: employeeId })
     
-    console.log('RPC Response - Data:', data, 'Error:', error)
-    
-    if (error) {
-      console.error('Supabase RPC Error:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      })
-      throw error
-    }
+    if (error) throw error
     return { data, error: null }
   } catch (error) {
     console.error('Error fetching employee details for edit:', error)
-    console.error('Error type:', typeof error)
-    console.error('Error keys:', Object.keys(error))
     return { data: null, error: error.message || 'Unknown error occurred' }
   }
 }
