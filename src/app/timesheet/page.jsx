@@ -119,7 +119,7 @@ function TimesheetContent() {
       id: 3,
       employeeName: 'Mike Johnson',
       employeeEmail: 'mike.j@company.com',
-      company: 'Tech Solutions Inc',
+      company: 'TechFlow Systems',
       department: 'Sales',
       cycle: 'bi-weekly',
       period: 'Dec 16 - Dec 29, 2024',
@@ -145,7 +145,7 @@ function TimesheetContent() {
       id: 5,
       employeeName: 'David Brown',
       employeeEmail: 'david.b@company.com',
-      company: 'Global Enterprises',
+      company: 'Global Logistics Inc',
       department: 'Operations',
       cycle: 'monthly',
       period: 'December 2024',
@@ -415,14 +415,29 @@ function TimesheetContent() {
       setOriginalCompany(selectedCompany)
     }
     
-    // Update selectedCompany to reflect the employee's cycle
-    if (timesheet.cycle) {
+    // Find the actual company object by name to get the correct ID
+    const actualCompany = companies.find(company => company.name === timesheet.company)
+    
+    console.log('Viewing timesheet:', {
+      timesheetCompany: timesheet.company,
+      foundCompany: actualCompany,
+      availableCompanies: companies.map(c => ({ id: c.id, name: c.name }))
+    })
+    
+    if (actualCompany && timesheet.cycle) {
       const viewCompany = {
-        ...selectedCompany,
-        id: timesheet.company || selectedCompany?.id,
-        name: timesheet.company || selectedCompany?.name,
+        ...actualCompany,  // Use the actual company object with correct ID
         timesheetCycle: timesheet.cycle
       }
+      console.log('Setting selected company:', viewCompany)
+      setSelectedCompany(viewCompany)
+    } else if (timesheet.cycle) {
+      // Fallback: if company not found, use current company but update cycle
+      const viewCompany = {
+        ...selectedCompany,
+        timesheetCycle: timesheet.cycle
+      }
+      console.log('Using fallback company:', viewCompany)
       setSelectedCompany(viewCompany)
     }
   }

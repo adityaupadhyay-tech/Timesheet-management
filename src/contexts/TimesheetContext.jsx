@@ -118,6 +118,13 @@ export function TimesheetProvider({ children }) {
     ? allProjects.filter(project => project.companyId === selectedCompany.id)
     : []
 
+  // Debug logging for project filtering
+  console.log('TimesheetContext - Project filtering:', {
+    selectedCompany: selectedCompany ? { id: selectedCompany.id, name: selectedCompany.name } : null,
+    allProjects: allProjects.map(p => ({ id: p.id, name: p.name, companyId: p.companyId })),
+    filteredProjects: projects.map(p => ({ id: p.id, name: p.name, companyId: p.companyId }))
+  })
+
   // Timer effect
   useEffect(() => {
     let interval
