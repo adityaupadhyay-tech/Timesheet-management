@@ -1655,7 +1655,10 @@ export default function AdminDashboard() {
                     Showing {getFilteredManageCompanies().length} of{" "}
                     {companies.length}
                   </span>
-                  <Button onClick={startAddCompanyWizard} className="flex-shrink-0">
+                  <Button
+                    onClick={startAddCompanyWizard}
+                    className="flex-shrink-0"
+                  >
                     <span className="hidden sm:inline">Add Company</span>
                     <span className="sm:hidden">Add</span>
                   </Button>
@@ -2261,7 +2264,7 @@ export default function AdminDashboard() {
 
                     {/* Delete Company Section - Collapsible */}
                     <Card className="border-red-200">
-                      <CardHeader 
+                      <CardHeader
                         className="bg-red-50 cursor-pointer hover:bg-red-100 transition-colors"
                         onClick={() => setShowDeleteSection(!showDeleteSection)}
                       >
@@ -2483,16 +2486,16 @@ export default function AdminDashboard() {
                                 <div className="flex items-center gap-3">
                                   <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                                     <span className="text-blue-600 font-semibold text-sm">
-                                      {employee.full_name
-                                        ?.split(" ")
-                                        .map((n) => n[0])
-                                        .join("")
-                                        .toUpperCase() || "N/A"}
+                                      {`${employee.first_name?.[0] || ""}${
+                                        employee.last_name?.[0] || ""
+                                      }`.toUpperCase() || "N/A"}
                                     </span>
                                   </div>
                                   <div>
                                     <p className="font-medium text-gray-900">
-                                      {employee.full_name || "Unknown"}
+                                      {`${employee.first_name || ""} ${
+                                        employee.last_name || ""
+                                      }`.trim() || "Unknown"}
                                     </p>
                                     <p className="text-sm text-gray-500">
                                       {employee.email}
@@ -2525,7 +2528,6 @@ export default function AdminDashboard() {
                       </CardContent>
                     </Card>
                   </TabsContent>
-
                 </div>
               </Tabs>
             </div>

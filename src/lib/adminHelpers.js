@@ -231,12 +231,63 @@ export const fetchCompanyWithDetails = async (companyId) => {
       return handleSupabaseError(employeesRes.error, 'fetching company employees')
     }
 
+    // Step 3: Fetch employee job roles and departments for this company
+    let employeesWithDetails = []
+    if (employeeIds.length > 0) {
+      // Get job roles for employees in this company
+      const { data: employeeJobRoles, error: jobRoleError } = await supabase
+        .from('employee_companies')
+        .select(`
+          employee_id,
+          job_role_id,
+          job_roles(title)
+        `)
+        .eq('company_id', companyId)
+        .not('job_role_id', 'is', null)
+      
+      if (jobRoleError) {
+        console.error('Error fetching employee job roles:', jobRoleError)
+      }
+      
+      // Get departments for employees in this company
+      const { data: employeeDepartments, error: deptError } = await supabase
+        .from('employee_departments')
+        .select(`
+          employee_id,
+          department_id,
+          departments(name)
+        `)
+        .in('department_id', departmentsRes.data?.map(d => d.id) || [])
+      
+      if (deptError) {
+        console.error('Error fetching employee departments:', deptError)
+      }
+      
+      // Combine employee data with their job roles and departments
+      employeesWithDetails = (employeesRes.data || []).map(employee => {
+        // Find job role for this employee in this company
+        const jobRoleData = employeeJobRoles?.find(er => er.employee_id === employee.id)
+        const jobTitle = jobRoleData?.job_roles?.title || null
+        
+        // Find departments for this employee
+        const employeeDeptData = employeeDepartments?.filter(ed => ed.employee_id === employee.id)
+        const departmentNames = employeeDeptData?.map(ed => ed.departments?.name).filter(Boolean) || []
+        const departmentName = departmentNames.length > 0 ? departmentNames.join(', ') : null
+        
+        return {
+          ...employee,
+          job_title: jobTitle,
+          department_name: departmentName
+        }
+      })
+    }
+
     const result = {
       company: companyRes.data,
       locations: locationsRes.data || [],
       departments: departmentsRes.data || [],
       paycycles: paycyclesRes.data || [],
-      employees: employeesRes.data || []
+      employees: employeesWithDetails
     }
 
     console.log('Returning company details:', result)
