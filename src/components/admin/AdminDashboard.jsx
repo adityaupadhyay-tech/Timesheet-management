@@ -32,7 +32,6 @@ import {
   getCompaniesForDashboard,
   createCompany,
   updateCompany,
-  deleteCompany,
   fetchCompanyWithDetails,
   addLocationForCompany,
   addDepartmentForCompany,
@@ -78,9 +77,7 @@ export default function AdminDashboard() {
   // Manage tab state
   const [showAddCompany, setShowAddCompany] = useState(false);
   const [showEditCompany, setShowEditCompany] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null);
-  const [deletingCompany, setDeletingCompany] = useState(null);
   const [newCompany, setNewCompany] = useState({
     name: "",
     description: "",
@@ -90,7 +87,6 @@ export default function AdminDashboard() {
 
   // Edit Company Tabs
   const [editCompanyActiveTab, setEditCompanyActiveTab] = useState("info");
-  const [showDeleteSection, setShowDeleteSection] = useState(false);
 
   // Add Company Wizard
   const [wizardStep, setWizardStep] = useState(1);
@@ -353,28 +349,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteCompany = async () => {
-    if (!deletingCompany || companyNameConfirmation !== deletingCompany.name)
-      return;
-
-    try {
-      setLoading(true);
-      const result = await deleteCompany(deletingCompany.id);
-
-      if (result.error) {
-        setError(result.error);
-      } else {
-        setShowDeleteConfirm(false);
-        setDeletingCompany(null);
-        setCompanyNameConfirmation("");
-        await loadData(); // Refresh data
-      }
-    } catch (err) {
-      setError("Failed to delete company");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Validation functions
   const validateCompanyForm = (company) => {
@@ -459,11 +433,6 @@ export default function AdminDashboard() {
     await fetchCompanyDetailsData(company.id);
   };
 
-  const openDeleteModal = (company) => {
-    setDeletingCompany(company);
-    setCompanyNameConfirmation("");
-    setShowDeleteConfirm(true);
-  };
 
   const fetchCompanyDetailsData = async (companyId) => {
     try {
@@ -2163,7 +2132,6 @@ export default function AdminDashboard() {
                     });
                     setFormErrors({});
                     setEditCompanyActiveTab("info");
-                    setShowDeleteSection(false);
                   }}
                 >
                   Close
@@ -2262,51 +2230,6 @@ export default function AdminDashboard() {
                       </CardContent>
                     </Card>
 
-                    {/* Delete Company Section - Collapsible */}
-                    <Card className="border-red-200">
-                      <CardHeader
-                        className="bg-red-50 cursor-pointer hover:bg-red-100 transition-colors"
-                        onClick={() => setShowDeleteSection(!showDeleteSection)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-red-800 flex items-center">
-                            ⚠️ Delete Company
-                          </CardTitle>
-                          <div className="text-red-600">
-                            {showDeleteSection ? (
-                              <ExpandLess className="h-5 w-5" />
-                            ) : (
-                              <ExpandMore className="h-5 w-5" />
-                            )}
-                          </div>
-                        </div>
-                      </CardHeader>
-                      {showDeleteSection && (
-                        <CardContent className="space-y-4 pt-6">
-                          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                            <h4 className="text-lg font-semibold text-red-800 mb-2">
-                              Delete this Company
-                            </h4>
-                            <p className="text-red-700 mb-4">
-                              Once you delete a company, there is no going back.
-                              This will permanently delete the company and all
-                              associated data including locations, departments,
-                              and employee assignments.
-                            </p>
-                            <p className="text-sm text-red-600 mb-4">
-                              <strong>This action cannot be undone.</strong>
-                            </p>
-                            <Button
-                              variant="destructive"
-                              onClick={() => openDeleteModal(editingCompany)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Delete Company
-                            </Button>
-                          </div>
-                        </CardContent>
-                      )}
-                    </Card>
                   </TabsContent>
 
                   {/* Locations Tab */}
@@ -2535,51 +2458,6 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && deletingCompany && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4 text-red-600">
-              Delete Company
-            </h3>
-            <p className="mb-4">
-              Are you sure you want to delete{" "}
-              <strong>{deletingCompany.name}</strong>? This action cannot be
-              undone and will also delete all associated locations, departments,
-              and employees.
-            </p>
-            <p className="mb-4 text-sm text-gray-600">
-              To confirm, please type the company name:{" "}
-              <strong>{deletingCompany.name}</strong>
-            </p>
-            <Input
-              value={companyNameConfirmation}
-              onChange={(e) => setCompanyNameConfirmation(e.target.value)}
-              placeholder="Type company name to confirm"
-              className="mb-4"
-            />
-            <div className="flex gap-2">
-              <Button
-                onClick={handleDeleteCompany}
-                disabled={companyNameConfirmation !== deletingCompany.name}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                Delete Company
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  setDeletingCompany(null);
-                  setCompanyNameConfirmation("");
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Assign Employee Modal */}
       {showAssignEmployee && (
