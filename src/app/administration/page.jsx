@@ -350,16 +350,15 @@ export default function AdministrationPage() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Users className="mr-2" />
-                User Management
+                Employee Management
               </CardTitle>
                   <CardDescription>
-                    Manage user accounts, roles, and permissions
+                    Manage employee records, assignments, and organizational structure
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-gray-600">
-                    Create, modify, and manage user accounts, roles, and access
-                    permissions.
+                    Create, modify, and manage employee records, company assignments, and organizational structure.
                   </p>
                 </CardContent>
               </Card>

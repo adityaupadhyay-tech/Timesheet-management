@@ -38,11 +38,20 @@ export default function EmployeeManagement() {
   // Employee pagination and filters
   const [currentEmployeePage, setCurrentEmployeePage] = useState(1);
   const EMPLOYEES_PER_PAGE = 25;
+  const [searchFilter, setSearchFilter] = useState("");
   const [companyFilter, setCompanyFilter] = useState("");
   const [jobRoleFilter, setJobRoleFilter] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [showEmployeeFilters, setShowEmployeeFilters] = useState(false);
   const [expandedRows, setExpandedRows] = useState({});
+  
+  // Filter options for dropdowns
+  const [filterOptions, setFilterOptions] = useState({
+    companies: [],
+    jobRoles: [],
+    departments: []
+  });
+
 
   // Employee form state
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
@@ -74,6 +83,13 @@ export default function EmployeeManagement() {
     loadEmployees();
   }, []);
 
+  // Update filter options when employees data changes
+  useEffect(() => {
+    if (allEmployees.length > 0) {
+      updateFilterOptions();
+    }
+  }, [allEmployees]);
+
   const loadEmployees = async () => {
     try {
       setLoading(true);
@@ -95,31 +111,147 @@ export default function EmployeeManagement() {
     }
   };
 
+  // Extract unique values for filter dropdowns
+  const updateFilterOptions = () => {
+    const companies = new Set();
+    const jobRoles = new Set();
+    const departments = new Set();
+
+    console.log('=== UPDATING FILTER OPTIONS ===');
+    console.log('Total employees:', allEmployees.length);
+
+    allEmployees.forEach((employee, index) => {
+      // Debug first few employees
+      if (index < 3) {
+        console.log(`Employee ${index + 1}: ${employee.first_name} ${employee.last_name}`, {
+          directCompanyName: employee.company_name,
+          companyAssignments: employee.company_assignments
+        });
+      }
+
+      // Add direct values
+      if (employee.company_name) companies.add(employee.company_name);
+      if (employee.job_title) jobRoles.add(employee.job_title);
+      if (employee.department_name) departments.add(employee.department_name);
+
+      // Add values from assignments
+      if (employee.company_assignments) {
+        employee.company_assignments.forEach(assignment => {
+          if (assignment.company_name) companies.add(assignment.company_name);
+          if (assignment.job_title) jobRoles.add(assignment.job_title);
+        });
+      }
+
+      if (employee.department_assignments) {
+        employee.department_assignments.forEach(assignment => {
+          if (assignment.department_name) departments.add(assignment.department_name);
+        });
+      }
+    });
+
+    const filterOptionsData = {
+      companies: Array.from(companies).sort(),
+      jobRoles: Array.from(jobRoles).sort(),
+      departments: Array.from(departments).sort()
+    };
+
+    console.log('Generated filter options:', filterOptionsData);
+    setFilterOptions(filterOptionsData);
+  };
+
   // Filter and paginate employees
   const getFilteredEmployees = () => {
     return allEmployees.filter((employee) => {
-      if (
-        companyFilter &&
-        !employee.company_name
-          ?.toLowerCase()
-          .includes(companyFilter.toLowerCase())
-      ) {
-        return false;
+      // Debug logging when company filter is active
+      if (companyFilter) {
+        // Get all companies this employee is assigned to
+        const allEmployeeCompanies = new Set();
+        
+        if (employee.company_name) {
+          allEmployeeCompanies.add(employee.company_name);
+        }
+        
+        if (employee.company_assignments) {
+          employee.company_assignments.forEach(assignment => {
+            if (assignment.company_name) {
+              allEmployeeCompanies.add(assignment.company_name);
+            }
+          });
+        }
+        
+        const isExclusivelyAssigned = allEmployeeCompanies.size === 1 && allEmployeeCompanies.has(companyFilter);
+        
+        console.log(`Employee: ${employee.first_name} ${employee.last_name}`, {
+          selectedCompany: companyFilter,
+          allEmployeeCompanies: Array.from(allEmployeeCompanies),
+          isExclusivelyAssigned,
+          willBeIncluded: isExclusivelyAssigned
+        });
       }
-      if (
-        jobRoleFilter &&
-        !employee.job_title?.toLowerCase().includes(jobRoleFilter.toLowerCase())
-      ) {
-        return false;
+
+      // Search filter - search across name, email, and other fields
+      if (searchFilter) {
+        const searchTerm = searchFilter.toLowerCase();
+        const searchMatch = 
+          `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchTerm) ||
+          employee.email?.toLowerCase().includes(searchTerm) ||
+          employee.phone?.toLowerCase().includes(searchTerm);
+        if (!searchMatch) {
+          return false;
+        }
       }
-      if (
-        departmentFilter &&
-        !employee.department_name
-          ?.toLowerCase()
-          .includes(departmentFilter.toLowerCase())
-      ) {
-        return false;
+
+      // Company filter - STRICT: Only show employees from the selected company
+      if (companyFilter) {
+        // Get all companies this employee is assigned to
+        const allEmployeeCompanies = new Set();
+        
+        // Add direct company assignment
+        if (employee.company_name) {
+          allEmployeeCompanies.add(employee.company_name);
+        }
+        
+        // Add companies from assignments
+        if (employee.company_assignments) {
+          employee.company_assignments.forEach(assignment => {
+            if (assignment.company_name) {
+              allEmployeeCompanies.add(assignment.company_name);
+            }
+          });
+        }
+        
+        // Only include employee if they are assigned ONLY to the selected company
+        const companyMatch = allEmployeeCompanies.size === 1 && allEmployeeCompanies.has(companyFilter);
+        
+        if (!companyMatch) {
+          return false;
+        }
       }
+
+      // Job role filter - exact match for selected job role
+      if (jobRoleFilter) {
+        const jobMatch = 
+          employee.job_title === jobRoleFilter ||
+          employee.company_assignments?.some(assignment => 
+            assignment.job_title === jobRoleFilter
+          );
+        if (!jobMatch) {
+          return false;
+        }
+      }
+
+      // Department filter - exact match for selected department
+      if (departmentFilter) {
+        const deptMatch = 
+          employee.department_name === departmentFilter ||
+          employee.department_assignments?.some(assignment => 
+            assignment.department_name === departmentFilter
+          );
+        if (!deptMatch) {
+          return false;
+        }
+      }
+
       return true;
     });
   };
@@ -141,6 +273,7 @@ export default function EmployeeManagement() {
   };
 
   const clearFilters = () => {
+    setSearchFilter("");
     setCompanyFilter("");
     setJobRoleFilter("");
     setDepartmentFilter("");
@@ -522,7 +655,7 @@ export default function EmployeeManagement() {
                   {showEmployeeFilters ? "Hide" : "Filters"}
                 </span>
               </Button>
-              {(companyFilter || jobRoleFilter || departmentFilter) && (
+              {(searchFilter || companyFilter || jobRoleFilter || departmentFilter) && (
                 <Button variant="outline" onClick={clearFilters} className="flex-shrink-0">
                   Clear Filters
                 </Button>
@@ -533,33 +666,63 @@ export default function EmployeeManagement() {
 
         {showEmployeeFilters && (
           <div className="px-6 pb-4">
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <Label htmlFor="search-filter">Search</Label>
+                <Input
+                  id="search-filter"
+                  placeholder="Search by name, email, or phone..."
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                />
+              </div>
               <div>
                 <Label htmlFor="company-filter">Company</Label>
-                <Input
+                <select
                   id="company-filter"
-                  placeholder="Filter by company..."
                   value={companyFilter}
                   onChange={(e) => setCompanyFilter(e.target.value)}
-                />
+                  className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">All Companies</option>
+                  {filterOptions.companies.map((company) => (
+                    <option key={company} value={company}>
+                      {company}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <Label htmlFor="job-filter">Job Role</Label>
-                <Input
+                <select
                   id="job-filter"
-                  placeholder="Filter by job role..."
                   value={jobRoleFilter}
                   onChange={(e) => setJobRoleFilter(e.target.value)}
-                />
+                  className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">All Job Roles</option>
+                  {filterOptions.jobRoles.map((jobRole) => (
+                    <option key={jobRole} value={jobRole}>
+                      {jobRole}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <Label htmlFor="dept-filter">Department</Label>
-                <Input
+                <select
                   id="dept-filter"
-                  placeholder="Filter by department..."
                   value={departmentFilter}
                   onChange={(e) => setDepartmentFilter(e.target.value)}
-                />
+                  className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">All Departments</option>
+                  {filterOptions.departments.map((department) => (
+                    <option key={department} value={department}>
+                      {department}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

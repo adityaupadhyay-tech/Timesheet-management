@@ -31,12 +31,12 @@ export default function UserManagementPage() {
     <Layout userRole={currentUser.role} userName={currentUser.name}>
       <div className="p-6">
         <PageHeader
-          title="User Management"
-          subtitle="Manage user accounts, roles, and permissions"
+          title="Employee Management"
+          subtitle="Manage employee records, assignments, and organizational structure"
           icon={<Users />}
           breadcrumbs={[
             { label: 'Administration', href: '/administration' },
-            { label: 'User Management' },
+            { label: 'Employee Management' },
           ]}
         />
 
