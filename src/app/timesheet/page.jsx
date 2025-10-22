@@ -744,10 +744,22 @@ function TimesheetContent() {
   const renderDetailView = () => (
     <>
       <div className="mb-6">
-        <Button variant="outline" onClick={handleBackToList} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Timesheets
-        </Button>
+        <div className="flex items-center justify-between mb-4">
+          <Button variant="outline" onClick={handleBackToList}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Timesheets
+          </Button>
+          
+          {/* Submit Timesheet Button - Right side */}
+          <Button
+            onClick={handleSubmitTimesheet}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+            title="Submit timesheet for approval"
+          >
+            <Send className="h-4 w-4" />
+            Submit Timesheet
+          </Button>
+        </div>
         
         {selectedTimesheetView && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">

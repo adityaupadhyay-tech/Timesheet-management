@@ -1315,6 +1315,7 @@ export default function TimeEntryGrid({
               <span className="hidden sm:inline">Add New Entry</span>
               <span className="sm:hidden">Add Entry</span>
             </Button>
+            
           </div>
           
           {/* Weekend Toggle Buttons - Show for weekly, bi-weekly, and monthly cycles */}
