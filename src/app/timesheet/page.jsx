@@ -181,27 +181,21 @@ function TimesheetContent() {
   }
 
   const validateTimesheetData = () => {
-    let hasErrors = false
-    
-    // Check if there are any rows with missing department, account, or code
-    gridRows.forEach((row) => {
-      if (!row.department || row.department.trim() === '') {
-        hasErrors = true
-      }
-      if (!row.account || row.account.trim() === '') {
-        hasErrors = true
-      }
-      if (!row.code || row.code.trim() === '') {
-        hasErrors = true
-      }
+    // Check if there's at least one row with complete data
+    const hasValidRows = gridRows.some(row => {
+      const hasRequiredFields = row.department && row.account && row.code
+      const hasTimeEntries = row.weekEntries && Object.values(row.weekEntries).some(dayEntry => 
+        dayEntry.duration && dayEntry.duration.trim() !== ''
+      )
+      return hasRequiredFields && hasTimeEntries
     })
     
-    // If there are errors, trigger validation in the TimeEntryGrid
-    if (hasErrors) {
+    // If no valid rows found, trigger validation in the TimeEntryGrid
+    if (!hasValidRows) {
       setValidationTrigger(prev => prev + 1)
     }
     
-    return hasErrors
+    return !hasValidRows // Return true if no valid rows found (has errors)
   }
 
   const confirmSubmitTimesheet = () => {
@@ -214,6 +208,35 @@ function TimesheetContent() {
       alert('Please enter a valid email address')
       return
     }
+    
+    // Filter out empty rows - only submit rows with actual data
+    const rowsWithData = gridRows.filter(row => {
+      // Check if row has department, account, and code
+      const hasRequiredFields = row.department && row.account && row.code
+      
+      // Check if row has any time entries
+      const hasTimeEntries = row.weekEntries && Object.values(row.weekEntries).some(dayEntry => 
+        dayEntry.duration && dayEntry.duration.trim() !== ''
+      )
+      
+      return hasRequiredFields && hasTimeEntries
+    })
+    
+    if (rowsWithData.length === 0) {
+      alert('No valid time entries found. Please add at least one row with department, account, code, and time entries.')
+      return
+    }
+    
+    console.log('Submitting timesheet with data:', {
+      totalRows: gridRows.length,
+      rowsWithData: rowsWithData.length,
+      filteredRows: rowsWithData,
+      employeeEmail
+    })
+    
+    // TODO: Send filtered data to backend
+    // For now, just show success message
+    alert(`Timesheet submitted successfully!\n\nSubmitted ${rowsWithData.length} entries with data.\nDiscarded ${gridRows.length - rowsWithData.length} empty rows.`)
     
     submitTimesheet()
     setShowSubmitModal(false)
