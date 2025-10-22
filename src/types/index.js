@@ -75,7 +75,9 @@
  * @typedef {Object} TimeEntry
  * @property {string} id
  * @property {string} userId
- * @property {string} [projectId]
+ * @property {string} [department]
+ * @property {string} [account]
+ * @property {string} [code]
  * @property {string} date
  * @property {string} startTime
  * @property {string} [endTime]

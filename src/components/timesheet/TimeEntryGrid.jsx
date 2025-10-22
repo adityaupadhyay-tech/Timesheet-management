@@ -176,7 +176,7 @@ export default function TimeEntryGrid({
 
     const groupedEntries = {}
     weekEntries.forEach(entry => {
-      const key = `${entry.projectId || 'no-project'}-${entry.description || 'no-description'}`
+      const key = `${entry.department || 'no-department'}-${entry.account || 'no-account'}-${entry.code || 'no-code'}`
       if (!groupedEntries[key]) {
         groupedEntries[key] = []
       }
@@ -204,8 +204,9 @@ export default function TimeEntryGrid({
 
       return {
         id: `row-${Date.now()}-${Math.random()}`,
-        projectId: entries[0].projectId || '',
-        description: entries[0].description || '',
+        department: entries[0].department || '',
+        account: entries[0].account || '',
+        code: entries[0].code || '',
         weekEntries,
         status: 'draft',
         isNew: false
@@ -254,14 +255,15 @@ export default function TimeEntryGrid({
   useEffect(() => {
     if (pendingAutoSaves.length > 0) {
       setIsAutoSaving(true)
-      pendingAutoSaves.forEach(({ id, date, duration, isNew, projectId, description }) => {
+      pendingAutoSaves.forEach(({ id, date, duration, isNew, department, account, code }) => {
         const durationMinutes = hhmmToMinutes(duration)
         
         if (durationMinutes === 0 || duration === '' || duration === '0:00') {
           const existingEntry = entries.find(entry => 
             entry.date === date && 
-            entry.projectId === (projectId || undefined) &&
-            entry.description === (description || 'Time entry')
+            entry.department === (department || undefined) &&
+            entry.account === (account || undefined) &&
+            entry.code === (code || undefined)
           )
           
           if (existingEntry) {
@@ -272,18 +274,21 @@ export default function TimeEntryGrid({
         
         if (durationMinutes > 0) {
           const entryData = {
-            projectId,
+            department,
+            account,
+            code,
             startTime: '09:00',
             endTime: '17:00',
             duration,
-            description: description || 'Time entry',
+            description: `${department} - ${account} - ${code}`,
             status: 'draft'
           }
 
           const existingEntry = entries.find(entry => 
             entry.date === date && 
-            entry.projectId === entryData.projectId &&
-            entry.description === entryData.description
+            entry.department === entryData.department &&
+            entry.account === entryData.account &&
+            entry.code === entryData.code
           )
 
           const shouldCreateNew = isNew && !existingEntry
@@ -332,13 +337,14 @@ export default function TimeEntryGrid({
       const groupedEntries = {}
       
       weekEntries.forEach(entry => {
-        const key = `${entry.projectId || 'no-project'}-${entry.description}`
+        const key = `${entry.department || 'no-department'}-${entry.account || 'no-account'}-${entry.code || 'no-code'}`
         
         if (!groupedEntries[key]) {
           groupedEntries[key] = {
             id: `row-${Date.now()}-${Math.random()}`,
-            projectId: entry.projectId || '',
-            description: entry.description,
+            department: entry.department || '',
+            account: entry.account || '',
+            code: entry.code || '',
             weekEntries: {},
             status: 'draft',
             isNew: false
@@ -367,8 +373,9 @@ export default function TimeEntryGrid({
         
         rows.push({
           id: `new-${Date.now()}-${i}`,
-          projectId: '',
-          description: '',
+          department: '',
+          account: '',
+          code: '',
           weekEntries,
           status: 'draft',
           isNew: false
@@ -422,8 +429,9 @@ export default function TimeEntryGrid({
     
     const newRow = {
       id: `new-${Date.now()}`,
-      projectId: '',
-      description: '',
+      department: '',
+      account: '',
+      code: '',
       weekEntries: cycleEntries, // Keep the same property name for compatibility
       status: 'draft',
       isNew: true
@@ -441,9 +449,9 @@ export default function TimeEntryGrid({
           if (dayEntry.duration && dayEntry.duration !== '') {
             const entriesToDelete = entries.filter((entry) => 
               entry.date === date &&
-              (entry.projectId === row.projectId || 
-               (entry.description === row.description && row.description !== '') ||
-               (entry.description === 'Time entry' && (!row.description || row.description === '')))
+              (entry.department === row.department || 
+               (entry.account === row.account && row.account !== '') ||
+               (entry.code === row.code && row.code !== ''))
             )
             entriesToDelete.forEach(entry => onDelete(entry.id))
           }
@@ -462,8 +470,9 @@ export default function TimeEntryGrid({
         if (row.id === id) {
           return {
             ...row,
-            projectId: '',
-            description: '',
+            department: '',
+            account: '',
+            code: '',
             weekEntries: cycleEntries,
             status: 'draft',
             isNew: false
@@ -486,9 +495,9 @@ export default function TimeEntryGrid({
           if (dayEntry.duration && dayEntry.duration !== '') {
             const entriesToDelete = entries.filter((entry) => 
               entry.date === date &&
-              (entry.projectId === row.projectId || 
-               (entry.description === row.description && row.description !== '') ||
-               (entry.description === 'Time entry' && (!row.description || row.description === '')))
+              (entry.department === row.department || 
+               (entry.account === row.account && row.account !== '') ||
+               (entry.code === row.code && row.code !== ''))
             )
             entriesToDelete.forEach(entry => onDelete(entry.id))
           }
@@ -506,11 +515,13 @@ export default function TimeEntryGrid({
         const durationMinutes = hhmmToMinutes(dayEntry.duration)
         if (durationMinutes > 0) {
           const entryData = {
-            projectId: row.projectId,
+            department: row.department,
+            account: row.account,
+            code: row.code,
             startTime: '09:00',
             endTime: '17:00',
             duration: dayEntry.duration,
-            description: row.description || 'Time entry',
+            description: `${row.department} - ${row.account} - ${row.code}`,
             status: row.status
           }
 
@@ -534,7 +545,7 @@ export default function TimeEntryGrid({
       if (row.id === id) {
         const updatedRow = { ...row, [field]: value }
         
-        if (field === 'description' || field === 'projectId') {
+        if (field === 'department' || field === 'account' || field === 'code') {
           if (saveTimeoutRef.current[id]) {
             clearTimeout(saveTimeoutRef.current[id])
           }
@@ -575,8 +586,9 @@ export default function TimeEntryGrid({
               date,
               duration: formattedDuration,
               isNew: row.isNew,
-              projectId: row.projectId,
-              description: row.description
+              department: row.department,
+              account: row.account,
+              code: row.code
             }])
           }, 2000)
         }
@@ -596,8 +608,9 @@ export default function TimeEntryGrid({
               date,
               duration: formattedDuration,
               isNew: currentRow.isNew,
-              projectId: currentRow.projectId,
-              description: currentRow.description
+              department: currentRow.department,
+              account: currentRow.account,
+              code: currentRow.code
             }])
           } else {
           }
@@ -626,15 +639,6 @@ export default function TimeEntryGrid({
     return hours * 60 + minutes
   }
 
-  const getProjectName = (projectId) => {
-    if (!projectId) return 'No Project'
-    const project = projects.find(p => p.id === projectId)
-    return project?.name || 'Unknown Project'
-  }
-
-  const selectProject = (rowId, projectId) => {
-    updateRow(rowId, 'projectId', projectId)
-  }
 
   const getTotalMinutesForWeek = () => {
     const totalMinutes = localGridRows.reduce((total, row) => {
@@ -836,12 +840,16 @@ export default function TimeEntryGrid({
   const validateRow = (row) => {
     const errors = {}
     
-    if (!row.projectId || row.projectId === '') {
-      errors.projectId = 'Project selection is required'
+    if (!row.department || row.department.trim() === '') {
+      errors.department = 'Department is required'
     }
     
-    if (!row.description || row.description.trim() === '') {
-      errors.description = 'Task description cannot be blank'
+    if (!row.account || row.account.trim() === '') {
+      errors.account = 'Account is required'
+    }
+    
+    if (!row.code || row.code.trim() === '') {
+      errors.code = 'Code is required'
     }
     
     return errors
@@ -927,7 +935,7 @@ export default function TimeEntryGrid({
                 )}
               </div>
               <p className="text-gray-600 text-xs sm:text-sm mt-1">
-                Select project, add description, then enter time in hh:mm format for each day
+                Select department, account, and code from dropdowns, then enter time in hh:mm format for each day
                 <span className="ml-2 text-xs text-purple-600 font-medium">
                   ({cycleType === 'semi-monthly' ? 'Semi-monthly view' : 
                     cycleType === 'weekly' ? '5-day week (Mon-Fri)' : 
@@ -1043,8 +1051,9 @@ export default function TimeEntryGrid({
           <table className={`w-full border-collapse ${cycleType === 'bi-weekly' ? 'min-w-[1400px]' : 'min-w-[800px]'}`}>
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/4 min-w-[150px] sm:min-w-[200px]">Project</th>
-                <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/3 min-w-[180px] sm:min-w-[250px]">Description</th>
+                <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/6 min-w-[120px] sm:min-w-[150px]">Department</th>
+                <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/6 min-w-[120px] sm:min-w-[150px]">Account</th>
+                <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/6 min-w-[120px] sm:min-w-[150px]">Code</th>
                 {cycleDays.map((day) => (
                   <th key={day.toISOString()} className="text-center py-2 px-1 font-medium text-gray-700 w-16 sm:w-20 min-w-[60px] sm:min-w-[80px]">
                     <div className="text-xs text-gray-500 mb-1">
@@ -1064,68 +1073,125 @@ export default function TimeEntryGrid({
                   <td className="py-4 px-2 sm:px-4">
                     <div className="relative">
                       <select
-                        value={row.projectId || ''}
+                        value={row.department || ''}
                         onChange={(e) => {
-                          selectProject(row.id, e.target.value)
+                          updateRow(row.id, 'department', e.target.value)
                           clearRowValidation(row.id)
                         }}
                         disabled={isTimesheetLocked}
                         className={`w-full h-10 px-2 sm:px-3 py-2 text-xs sm:text-sm border rounded-lg focus:ring-2 transition-all duration-200 shadow-sm hover:shadow-md appearance-none ${
-                          getRowValidationError(row.id, 'projectId')
+                          getRowValidationError(row.id, 'department')
                             ? 'border-red-300 focus:border-red-500 focus:ring-red-100 bg-red-50'
                             : isTimesheetLocked 
                               ? 'bg-gray-100 cursor-not-allowed opacity-60 border-gray-200' 
                               : 'bg-white hover:bg-gray-50 cursor-pointer border-gray-200 focus:border-blue-500 focus:ring-blue-100'
                         }`}
                       >
-                        <option value="">Select Project</option>
-                        {projects.map((project) => (
-                          <option key={project.id} value={project.id}>
-                            {project.name}
-                          </option>
-                        ))}
+                        <option value="">Select Department</option>
+                        <option value="Engineering">Engineering</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Finance">Finance</option>
+                        <option value="HR">HR</option>
+                        <option value="IT">IT</option>
+                        <option value="Customer Service">Customer Service</option>
                       </select>
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                         <ChevronDown className="w-4 h-4 text-gray-400" />
                       </div>
                     </div>
-                    {getRowValidationError(row.id, 'projectId') && (
+                    {getRowValidationError(row.id, 'department') && (
                       <div className="mt-1 flex items-center gap-1">
                         <div className="w-1 h-1 bg-red-500 rounded-full"></div>
                         <span className="text-xs text-red-600 font-medium">
-                          {getRowValidationError(row.id, 'projectId')}
+                          {getRowValidationError(row.id, 'department')}
                         </span>
                       </div>
                     )}
                   </td>
                   <td className="py-4 px-2 sm:px-4">
-                    <div>
-                      <textarea
-                        value={row.description}
+                    <div className="relative">
+                      <select
+                        value={row.account || ''}
                         onChange={(e) => {
-                          updateRow(row.id, 'description', e.target.value)
+                          updateRow(row.id, 'account', e.target.value)
                           clearRowValidation(row.id)
                         }}
-                        placeholder="Enter description..."
                         disabled={isTimesheetLocked}
-                        className={`w-full px-2 sm:px-3 py-2 border rounded text-xs sm:text-sm focus:ring-2 min-h-[40px] resize-y transition-all duration-200 ${
-                          getRowValidationError(row.id, 'description')
+                        className={`w-full h-10 px-2 sm:px-3 py-2 text-xs sm:text-sm border rounded-lg focus:ring-2 transition-all duration-200 shadow-sm hover:shadow-md appearance-none ${
+                          getRowValidationError(row.id, 'account')
                             ? 'border-red-300 focus:border-red-500 focus:ring-red-100 bg-red-50'
                             : isTimesheetLocked 
                               ? 'bg-gray-100 cursor-not-allowed opacity-60 border-gray-200' 
-                              : 'cursor-text border-gray-200 focus:border-blue-500 focus:ring-blue-100'
+                              : 'bg-white hover:bg-gray-50 cursor-pointer border-gray-200 focus:border-blue-500 focus:ring-blue-100'
                         }`}
-                        rows={2}
-                      />
-                      {getRowValidationError(row.id, 'description') && (
-                        <div className="mt-1 flex items-center gap-1">
-                          <div className="w-1 h-1 bg-red-500 rounded-full"></div>
-                          <span className="text-xs text-red-600 font-medium">
-                            {getRowValidationError(row.id, 'description')}
-                          </span>
-                        </div>
-                      )}
+                      >
+                        <option value="">Select Account</option>
+                        <option value="Project Alpha">Project Alpha</option>
+                        <option value="Project Beta">Project Beta</option>
+                        <option value="Project Gamma">Project Gamma</option>
+                        <option value="Client A">Client A</option>
+                        <option value="Client B">Client B</option>
+                        <option value="Internal">Internal</option>
+                        <option value="Training">Training</option>
+                        <option value="Administrative">Administrative</option>
+                        <option value="Research">Research</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      </div>
                     </div>
+                    {getRowValidationError(row.id, 'account') && (
+                      <div className="mt-1 flex items-center gap-1">
+                        <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                        <span className="text-xs text-red-600 font-medium">
+                          {getRowValidationError(row.id, 'account')}
+                        </span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-4 px-2 sm:px-4">
+                    <div className="relative">
+                      <select
+                        value={row.code || ''}
+                        onChange={(e) => {
+                          updateRow(row.id, 'code', e.target.value)
+                          clearRowValidation(row.id)
+                        }}
+                        disabled={isTimesheetLocked}
+                        className={`w-full h-10 px-2 sm:px-3 py-2 text-xs sm:text-sm border rounded-lg focus:ring-2 transition-all duration-200 shadow-sm hover:shadow-md appearance-none ${
+                          getRowValidationError(row.id, 'code')
+                            ? 'border-red-300 focus:border-red-500 focus:ring-red-100 bg-red-50'
+                            : isTimesheetLocked 
+                              ? 'bg-gray-100 cursor-not-allowed opacity-60 border-gray-200' 
+                              : 'bg-white hover:bg-gray-50 cursor-pointer border-gray-200 focus:border-blue-500 focus:ring-blue-100'
+                        }`}
+                      >
+                        <option value="">Select Code</option>
+                        <option value="DEV">DEV - Development</option>
+                        <option value="TEST">TEST - Testing</option>
+                        <option value="DESIGN">DESIGN - Design</option>
+                        <option value="DOCS">DOCS - Documentation</option>
+                        <option value="MEET">MEET - Meetings</option>
+                        <option value="TRAIN">TRAIN - Training</option>
+                        <option value="ADMIN">ADMIN - Administrative</option>
+                        <option value="SUPPORT">SUPPORT - Support</option>
+                        <option value="RESEARCH">RESEARCH - Research</option>
+                        <option value="REVIEW">REVIEW - Code Review</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      </div>
+                    </div>
+                    {getRowValidationError(row.id, 'code') && (
+                      <div className="mt-1 flex items-center gap-1">
+                        <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+                        <span className="text-xs text-red-600 font-medium">
+                          {getRowValidationError(row.id, 'code')}
+                        </span>
+                      </div>
+                    )}
                   </td>
                   {cycleDays.map((day) => {
                     const dateStr = day.toISOString().split('T')[0]
@@ -1209,6 +1275,7 @@ export default function TimeEntryGrid({
             <tfoot>
               <tr className="border-t-2 border-gray-300 bg-gray-50">
                 <td className="py-4 px-4 font-semibold text-gray-900">Daily Totals</td>
+                <td className="py-4 px-4"></td>
                 <td className="py-4 px-4"></td>
                 {cycleDays.map((day) => {
                   const dateStr = day.toISOString().split('T')[0]

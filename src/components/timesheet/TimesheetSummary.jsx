@@ -47,9 +47,9 @@ export default function TimesheetSummary({ entries, projects, selectedDate, grid
     const breakdown = {}
     
     entries.forEach(entry => {
-      const projectName = entry.projectId 
-        ? projects.find(p => p.id === entry.projectId)?.name || 'Unknown'
-        : 'No Project'
+      const projectName = entry.department && entry.account && entry.code
+        ? `${entry.department} - ${entry.account} - ${entry.code}`
+        : 'No Department/Account/Code'
       
       breakdown[projectName] = (breakdown[projectName] || 0) + entry.duration
     })

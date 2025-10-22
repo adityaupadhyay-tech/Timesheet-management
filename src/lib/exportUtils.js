@@ -36,7 +36,9 @@ export const exportToCSV = (data, options) => {
     'End Time',
     'Duration (Hours)',
     'Duration (Minutes)',
-    'Project',
+    'Department',
+    'Account',
+    'Code',
     'Description',
     'Status',
     'Created At',
@@ -45,7 +47,6 @@ export const exportToCSV = (data, options) => {
   
   // Create CSV rows
   const rows = entries.map(entry => {
-    const project = projects.find(p => p.id === entry.projectId)
     const durationHours = (entry.duration / 60).toFixed(2)
     
     return [
@@ -54,7 +55,9 @@ export const exportToCSV = (data, options) => {
       entry.endTime || 'Ongoing',
       durationHours,
       entry.duration.toString(),
-      project?.name || 'No Project',
+      entry.department || 'No Department',
+      entry.account || 'No Account',
+      entry.code || 'No Code',
       `"${entry.description.replace(/"/g, '""')}"`, // Escape quotes in CSV
       entry.status,
       entry.createdAt,
@@ -111,10 +114,11 @@ export const exportToJSON = (data, options) => {
       color: project.color
     })),
     entries: entries.map(entry => {
-      const project = projects.find(p => p.id === entry.projectId)
       return {
         ...entry,
-        projectName: project?.name || 'No Project',
+        department: entry.department || 'No Department',
+        account: entry.account || 'No Account',
+        code: entry.code || 'No Code',
         durationHours: parseFloat((entry.duration / 60).toFixed(2)),
         durationMinutes: entry.duration
       }
@@ -197,8 +201,9 @@ export const calculateSummary = (entries, projects) => {
   
   const projectHours = {}
   entries.forEach(entry => {
-    const project = projects.find(p => p.id === entry.projectId)
-    const projectName = project?.name || 'No Project'
+    const projectName = entry.department && entry.account && entry.code
+      ? `${entry.department} - ${entry.account} - ${entry.code}`
+      : 'No Department/Account/Code'
     projectHours[projectName] = (projectHours[projectName] || 0) + entry.duration / 60
   })
   

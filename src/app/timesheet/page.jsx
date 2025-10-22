@@ -176,12 +176,15 @@ function TimesheetContent() {
   const validateTimesheetData = () => {
     let hasErrors = false
     
-    // Check if there are any rows with missing project or description
+    // Check if there are any rows with missing department, account, or code
     gridRows.forEach((row) => {
-      if (!row.projectId || row.projectId === '') {
+      if (!row.department || row.department.trim() === '') {
         hasErrors = true
       }
-      if (!row.description || row.description.trim() === '') {
+      if (!row.account || row.account.trim() === '') {
+        hasErrors = true
+      }
+      if (!row.code || row.code.trim() === '') {
         hasErrors = true
       }
     })
