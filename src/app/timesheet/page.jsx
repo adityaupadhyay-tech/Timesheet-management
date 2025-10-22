@@ -844,8 +844,7 @@ function TimesheetContent() {
             
             <TabsContent value="projects" className="space-y-4">
               <ProjectOverview
-                projects={projects}
-                entries={entries}
+                gridRows={gridRows}
               />
             </TabsContent>
           </Tabs>
