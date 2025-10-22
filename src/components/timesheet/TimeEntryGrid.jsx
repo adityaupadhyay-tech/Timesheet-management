@@ -1052,7 +1052,7 @@ export default function TimeEntryGrid({
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/6 min-w-[120px] sm:min-w-[150px]">Department</th>
-                <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/6 min-w-[120px] sm:min-w-[150px]">Account</th>
+                <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/6 min-w-[120px] sm:min-w-[150px]">Jobs</th>
                 <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/6 min-w-[120px] sm:min-w-[150px]">Code</th>
                 {cycleDays.map((day) => (
                   <th key={day.toISOString()} className="text-center py-2 px-1 font-medium text-gray-700 w-16 sm:w-20 min-w-[60px] sm:min-w-[80px]">
