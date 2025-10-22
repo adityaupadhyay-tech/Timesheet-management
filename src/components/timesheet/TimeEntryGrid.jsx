@@ -1088,14 +1088,9 @@ export default function TimeEntryGrid({
                         }`}
                       >
                         <option value="">Select Department</option>
-                        <option value="Engineering">Engineering</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="Sales">Sales</option>
-                        <option value="Operations">Operations</option>
-                        <option value="Finance">Finance</option>
-                        <option value="HR">HR</option>
-                        <option value="IT">IT</option>
-                        <option value="Customer Service">Customer Service</option>
+                        <option value="Desk">Desk</option>
+                        <option value="Chair">Chair</option>
+                        <option value="General Office">General Office</option>
                       </select>
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                         <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -1128,15 +1123,8 @@ export default function TimeEntryGrid({
                         }`}
                       >
                         <option value="">Select Account</option>
-                        <option value="Project Alpha">Project Alpha</option>
-                        <option value="Project Beta">Project Beta</option>
-                        <option value="Project Gamma">Project Gamma</option>
-                        <option value="Client A">Client A</option>
-                        <option value="Client B">Client B</option>
-                        <option value="Internal">Internal</option>
-                        <option value="Training">Training</option>
-                        <option value="Administrative">Administrative</option>
-                        <option value="Research">Research</option>
+                        <option value="Account 1">Account 1</option>
+                        <option value="Account 2">Account 2</option>
                       </select>
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                         <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -1169,16 +1157,14 @@ export default function TimeEntryGrid({
                         }`}
                       >
                         <option value="">Select Code</option>
-                        <option value="DEV">DEV - Development</option>
-                        <option value="TEST">TEST - Testing</option>
-                        <option value="DESIGN">DESIGN - Design</option>
-                        <option value="DOCS">DOCS - Documentation</option>
-                        <option value="MEET">MEET - Meetings</option>
-                        <option value="TRAIN">TRAIN - Training</option>
-                        <option value="ADMIN">ADMIN - Administrative</option>
-                        <option value="SUPPORT">SUPPORT - Support</option>
-                        <option value="RESEARCH">RESEARCH - Research</option>
-                        <option value="REVIEW">REVIEW - Code Review</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Overtime">Overtime</option>
+                        <option value="Bonus">Bonus</option>
+                        <option value="Commissions">Commissions</option>
+                        <option value="Vac Leave">Vac Leave</option>
+                        <option value="Holiday">Holiday</option>
+                        <option value="Mileage- N.T.">Mileage- N.T.</option>
+                        <option value="NT/ MIsc Benefits">NT/ MIsc Benefits</option>
                       </select>
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                         <ChevronDown className="w-4 h-4 text-gray-400" />

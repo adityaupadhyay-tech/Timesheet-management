@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, useCallback } from "react";
+import { memo, useMemo, useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,6 @@ import BuildIcon from "@mui/icons-material/Build";
 import FolderIcon from "@mui/icons-material/Folder";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import MenuIcon from "@mui/icons-material/Menu";
-import LogoutIcon from "@mui/icons-material/Logout";
 
 /**
  * @typedef {Object} SidebarProps
@@ -26,10 +25,13 @@ import LogoutIcon from "@mui/icons-material/Logout";
 const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [selectedPersona, setSelectedPersona] = useState('admin');
 
-  const handleLogout = useCallback(() => {
-    router.push("/login");
-  }, [router]);
+  const handlePersonaChange = useCallback((persona) => {
+    setSelectedPersona(persona);
+    // Here you can add logic to change the view based on persona
+    console.log('Switched to persona:', persona);
+  }, []);
 
   const menuItems = useMemo(() => [
       { href: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
@@ -68,7 +70,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
       {/* Sidebar */}
       <div
         className={`
-        fixed top-0 left-0 h-full bg-white shadow-lg z-50 transition-all duration-300 ease-in-out
+        fixed top-0 left-0 h-full bg-white shadow-lg z-50 transition-all duration-300 ease-in-out flex flex-col
         lg:relative lg:translate-x-0
         ${
           isOpen
@@ -104,7 +106,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 px-2 py-4 space-y-1">
+        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
@@ -129,7 +131,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
         </nav>
 
         {/* User Section */}
-        <div className="border-t px-2 py-4">
+        <div className="border-t px-2 py-4 flex-shrink-0">
           {/* User Info */}
           <div className="px-3 py-2">
             {isOpen ? (
@@ -150,24 +152,31 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
             )}
           </div>
 
-          {/* Logout Button */}
-          <div className="px-3 py-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className={`w-full ${!isOpen && "px-2"}`}
-            >
-              {isOpen ? (
-                <>
-                  <LogoutIcon className="h-4 w-4 mr-2" />
-                  Logout
-                </>
-              ) : (
-                <LogoutIcon className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          {/* Persona Switcher */}
+          {isOpen && (
+            <div className="px-3 py-1">
+              <div className="text-xs text-gray-500 font-medium mb-1">Switch View</div>
+              <div className="space-y-0.5">
+                {[
+                  { key: 'admin', label: 'Admin', color: 'bg-blue-100 text-blue-700' },
+                  { key: 'supervisor', label: 'Supervisor', color: 'bg-orange-100 text-orange-700' },
+                  { key: 'employee', label: 'Employee', color: 'bg-green-100 text-green-700' }
+                ].map((persona) => (
+                  <button
+                    key={persona.key}
+                    onClick={() => handlePersonaChange(persona.key)}
+                    className={`w-full text-left px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                      selectedPersona === persona.key
+                        ? persona.color
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {persona.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

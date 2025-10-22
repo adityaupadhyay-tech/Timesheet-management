@@ -45,7 +45,14 @@ function TimesheetContent() {
 
   const [showExportModal, setShowExportModal] = useState(false)
   const [showSubmitModal, setShowSubmitModal] = useState(false)
+  const [employeeEmail, setEmployeeEmail] = useState('')
   const [selectedDate, setSelectedDate] = useState(new Date())
+  
+  // Helper function to validate email format
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
   const [gridRows, setGridRows] = useState([])
   const [validationTrigger, setValidationTrigger] = useState(0)
   
@@ -198,12 +205,24 @@ function TimesheetContent() {
   }
 
   const confirmSubmitTimesheet = () => {
+    if (!employeeEmail.trim()) {
+      alert('Please enter your email address')
+      return
+    }
+    
+    if (!isValidEmail(employeeEmail)) {
+      alert('Please enter a valid email address')
+      return
+    }
+    
     submitTimesheet()
     setShowSubmitModal(false)
+    setEmployeeEmail('') // Reset email field
   }
 
   const cancelSubmitTimesheet = () => {
     setShowSubmitModal(false)
+    setEmployeeEmail('') // Reset email field
   }
 
   const handleGridDataChange = (newGridRows) => {
@@ -754,10 +773,10 @@ function TimesheetContent() {
           <Button
             onClick={handleSubmitTimesheet}
             className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-            title="Submit timesheet for approval"
+            title="Sign timesheet for approval"
           >
             <Send className="h-4 w-4" />
-            Submit Timesheet
+            Sign Timesheet
           </Button>
         </div>
         
@@ -964,8 +983,8 @@ function TimesheetContent() {
                     <Send className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Submit Timesheet</h3>
-                    <p className="text-sm text-gray-600">Confirm your submission</p>
+                    <h3 className="text-lg font-semibold text-gray-900">Sign Timesheet</h3>
+                    <p className="text-sm text-gray-600">Enter your email to sign and submit</p>
                   </div>
                 </div>
               </div>
@@ -973,14 +992,34 @@ function TimesheetContent() {
               {/* Content */}
               <div className="px-6 py-6">
                 <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="text-sm text-gray-700 italic">
+                      "I {selectedTimesheetView?.employeeName || 'Employee Name'}, hereby attest that the amounts reported on this worksheet are true and correct to the best of my knowledge."
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="employee-email" className="text-sm font-medium text-gray-700">
+                      Employee Email
+                    </Label>
+                    <Input
+                      id="employee-email"
+                      type="email"
+                      placeholder="Enter your email address"
+                      value={employeeEmail}
+                      onChange={(e) => setEmployeeEmail(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  
                   <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                     <div className="p-1 bg-amber-100 rounded-full">
                       <CheckCircle className="h-4 w-4 text-amber-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-amber-800">Ready to Submit?</p>
+                      <p className="text-sm font-medium text-amber-800">Ready to Sign?</p>
                       <p className="text-xs text-amber-700 mt-1">
-                        Your timesheet will be sent for review and cannot be edited after submission.
+                        Your timesheet will be signed and sent for review. It cannot be edited after signing.
                       </p>
                     </div>
                   </div>
@@ -1044,10 +1083,11 @@ function TimesheetContent() {
                 </Button>
                 <Button
                   onClick={confirmSubmitTimesheet}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  disabled={!employeeEmail.trim() || !isValidEmail(employeeEmail)}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  Submit Timesheet
+                  Sign and Submit
                 </Button>
               </div>
             </div>
