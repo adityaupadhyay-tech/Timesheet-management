@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -26,7 +26,7 @@ import CreditCardIcon from '@mui/icons-material/CreditCard'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 
-export default function MyStuffPage() {
+function MyStuffContent() {
   const { user: currentUser } = useUser()
   const searchParams = useSearchParams()
   const [activeSection, setActiveSection] = useState(null)
@@ -768,5 +768,13 @@ export default function MyStuffPage() {
       </div>
       </div>
     </Layout>
+  )
+}
+
+export default function MyStuffPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <MyStuffContent />
+    </Suspense>
   )
 }
