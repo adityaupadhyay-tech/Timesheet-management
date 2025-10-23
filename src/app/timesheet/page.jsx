@@ -791,16 +791,6 @@ function TimesheetContent() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Timesheets
           </Button>
-          
-          {/* Submit Timesheet Button - Right side */}
-          <Button
-            onClick={handleSubmitTimesheet}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-            title="Sign timesheet for approval"
-          >
-            <Send className="h-4 w-4" />
-            Sign Timesheet
-          </Button>
         </div>
         
         {selectedTimesheetView && (
@@ -857,7 +847,7 @@ function TimesheetContent() {
                 onGridDataChange={handleGridDataChange}
                 selectedCompany={selectedCompany}
                 timesheet={currentTimesheet}
-                onSubmitTimesheet={submitTimesheet}
+                onSubmitTimesheet={handleSubmitTimesheet}
                 onApproveTimesheet={approveTimesheet}
                 onRejectTimesheet={rejectTimesheet}
                 validationTrigger={validationTrigger}

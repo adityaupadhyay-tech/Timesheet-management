@@ -28,7 +28,9 @@ import {
   AlertCircle,
   ThumbsUp,
   ThumbsDown,
-  MessageSquare
+  MessageSquare,
+  Printer,
+  Download
 } from 'lucide-react'
 import { 
   getCycleStartDate, 
@@ -1284,7 +1286,7 @@ export default function TimeEntryGrid({
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pt-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Button
               variant="outline"
               size="sm"
@@ -1302,51 +1304,125 @@ export default function TimeEntryGrid({
               <span className="sm:hidden">Add Entry</span>
             </Button>
             
+            {/* Weekend Toggle Buttons - Show for weekly, bi-weekly, and monthly cycles */}
+            {(cycleType === 'weekly' || cycleType === 'bi-weekly' || cycleType === 'monthly') && (
+              <>
+                <Button
+                  variant={includeSaturday ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    const wasIncluded = includeSaturday
+                    setIncludeSaturday(!includeSaturday)
+                    if (wasIncluded) {
+                    }
+                  }}
+                  className="flex items-center gap-2"
+                  title={includeSaturday ? "Remove Saturday (will clear all Saturday entries)" : "Add Saturday"}
+                >
+                  <Calendar className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {includeSaturday ? "Remove Sat" : "Add Saturday"}
+                  </span>
+                  <span className="sm:hidden">
+                    {includeSaturday ? "No Sat" : "Add Sat"}
+                  </span>
+                </Button>
+                
+                <Button
+                  variant={includeSunday ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    const wasIncluded = includeSunday
+                    setIncludeSunday(!includeSunday)
+                    if (wasIncluded) {
+                    }
+                  }}
+                  className="flex items-center gap-2"
+                  title={includeSunday ? "Remove Sunday (will clear all Sunday entries)" : "Add Sunday"}
+                >
+                  <Calendar className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {includeSunday ? "Remove Sun" : "Add Sunday"}
+                  </span>
+                  <span className="sm:hidden">
+                    {includeSunday ? "No Sun" : "Add Sun"}
+                  </span>
+                </Button>
+              </>
+            )}
+            
+            {/* Print Timesheet Button */}
+            <Button
+              onClick={() => window.print()}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              title="Print timesheet"
+            >
+              <Printer className="h-4 w-4" />
+              <span className="hidden sm:inline">Print Timesheet</span>
+              <span className="sm:hidden">Print</span>
+            </Button>
+            
+            {/* Download Timesheet Button */}
+            <Button
+              onClick={() => {
+                // Convert grid rows to CSV
+                const csvRows = [
+                  ['Department', 'Account', 'Code', ...cycleDays.map(d => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })), 'Total']
+                ]
+                
+                localGridRows.forEach(row => {
+                  const rowData = [
+                    row.department || '',
+                    row.account || '',
+                    row.code || '',
+                    ...cycleDays.map(day => {
+                      const dateStr = day.toISOString().split('T')[0]
+                      return row.weekEntries[dateStr]?.duration || ''
+                    }),
+                    row.total || ''
+                  ]
+                  csvRows.push(rowData)
+                })
+                
+                // Create CSV content
+                const csvContent = csvRows.map(row => row.join(',')).join('\n')
+                
+                // Download CSV file
+                const blob = new Blob([csvContent], { type: 'text/csv' })
+                const url = URL.createObjectURL(blob)
+                const link = document.createElement('a')
+                link.href = url
+                link.download = `timesheet_${cyclePeriod.replace(/\s+/g, '_')}.csv`
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+                URL.revokeObjectURL(url)
+              }}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              title="Download timesheet as CSV"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Download</span>
+              <span className="sm:hidden">DL</span>
+            </Button>
           </div>
           
-          {/* Weekend Toggle Buttons - Show for weekly, bi-weekly, and monthly cycles */}
-          {(cycleType === 'weekly' || cycleType === 'bi-weekly' || cycleType === 'monthly') && (
-            <div className="flex items-center gap-2 flex-wrap">
+          {/* Sign Timesheet Button - Right side */}
+          {onSubmitTimesheet && (
+            <div className="flex items-center gap-3">
               <Button
-                variant={includeSaturday ? "default" : "outline"}
+                onClick={onSubmitTimesheet}
                 size="sm"
-                onClick={() => {
-                  const wasIncluded = includeSaturday
-                  setIncludeSaturday(!includeSaturday)
-                  if (wasIncluded) {
-                  }
-                }}
-                className="flex items-center gap-2"
-                title={includeSaturday ? "Remove Saturday (will clear all Saturday entries)" : "Add Saturday"}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                title="Sign timesheet for approval"
               >
-                <Calendar className="h-4 w-4" />
-                <span className="hidden sm:inline">
-                  {includeSaturday ? "Remove Sat" : "Add Saturday"}
-                </span>
-                <span className="sm:hidden">
-                  {includeSaturday ? "No Sat" : "Add Sat"}
-                </span>
-              </Button>
-              
-              <Button
-                variant={includeSunday ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  const wasIncluded = includeSunday
-                  setIncludeSunday(!includeSunday)
-                  if (wasIncluded) {
-                  }
-                }}
-                className="flex items-center gap-2"
-                title={includeSunday ? "Remove Sunday (will clear all Sunday entries)" : "Add Sunday"}
-              >
-                <Calendar className="h-4 w-4" />
-                <span className="hidden sm:inline">
-                  {includeSunday ? "Remove Sun" : "Add Sunday"}
-                </span>
-                <span className="sm:hidden">
-                  {includeSunday ? "No Sun" : "Add Sun"}
-                </span>
+                <Send className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign Timesheet</span>
+                <span className="sm:hidden">Sign</span>
               </Button>
             </div>
           )}
