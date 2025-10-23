@@ -1,9 +1,14 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import { useUser } from '@/contexts/UserContext'
+import { ArrowLeft, Save } from 'lucide-react'
 import PersonIcon from '@mui/icons-material/Person'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import SettingsIcon from '@mui/icons-material/Settings'
@@ -23,6 +28,45 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime'
 
 export default function MyStuffPage() {
   const { user: currentUser } = useUser()
+  const searchParams = useSearchParams()
+  const [activeSection, setActiveSection] = useState(null)
+  
+  // Check for section parameter in URL
+  useEffect(() => {
+    const section = searchParams.get('section')
+    if (section && currentUser.role === 'Employee') {
+      setActiveSection(section)
+    }
+  }, [searchParams, currentUser.role])
+  
+  // Basic Information form state
+  const [basicInfo, setBasicInfo] = useState({
+    company: '',
+    firstName: '',
+    lastName: '',
+    address1: '',
+    address2: '',
+    city: '',
+    state: '',
+    zipcode: '',
+    homePhone: '',
+    workPhone: '',
+    workEmail: ''
+  })
+
+  // Job Status form state
+  const [jobStatus, setJobStatus] = useState({
+    alternateId: '',
+    occupation: '',
+    workersCompCode: '',
+    clientHireDate: '',
+    companyHireDate: '',
+    terminationDate: '',
+    anniversaryDate: '',
+    reviewDate: '',
+    payRate: '',
+    standardHours: ''
+  })
 
   // Sub-tabs for My Profile
   const profileTabs = useMemo(() => [
@@ -76,8 +120,352 @@ export default function MyStuffPage() {
     return []
   }, [currentUser.role])
 
+  // Handle form save
+  const handleSaveBasicInfo = () => {
+    console.log('Saving basic info:', basicInfo)
+    // TODO: Implement save logic
+    alert('Basic information saved successfully!')
+    setActiveSection(null)
+  }
+
+  const handleSaveJobStatus = () => {
+    console.log('Saving job status:', jobStatus)
+    // TODO: Implement save logic
+    alert('Job status saved successfully!')
+    setActiveSection(null)
+  }
+
+  // Render Job Status form
+  const renderJobStatusForm = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="outline"
+          onClick={() => setActiveSection(null)}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <h2 className="text-2xl font-semibold text-gray-900">Job Status</h2>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Employment Details</CardTitle>
+          <CardDescription>View your job status and employment information</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="alternateId">Alternate ID</Label>
+              <Input
+                id="alternateId"
+                value={jobStatus.alternateId}
+                disabled
+                placeholder="Enter alternate ID"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="occupation">Occupation</Label>
+              <Input
+                id="occupation"
+                value={jobStatus.occupation}
+                disabled
+                placeholder="Enter occupation"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="workersCompCode">Worker's Comp Code</Label>
+              <Input
+                id="workersCompCode"
+                value={jobStatus.workersCompCode}
+                disabled
+                placeholder="Enter worker's comp code"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="clientHireDate">Client Hire Date</Label>
+              <Input
+                id="clientHireDate"
+                type="date"
+                value={jobStatus.clientHireDate}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="companyHireDate">Company Hire Date</Label>
+              <Input
+                id="companyHireDate"
+                type="date"
+                value={jobStatus.companyHireDate}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="terminationDate">Termination Date</Label>
+              <Input
+                id="terminationDate"
+                type="date"
+                value={jobStatus.terminationDate}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="anniversaryDate">Anniversary Date</Label>
+              <Input
+                id="anniversaryDate"
+                type="date"
+                value={jobStatus.anniversaryDate}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reviewDate">Review Date</Label>
+              <Input
+                id="reviewDate"
+                type="date"
+                value={jobStatus.reviewDate}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payRate">Pay Rate</Label>
+              <Input
+                id="payRate"
+                type="number"
+                value={jobStatus.payRate}
+                disabled
+                placeholder="Enter pay rate"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="standardHours">Standard Hours</Label>
+              <Input
+                id="standardHours"
+                type="number"
+                value={jobStatus.standardHours}
+                disabled
+                placeholder="Enter standard hours"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setActiveSection(null)}
+            >
+              Back to My Stuff
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+
+  // Render Basic Information form
+  const renderBasicInfoForm = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="outline"
+          onClick={() => setActiveSection(null)}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <h2 className="text-2xl font-semibold text-gray-900">Basic Information</h2>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Personal Details</CardTitle>
+          <CardDescription>Update your basic personal information</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="company">Company</Label>
+              <Input
+                id="company"
+                value={basicInfo.company}
+                disabled
+                placeholder="Enter company name"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                value={basicInfo.firstName}
+                disabled
+                placeholder="Enter first name"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                value={basicInfo.lastName}
+                disabled
+                placeholder="Enter last name"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="workEmail">Work Email</Label>
+              <Input
+                id="workEmail"
+                type="email"
+                value={basicInfo.workEmail}
+                disabled
+                placeholder="Enter work email"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address1">Address Line 1</Label>
+              <Input
+                id="address1"
+                value={basicInfo.address1}
+                disabled
+                placeholder="Enter street address"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address2">Address Line 2</Label>
+              <Input
+                id="address2"
+                value={basicInfo.address2}
+                disabled
+                placeholder="Apartment, suite, etc. (optional)"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="city">City</Label>
+              <Input
+                id="city"
+                value={basicInfo.city}
+                disabled
+                placeholder="Enter city"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="state">State</Label>
+              <Input
+                id="state"
+                value={basicInfo.state}
+                disabled
+                placeholder="Enter state"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="zipcode">Zip Code</Label>
+              <Input
+                id="zipcode"
+                value={basicInfo.zipcode}
+                disabled
+                placeholder="Enter zip code"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="homePhone">Home Phone</Label>
+              <Input
+                id="homePhone"
+                type="tel"
+                value={basicInfo.homePhone}
+                disabled
+                placeholder="Enter home phone"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="workPhone">Work Phone</Label>
+              <Input
+                id="workPhone"
+                type="tel"
+                value={basicInfo.workPhone}
+                disabled
+                placeholder="Enter work phone"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setActiveSection(null)}
+            >
+              Back to My Stuff
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+
   // Render Employee view with card-based layout
   if (currentUser.role === 'Employee') {
+    // Show form if a section is active
+    if (activeSection === 'basic-info') {
+      return (
+        <Layout userRole={currentUser.role} userName={currentUser.name}>
+          <div className="p-6">
+            {renderBasicInfoForm()}
+          </div>
+        </Layout>
+      )
+    }
+
+    if (activeSection === 'job-status') {
+      return (
+        <Layout userRole={currentUser.role} userName={currentUser.name}>
+          <div className="p-6">
+            {renderJobStatusForm()}
+          </div>
+        </Layout>
+      )
+    }
+
     return (
       <Layout userRole={currentUser.role} userName={currentUser.name}>
         <div className="p-6">
@@ -98,12 +486,20 @@ export default function MyStuffPage() {
                   <Card
                     key={tab.id}
                     className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => console.log(`Navigate to ${tab.label}`)}
+                    onClick={() => {
+                      if (tab.id === 'basic-info') {
+                        setActiveSection('basic-info')
+                      } else if (tab.id === 'job-status') {
+                        setActiveSection('job-status')
+                      } else {
+                        console.log(`Navigate to ${tab.label}`)
+                      }
+                    }}
                   >
                     <CardHeader>
                       <CardTitle className="flex items-center">
-                        <span className="mr-2 text-gray-600">{tab.icon}</span>
-                        {tab.label}
+                        <span className="mr-2 text-gray-600 w-5 flex-shrink-0">{tab.icon}</span>
+                        <span className="text-left">{tab.label}</span>
                       </CardTitle>
                       <CardDescription>
                         {tab.id === 'basic-info' && 'View and update your basic personal information'}
@@ -146,8 +542,8 @@ export default function MyStuffPage() {
                   >
                     <CardHeader>
                       <CardTitle className="flex items-center">
-                        <span className="mr-2 text-gray-600">{tab.icon}</span>
-                        {tab.label}
+                        <span className="mr-2 text-gray-600 w-5 flex-shrink-0">{tab.icon}</span>
+                        <span className="text-left">{tab.label}</span>
                       </CardTitle>
                       <CardDescription>
                         {tab.id === 'earning-statement' && 'View your payslips and earning statements'}
@@ -184,29 +580,29 @@ export default function MyStuffPage() {
   return (
     <Layout userRole={currentUser.role} userName={currentUser.name}>
       <div className="p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Stuff</h1>
-          <p className="text-gray-600">Manage your personal information, preferences, and account settings</p>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">My Stuff</h1>
+        <p className="text-gray-600">Manage your personal information, preferences, and account settings</p>
+      </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {sections.map((section, index) => (
             <Card key={index} className={`cursor-pointer transition-all border-2 ${section.color}`}>
-              <CardHeader>
+          <CardHeader>
                 <div className="flex items-center space-x-3 mb-2">
                   {section.icon}
                   <CardTitle>{section.title}</CardTitle>
                 </div>
                 <CardDescription>{section.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600">
                   {section.content}
-                </p>
-              </CardContent>
-            </Card>
+            </p>
+          </CardContent>
+        </Card>
           ))}
-        </div>
+      </div>
       </div>
     </Layout>
   )

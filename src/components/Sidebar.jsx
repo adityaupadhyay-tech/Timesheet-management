@@ -14,6 +14,20 @@ import BuildIcon from "@mui/icons-material/Build";
 import FolderIcon from "@mui/icons-material/Folder";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import MenuIcon from "@mui/icons-material/Menu";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import InfoIcon from "@mui/icons-material/Info";
+import WorkIcon from "@mui/icons-material/Work";
+import GroupIcon from "@mui/icons-material/Group";
+import ContactPhoneIcon from "@mui/icons-material/ContactPhone";
+import EventIcon from "@mui/icons-material/Event";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import ReceiptIcon from "@mui/icons-material/Receipt";
+import DescriptionIcon from "@mui/icons-material/Description";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import CreditCardIcon from "@mui/icons-material/CreditCard";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { useUser } from "@/contexts/UserContext";
 
 /**
@@ -28,6 +42,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
   const pathname = usePathname();
   const { user, setUser } = useUser();
   const [selectedPersona, setSelectedPersona] = useState(userRole);
+  const [isMyStuffOpen, setIsMyStuffOpen] = useState(false);
 
   // Update selectedPersona when userRole changes
   useEffect(() => {
@@ -49,7 +64,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
   const menuItems = useMemo(() => {
     const allItems = [
       { href: "/dashboard", label: "Dashboard", icon: <DashboardIcon />, roles: ['Admin', 'Manager', 'Employee'] },
-      { href: "/my-stuff", label: "My stuff", icon: <PersonIcon />, roles: ['Admin', 'Manager', 'Employee'] },
+      { href: "/my-stuff", label: "My stuff", icon: <PersonIcon />, roles: ['Admin', 'Manager', 'Employee'], hasSubmenu: true },
       {
         href: "/timesheet",
         label: "Timesheet management",
@@ -76,6 +91,33 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     
     // Filter menu items based on user role
     return allItems.filter(item => item.roles.includes(userRole));
+  }, [userRole]);
+
+  // My Stuff submenu items for Employee role
+  const myStuffSubmenu = useMemo(() => {
+    if (userRole === 'Employee') {
+      return {
+        profile: [
+          { id: 'basic-info', label: 'Basic Information', icon: <InfoIcon /> },
+          { id: 'job-status', label: 'Job Status', icon: <WorkIcon /> },
+          { id: 'department', label: 'Department', icon: <GroupIcon /> },
+          { id: 'personal-info', label: 'Personal Information', icon: <PersonIcon /> },
+          { id: 'paid-leave', label: 'Paid Leave', icon: <EventIcon /> },
+          { id: 'emergency-contact', label: 'Emergency Contact', icon: <ContactPhoneIcon /> },
+          { id: 'performance-coaching', label: 'Performance Coaching', icon: <TrendingUpIcon /> }
+        ],
+        payroll: [
+          { id: 'earning-statement', label: 'Earning Statement', icon: <ReceiptIcon /> },
+          { id: 'w2-register', label: 'W-2 Register', icon: <DescriptionIcon /> },
+          { id: 'tax-settings', label: 'Tax Settings', icon: <AccountBalanceIcon /> },
+          { id: 'direct-deposits', label: 'Direct Deposits', icon: <CreditCardIcon /> },
+          { id: 'ytd-info', label: 'Year to Date Information', icon: <CalendarTodayIcon /> },
+          { id: 'online-timecard', label: 'On-line Timecard', icon: <AccessTimeIcon /> },
+          { id: 'sundial-clock', label: 'Sundial Time Clock', icon: <AccessTimeIcon /> }
+        ]
+      }
+    }
+    return null
   }, [userRole]);
 
   return (
@@ -131,6 +173,74 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
           {menuItems.map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
+            
+            // Handle My Stuff with dropdown
+            if (item.hasSubmenu && userRole === 'Employee' && myStuffSubmenu) {
+              return (
+                <div key={item.href}>
+                  <button
+                    onClick={() => setIsMyStuffOpen(!isMyStuffOpen)}
+                    className={`
+                      w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors
+                      ${
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "text-gray-700 hover:text-primary hover:bg-gray-50"
+                      }
+                    `}
+                  >
+                    <div className="flex items-center">
+                      <span className="text-lg mr-3">{item.icon}</span>
+                      {isOpen && <span>{item.label}</span>}
+                    </div>
+                    {isOpen && (
+                      isMyStuffOpen ? <ExpandMoreIcon className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                  
+                  {/* Dropdown submenu */}
+                  {isMyStuffOpen && isOpen && (
+                    <div className="ml-4 mt-1 space-y-1">
+                      {/* My Profile Section */}
+                      <div className="px-3 py-2">
+                        <div className="text-xs font-semibold text-gray-500 uppercase mb-2">My Profile</div>
+                        {myStuffSubmenu.profile.map((subItem) => (
+                          <button
+                            key={subItem.id}
+                            onClick={() => {
+                              router.push(`/my-stuff?section=${subItem.id}`)
+                            }}
+                            className="w-full flex items-center px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                          >
+                            <span className="mr-2 text-base w-5 flex justify-center">{subItem.icon}</span>
+                            <span className="text-left">{subItem.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {/* My Payroll Section */}
+                      <div className="px-3 py-2">
+                        <div className="text-xs font-semibold text-gray-500 uppercase mb-2">My Payroll</div>
+                        {myStuffSubmenu.payroll.map((subItem) => (
+                          <button
+                            key={subItem.id}
+                            onClick={() => {
+                              router.push(`/my-stuff?section=${subItem.id}`)
+                            }}
+                            className="w-full flex items-center px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                          >
+                            <span className="mr-2 text-base w-5 flex justify-center">{subItem.icon}</span>
+                            <span className="text-left">{subItem.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            
+            // Regular menu items
             return (
               <Link
                 key={item.href}
