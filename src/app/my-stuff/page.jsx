@@ -68,6 +68,18 @@ export default function MyStuffPage() {
     standardHours: ''
   })
 
+  // Department form state
+  const [department, setDepartment] = useState({
+    department1: '',
+    department1Percent: '',
+    department2: '',
+    department2Percent: '',
+    department3: '',
+    department3Percent: '',
+    department4: '',
+    department4Percent: ''
+  })
+
   // Sub-tabs for My Profile
   const profileTabs = useMemo(() => [
     { id: 'basic-info', label: 'Basic Information', icon: <InfoIcon /> },
@@ -134,6 +146,141 @@ export default function MyStuffPage() {
     alert('Job status saved successfully!')
     setActiveSection(null)
   }
+
+  const handleSaveDepartment = () => {
+    console.log('Saving department:', department)
+    // TODO: Implement save logic
+    alert('Department information saved successfully!')
+    setActiveSection(null)
+  }
+
+  // Render Department form
+  const renderDepartmentForm = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="outline"
+          onClick={() => setActiveSection(null)}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <h2 className="text-2xl font-semibold text-gray-900">Department</h2>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Department Assignment</CardTitle>
+          <CardDescription>View your department assignments and percentages</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="department1">Department 1</Label>
+              <Input
+                id="department1"
+                value={department.department1}
+                disabled
+                placeholder="Enter department name"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="department1Percent">Department 1 Percent</Label>
+              <Input
+                id="department1Percent"
+                type="number"
+                value={department.department1Percent}
+                disabled
+                placeholder="Enter percentage"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="department2">Department 2</Label>
+              <Input
+                id="department2"
+                value={department.department2}
+                disabled
+                placeholder="Enter department name"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="department2Percent">Department 2 Percent</Label>
+              <Input
+                id="department2Percent"
+                type="number"
+                value={department.department2Percent}
+                disabled
+                placeholder="Enter percentage"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="department3">Department 3</Label>
+              <Input
+                id="department3"
+                value={department.department3}
+                disabled
+                placeholder="Enter department name"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="department3Percent">Department 3 Percent</Label>
+              <Input
+                id="department3Percent"
+                type="number"
+                value={department.department3Percent}
+                disabled
+                placeholder="Enter percentage"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="department4">Department 4</Label>
+              <Input
+                id="department4"
+                value={department.department4}
+                disabled
+                placeholder="Enter department name"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="department4Percent">Department 4 Percent</Label>
+              <Input
+                id="department4Percent"
+                type="number"
+                value={department.department4Percent}
+                disabled
+                placeholder="Enter percentage"
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setActiveSection(null)}
+            >
+              Back to My Stuff
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
 
   // Render Job Status form
   const renderJobStatusForm = () => (
@@ -466,6 +613,16 @@ export default function MyStuffPage() {
       )
     }
 
+    if (activeSection === 'department') {
+      return (
+        <Layout userRole={currentUser.role} userName={currentUser.name}>
+          <div className="p-6">
+            {renderDepartmentForm()}
+          </div>
+        </Layout>
+      )
+    }
+
     return (
       <Layout userRole={currentUser.role} userName={currentUser.name}>
         <div className="p-6">
@@ -485,12 +642,18 @@ export default function MyStuffPage() {
                 {profileTabs.map((tab) => (
                   <Card
                     key={tab.id}
-                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    className={`cursor-pointer hover:shadow-md transition-all ${
+                      activeSection === tab.id
+                        ? 'border-2 border-blue-500 bg-blue-50'
+                        : ''
+                    }`}
                     onClick={() => {
                       if (tab.id === 'basic-info') {
                         setActiveSection('basic-info')
                       } else if (tab.id === 'job-status') {
                         setActiveSection('job-status')
+                      } else if (tab.id === 'department') {
+                        setActiveSection('department')
                       } else {
                         console.log(`Navigate to ${tab.label}`)
                       }

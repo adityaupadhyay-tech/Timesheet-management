@@ -2,7 +2,7 @@
 
 import { memo, useMemo, useCallback, useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PersonIcon from "@mui/icons-material/Person";
@@ -40,14 +40,25 @@ import { useUser } from "@/contexts/UserContext";
 const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, setUser } = useUser();
   const [selectedPersona, setSelectedPersona] = useState(userRole);
   const [isMyStuffOpen, setIsMyStuffOpen] = useState(false);
+  
+  // Get current section from URL if on my-stuff page
+  const currentSection = searchParams.get('section');
 
   // Update selectedPersona when userRole changes
   useEffect(() => {
     setSelectedPersona(userRole);
   }, [userRole]);
+
+  // Keep My Stuff dropdown open if there's an active section
+  useEffect(() => {
+    if (currentSection && pathname === '/my-stuff') {
+      setIsMyStuffOpen(true);
+    }
+  }, [currentSection, pathname]);
 
   const handlePersonaChange = useCallback((persona) => {
     setSelectedPersona(persona);
@@ -210,7 +221,11 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                             onClick={() => {
                               router.push(`/my-stuff?section=${subItem.id}`)
                             }}
-                            className="w-full flex items-center px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                            className={`w-full flex items-center px-3 py-2 rounded-md text-sm transition-colors ${
+                              currentSection === subItem.id
+                                ? 'bg-blue-50 text-blue-700 font-medium'
+                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                            }`}
                           >
                             <span className="mr-2 text-base w-5 flex justify-center">{subItem.icon}</span>
                             <span className="text-left">{subItem.label}</span>
@@ -227,7 +242,11 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                             onClick={() => {
                               router.push(`/my-stuff?section=${subItem.id}`)
                             }}
-                            className="w-full flex items-center px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                            className={`w-full flex items-center px-3 py-2 rounded-md text-sm transition-colors ${
+                              currentSection === subItem.id
+                                ? 'bg-blue-50 text-blue-700 font-medium'
+                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                            }`}
                           >
                             <span className="mr-2 text-base w-5 flex justify-center">{subItem.icon}</span>
                             <span className="text-left">{subItem.label}</span>
