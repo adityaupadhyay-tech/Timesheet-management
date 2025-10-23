@@ -1,6 +1,6 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, Suspense } from 'react'
 import Sidebar from './Sidebar'
 import MenuIcon from '@mui/icons-material/Menu'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -21,12 +21,14 @@ const Layout = memo(function Layout({ children, userRole, userName }) {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <Sidebar 
-        userRole={userRole} 
-        userName={userName} 
-        isOpen={sidebarOpen} 
-        onToggle={toggleSidebar} 
-      />
+      <Suspense fallback={<div className="w-16 lg:w-64 bg-white" />}>
+        <Sidebar 
+          userRole={userRole} 
+          userName={userName} 
+          isOpen={sidebarOpen} 
+          onToggle={toggleSidebar} 
+        />
+      </Suspense>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
