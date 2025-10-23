@@ -26,7 +26,7 @@ const UserContext = createContext(undefined)
 export const UserProvider = memo(function UserProvider({ children }) {
   const [user, setUser] = useState({
     name: 'John Doe',
-    role: 'admin',
+    role: 'Employee', // Change to 'Admin', 'Manager', or 'Employee' to test different roles
     email: 'john.doe@company.com',
     company: {
       id: 'company-1',

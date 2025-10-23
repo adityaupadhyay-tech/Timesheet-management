@@ -10,7 +10,7 @@ export default function SettingsPage() {
   // TODO: Get user data from authentication context/API
   const [currentUser] = useState({
     name: 'John Doe',
-    role: 'admin',
+    role: 'Admin',
     email: 'john.doe@company.com'
   })
 

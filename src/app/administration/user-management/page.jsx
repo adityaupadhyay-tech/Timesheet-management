@@ -21,10 +21,10 @@ export default function UserManagementPage() {
   const { user } = useSupabase()
   const currentUser = useMemo(() => user ? {
     name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin User',
-    role: 'admin',
+    role: 'Admin',
   } : {
     name: 'Admin User',
-    role: 'admin',
+    role: 'Admin',
   }, [user])
 
   return (

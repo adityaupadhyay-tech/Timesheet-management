@@ -32,7 +32,7 @@ import { Input } from "@/components/ui/input";
 export default function PaycodeAccessPage() {
   const [currentUser] = useState({
     name: "John Doe",
-    role: "admin",
+    role: "Admin",
     email: "john.doe@company.com",
   });
 

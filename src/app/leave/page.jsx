@@ -9,7 +9,7 @@ export default function LeavePage() {
   // TODO: Get user data from authentication context/API
   const [currentUser] = useState({
     name: 'John Doe',
-    role: 'admin', // Using same role: 'john.doe@company.com'
+    role: 'Admin', // Using same role: 'john.doe@company.com'
   })
 
   return (

@@ -25,19 +25,10 @@ import {
 } from "@mui/icons-material";
 import { useSupabase } from "@/contexts/SupabaseContext";
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/contexts/UserContext";
 
 export default function ResourcesPage() {
-  const { user } = useSupabase();
-  const currentUser = user
-    ? {
-        name:
-          user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
-        role: user.user_metadata?.role || "user",
-      }
-    : {
-        name: "User",
-        role: "user",
-      };
+  const { user: currentUser } = useUser();
 
   const [loading, setLoading] = useState(true);
   const [resourceCategories, setResourceCategories] = useState([]);

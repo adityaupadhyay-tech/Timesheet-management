@@ -16,10 +16,10 @@ export default function ImportW2sPage() {
   const { user } = useSupabase()
   const currentUser = user ? {
     name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin User',
-    role: 'admin'
+    role: 'Admin'
   } : {
     name: 'Admin User',
-    role: 'admin'
+    role: 'Admin'
   }
 
   const [activeTab, setActiveTab] = useState('add');

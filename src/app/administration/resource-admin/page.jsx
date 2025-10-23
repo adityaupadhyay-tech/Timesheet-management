@@ -59,11 +59,11 @@ export default function ResourceAdminPage() {
           user.user_metadata?.full_name ||
           user.email?.split("@")[0] ||
           "Admin User",
-        role: "admin",
+        role: "Admin",
       }
     : {
         name: "Admin User",
-        role: "admin",
+        role: "Admin",
       };
   const [activeTab, setActiveTab] = useState("resource");
   const [loading, setLoading] = useState(true);

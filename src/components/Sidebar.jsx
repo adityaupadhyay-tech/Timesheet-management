@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, useCallback, useState } from "react";
+import { memo, useMemo, useCallback, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import BuildIcon from "@mui/icons-material/Build";
 import FolderIcon from "@mui/icons-material/Folder";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useUser } from "@/contexts/UserContext";
 
 /**
  * @typedef {Object} SidebarProps
@@ -25,37 +26,57 @@ import MenuIcon from "@mui/icons-material/Menu";
 const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [selectedPersona, setSelectedPersona] = useState('admin');
+  const { user, setUser } = useUser();
+  const [selectedPersona, setSelectedPersona] = useState(userRole);
+
+  // Update selectedPersona when userRole changes
+  useEffect(() => {
+    setSelectedPersona(userRole);
+  }, [userRole]);
 
   const handlePersonaChange = useCallback((persona) => {
     setSelectedPersona(persona);
-    // Here you can add logic to change the view based on persona
+    // Update the user's role in the context
+    if (setUser && user) {
+      setUser({
+        ...user,
+        role: persona
+      });
+    }
     console.log('Switched to persona:', persona);
-  }, []);
+  }, [setUser, user]);
 
-  const menuItems = useMemo(() => [
-      { href: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
-      { href: "/my-stuff", label: "My stuff", icon: <PersonIcon /> },
+  const menuItems = useMemo(() => {
+    const allItems = [
+      { href: "/dashboard", label: "Dashboard", icon: <DashboardIcon />, roles: ['Admin', 'Manager', 'Employee'] },
+      { href: "/my-stuff", label: "My stuff", icon: <PersonIcon />, roles: ['Admin', 'Manager', 'Employee'] },
       {
         href: "/timesheet",
         label: "Timesheet management",
         icon: <ScheduleIcon />,
+        roles: ['Admin', 'Manager']
       },
       {
         href: "/pto-requests",
         label: "PTO Requests",
         icon: <BeachAccessIcon />,
+        roles: ['Admin', 'Manager']
       },
-      { href: "/personnel", label: "Personnel", icon: <PeopleIcon /> },
-      { href: "/payroll", label: "Payroll", icon: <AttachMoneyIcon /> },
-      { href: "/tools", label: "Tools", icon: <BuildIcon /> },
-      { href: "/resources", label: "Resources", icon: <FolderIcon /> },
+      { href: "/personnel", label: "Personnel", icon: <PeopleIcon />, roles: ['Admin', 'Manager'] },
+      { href: "/payroll", label: "Payroll", icon: <AttachMoneyIcon />, roles: ['Admin', 'Manager'] },
+      { href: "/tools", label: "Tools", icon: <BuildIcon />, roles: ['Admin', 'Manager'] },
+      { href: "/resources", label: "Resources", icon: <FolderIcon />, roles: ['Admin', 'Manager', 'Employee'] },
       {
         href: "/administration",
         label: "Administration",
         icon: <AdminPanelSettingsIcon />,
+        roles: ['Admin']
       },
-    ], []);
+    ];
+    
+    // Filter menu items based on user role
+    return allItems.filter(item => item.roles.includes(userRole));
+  }, [userRole]);
 
   return (
     <>
@@ -158,9 +179,9 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
               <div className="text-xs text-gray-500 font-medium mb-1">Switch View</div>
               <div className="space-y-0.5">
                 {[
-                  { key: 'admin', label: 'Admin', color: 'bg-blue-100 text-blue-700' },
-                  { key: 'supervisor', label: 'Supervisor', color: 'bg-orange-100 text-orange-700' },
-                  { key: 'employee', label: 'Employee', color: 'bg-green-100 text-green-700' }
+                  { key: 'Admin', label: 'Admin', color: 'bg-blue-100 text-blue-700' },
+                  { key: 'Manager', label: 'Manager', color: 'bg-orange-100 text-orange-700' },
+                  { key: 'Employee', label: 'Employee', color: 'bg-green-100 text-green-700' }
                 ].map((persona) => (
                   <button
                     key={persona.key}

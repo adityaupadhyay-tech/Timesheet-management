@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useMemo, useCallback } from 'react'
 import Layout from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ScheduleIcon from '@mui/icons-material/Schedule'
@@ -12,18 +12,14 @@ import PeopleIcon from '@mui/icons-material/People'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import PageHeader from '@/components/PageHeader'
 import DashboardIcon from '@mui/icons-material/Dashboard'
+import { useUser } from '@/contexts/UserContext'
 
 export default function DashboardPage() {
-  // TODO: Get user data from authentication context/API
-  const [currentUser] = useState({
-    name: 'John Doe',
-    role: 'admin', // Change this to test different roles: 'admin', 'manager', 'employee'
-    email: 'john.doe@company.com'
-  })
+  const { user: currentUser } = useUser()
 
   const getDashboardContent = useCallback(() => {
     switch (currentUser.role) {
-      case 'admin':
+      case 'Admin':
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
@@ -80,7 +76,7 @@ export default function DashboardPage() {
           </div>
         )
 
-      case 'manager':
+      case 'Manager':
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card>
@@ -124,7 +120,8 @@ export default function DashboardPage() {
           </div>
         )
 
-      default: // employee
+      case 'Employee':
+      default: // fallback
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card>
@@ -176,7 +173,7 @@ export default function DashboardPage() {
       { label: 'Request Leave', href: '/leave/new', icon: <BeachAccessIcon /> },
     ]
 
-    if (currentUser.role === 'admin') {
+    if (currentUser.role === 'Admin') {
       return [
         ...baseActions,
         { label: 'Add User', href: '/users/new', icon: <PersonAddIcon /> },
@@ -185,7 +182,7 @@ export default function DashboardPage() {
       ]
     }
 
-    if (currentUser.role === 'manager') {
+    if (currentUser.role === 'Manager') {
       return [
         ...baseActions,
         { label: 'Team Overview', href: '/team', icon: <PeopleIcon /> },

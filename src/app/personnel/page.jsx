@@ -15,7 +15,7 @@ import FilterListIcon from '@mui/icons-material/FilterList'
 export default function PersonnelPage() {
   const [currentUser] = useState({
     name: 'John Doe',
-    role: 'admin',
+    role: 'Admin',
     email: 'john.doe@company.com'
   })
 

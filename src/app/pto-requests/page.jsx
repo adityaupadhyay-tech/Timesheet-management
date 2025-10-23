@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export default function PTORequestsPage() {
   const [currentUser] = useState({
     name: 'John Doe',
-    role: 'admin',
+    role: 'Admin',
     email: 'john.doe@company.com'
   })
 

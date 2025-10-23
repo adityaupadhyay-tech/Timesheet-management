@@ -26,7 +26,7 @@ export default function PayrollPage() {
   const router = useRouter()
   const [currentUser] = useState({
     name: 'John Doe',
-    role: 'admin',
+    role: 'Admin',
     email: 'john.doe@company.com'
   })
 

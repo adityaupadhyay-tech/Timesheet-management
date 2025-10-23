@@ -1382,7 +1382,7 @@ function TimesheetContent() {
 export default function TimesheetPage() {
   const [currentUser] = useState({
     name: 'John Doe',
-    role: 'admin',
+    role: 'Admin',
     email: 'john.doe@company.com'
   })
 

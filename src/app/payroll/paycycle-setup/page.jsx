@@ -33,7 +33,7 @@ import PageHeader from "@/components/PageHeader";
 export default function PaycycleSetupPage() {
   const [currentUser] = useState({
     name: "John Doe",
-    role: "admin",
+    role: "Admin",
     email: "john.doe@company.com",
   });
 

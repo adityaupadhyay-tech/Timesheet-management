@@ -32,6 +32,7 @@ import Upgrade from "@mui/icons-material/Upgrade";
 import PageHeader from "@/components/PageHeader";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { useSupabase } from "@/contexts/SupabaseContext";
+import { useUser } from "@/contexts/UserContext";
 
 // Dynamically import heavy components with loading states
 const AdminDashboard = dynamic(
@@ -52,22 +53,7 @@ const EmployeeManagement = dynamic(
 
 export default function AdministrationPage() {
   const { user, loading } = useSupabase();
-  
-  // Fallback user data if not authenticated
-  const currentUser = user
-    ? {
-        name:
-          user.user_metadata?.full_name ||
-          user.email?.split("@")[0] ||
-          "Admin User",
-        role: "admin",
-        email: user.email,
-      }
-    : {
-        name: "Admin User",
-        role: "admin",
-        email: "admin@company.com",
-      };
+  const { user: currentUser } = useUser();
 
   const [activeSection, setActiveSection] = useState("overview");
   const [showNavigation, setShowNavigation] = useState(false);
