@@ -89,6 +89,42 @@ export default function MyStuffPage() {
     birthDate: '1985-06-15'
   })
 
+  // Paid Leave form state
+  const [paidLeave, setPaidLeave] = useState({
+    ptoVacation: {
+      asOfDate: '2025-02-10',
+      resetDate: '2025-01-01',
+      balanceForward: '40.00',
+      accrued: '8.00',
+      used: '16.00',
+      adjustments: '0.00',
+      totalBank: '32.00',
+      available: '32.00'
+    },
+    pacWestSickLeave: {
+      asOfDate: '2025-02-10',
+      resetDate: '2025-01-01',
+      balanceForward: '80.00',
+      accrued: '0.00',
+      used: '8.00',
+      adjustments: '0.00',
+      totalBank: '72.00',
+      available: '72.00'
+    }
+  })
+
+  // Historical paid leave usage
+  const [historicalUsage] = useState([
+    { checkDate: '2025-01-15', type: 'PTO/Vacation', hoursTaken: '8.0' },
+    { checkDate: '2025-01-10', type: 'PTO/Vacation', hoursTaken: '4.0' },
+    { checkDate: '2025-01-08', type: 'PTO/Vacation', hoursTaken: '4.0' },
+    { checkDate: '2024-12-20', type: 'Pac West Sick Leave', hoursTaken: '8.0' },
+    { checkDate: '2024-12-05', type: 'PTO/Vacation', hoursTaken: '16.0' },
+    { checkDate: '2024-11-28', type: 'Pac West Sick Leave', hoursTaken: '4.0' },
+    { checkDate: '2024-11-15', type: 'PTO/Vacation', hoursTaken: '8.0' },
+    { checkDate: '2024-10-30', type: 'PTO/Vacation', hoursTaken: '8.0' }
+  ])
+
   // Sub-tabs for My Profile
   const profileTabs = useMemo(() => [
     { id: 'basic-info', label: 'Basic Information', icon: <InfoIcon /> },
@@ -160,6 +196,13 @@ export default function MyStuffPage() {
     console.log('Saving department:', department)
     // TODO: Implement save logic
     alert('Department information saved successfully!')
+    setActiveSection(null)
+  }
+
+  const handleSavePaidLeave = () => {
+    console.log('Saving paid leave:', paidLeave)
+    // TODO: Implement save logic
+    alert('Paid leave information saved successfully!')
     setActiveSection(null)
   }
 
@@ -236,6 +279,199 @@ export default function MyStuffPage() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  )
+
+  const renderPaidLeaveForm = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="outline" onClick={() => setActiveSection(null)} className="flex items-center gap-2">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Button>
+        <h2 className="text-2xl font-semibold text-gray-900">Paid Leave</h2>
+      </div>
+      
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* PTO/Vacation Card */}
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <EventIcon className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">PTO/Vacation</CardTitle>
+                <CardDescription>Paid time off and vacation balance</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">As of Date</Label>
+                <div className="text-sm font-mono text-gray-900">{paidLeave.ptoVacation.asOfDate}</div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Date</Label>
+                <div className="text-sm font-mono text-gray-900">{paidLeave.ptoVacation.resetDate}</div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Balance Forward</Label>
+                <div className="text-lg font-semibold text-gray-900">{paidLeave.ptoVacation.balanceForward} hrs</div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Accrued</Label>
+                <div className="text-lg font-semibold text-green-600">+{paidLeave.ptoVacation.accrued} hrs</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Used</Label>
+                <div className="text-lg font-semibold text-red-600">-{paidLeave.ptoVacation.used} hrs</div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Adjustments</Label>
+                <div className="text-lg font-semibold text-gray-600">{paidLeave.ptoVacation.adjustments} hrs</div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center">
+                <Label className="text-sm font-medium text-gray-700">Available Balance</Label>
+                <div className="text-2xl font-bold text-blue-600">{paidLeave.ptoVacation.available} hrs</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pac West Sick Leave Card */}
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <ContactPhoneIcon className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Pac West Sick Leave</CardTitle>
+                <CardDescription>Sick leave and medical time off</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">As of Date</Label>
+                <div className="text-sm font-mono text-gray-900">{paidLeave.pacWestSickLeave.asOfDate}</div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Date</Label>
+                <div className="text-sm font-mono text-gray-900">{paidLeave.pacWestSickLeave.resetDate}</div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Balance Forward</Label>
+                <div className="text-lg font-semibold text-gray-900">{paidLeave.pacWestSickLeave.balanceForward} hrs</div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Accrued</Label>
+                <div className="text-lg font-semibold text-green-600">+{paidLeave.pacWestSickLeave.accrued} hrs</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Used</Label>
+                <div className="text-lg font-semibold text-red-600">-{paidLeave.pacWestSickLeave.used} hrs</div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Adjustments</Label>
+                <div className="text-lg font-semibold text-gray-600">{paidLeave.pacWestSickLeave.adjustments} hrs</div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center">
+                <Label className="text-sm font-medium text-gray-700">Available Balance</Label>
+                <div className="text-2xl font-bold text-green-600">{paidLeave.pacWestSickLeave.available} hrs</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Summary Card */}
+      <Card className="bg-gradient-to-r from-gray-50 to-gray-100">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-gray-900">Total Available Leave</h3>
+              <p className="text-sm text-gray-600">Combined balance across all leave types</p>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-gray-900">
+                {(parseFloat(paidLeave.ptoVacation.available) + parseFloat(paidLeave.pacWestSickLeave.available)).toFixed(1)} hrs
+              </div>
+              <div className="text-sm text-gray-500">
+                {paidLeave.ptoVacation.available} PTO + {paidLeave.pacWestSickLeave.available} Sick
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Historical Usage */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Historical Leave Usage</CardTitle>
+          <CardDescription>Your recent paid leave usage history</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Check Date</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Type</th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Hours Taken</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historicalUsage.map((entry, index) => (
+                  <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-4 text-sm text-gray-900 font-mono">{entry.checkDate}</td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        entry.type === 'PTO/Vacation' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {entry.type}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right text-sm font-semibold text-gray-900">{entry.hoursTaken} hrs</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {historicalUsage.length === 0 && (
+            <div className="text-center py-8">
+              <div className="text-gray-500 text-sm">No historical usage found</div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end gap-3 mt-6">
+        <Button variant="outline" onClick={() => setActiveSection(null)}>Back to My Stuff</Button>
+      </div>
     </div>
   )
 
@@ -718,6 +954,16 @@ export default function MyStuffPage() {
       )
     }
 
+    if (activeSection === 'paid-leave') {
+      return (
+        <Layout userRole={currentUser.role} userName={currentUser.name}>
+          <div className="p-6">
+            {renderPaidLeaveForm()}
+          </div>
+        </Layout>
+      )
+    }
+
     return (
       <Layout userRole={currentUser.role} userName={currentUser.name}>
         <div className="p-6">
@@ -742,19 +988,21 @@ export default function MyStuffPage() {
                         ? 'border-2 border-blue-500 bg-blue-50'
                         : ''
                     }`}
-                    onClick={() => {
-                      if (tab.id === 'basic-info') {
-                        setActiveSection('basic-info')
-                      } else if (tab.id === 'job-status') {
-                        setActiveSection('job-status')
-                      } else if (tab.id === 'department') {
-                        setActiveSection('department')
-                      } else if (tab.id === 'personal-info') {
-                        setActiveSection('personal-info')
-                      } else {
-                        console.log(`Navigate to ${tab.label}`)
-                      }
-                    }}
+                            onClick={() => {
+                              if (tab.id === 'basic-info') {
+                                setActiveSection('basic-info')
+                              } else if (tab.id === 'job-status') {
+                                setActiveSection('job-status')
+                              } else if (tab.id === 'department') {
+                                setActiveSection('department')
+                              } else if (tab.id === 'personal-info') {
+                                setActiveSection('personal-info')
+                              } else if (tab.id === 'paid-leave') {
+                                setActiveSection('paid-leave')
+                              } else {
+                                console.log(`Navigate to ${tab.label}`)
+                              }
+                            }}
                   >
                     <CardHeader>
                       <CardTitle className="flex items-center">
