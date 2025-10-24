@@ -53,12 +53,12 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     setSelectedPersona(userRole);
   }, [userRole]);
 
-  // Keep My Stuff dropdown open if there's an active section
+  // Keep My Stuff dropdown open when on my-stuff page with any section
   useEffect(() => {
-    if (currentSection && pathname === '/my-stuff') {
+    if (pathname === '/my-stuff') {
       setIsMyStuffOpen(true);
     }
-  }, [currentSection, pathname]);
+  }, [pathname]);
 
   const handlePersonaChange = useCallback((persona) => {
     setSelectedPersona(persona);
