@@ -80,6 +80,15 @@ export default function MyStuffPage() {
     department4Percent: ''
   })
 
+  // Personal Information form state
+  const [personalInfo, setPersonalInfo] = useState({
+    ssn: '***-**-1234',
+    race: 'Asian',
+    alienExp: 'Permanent Resident',
+    veteranStatus: 'Not a Veteran',
+    birthDate: '1985-06-15'
+  })
+
   // Sub-tabs for My Profile
   const profileTabs = useMemo(() => [
     { id: 'basic-info', label: 'Basic Information', icon: <InfoIcon /> },
@@ -153,6 +162,82 @@ export default function MyStuffPage() {
     alert('Department information saved successfully!')
     setActiveSection(null)
   }
+
+  const renderPersonalInfoForm = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="outline" onClick={() => setActiveSection(null)} className="flex items-center gap-2">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </Button>
+        <h2 className="text-2xl font-semibold text-gray-900">Personal Information</h2>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Personal Details</CardTitle>
+          <CardDescription>View your personal information and demographics</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="ssn">SSN</Label>
+              <Input
+                id="ssn"
+                value={personalInfo.ssn}
+                onChange={(e) => setPersonalInfo({...personalInfo, ssn: e.target.value})}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="race">Race</Label>
+              <Input
+                id="race"
+                value={personalInfo.race}
+                onChange={(e) => setPersonalInfo({...personalInfo, race: e.target.value})}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="alienExp">Alien Exp</Label>
+              <Input
+                id="alienExp"
+                value={personalInfo.alienExp}
+                onChange={(e) => setPersonalInfo({...personalInfo, alienExp: e.target.value})}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="veteranStatus">Veteran Status</Label>
+              <Input
+                id="veteranStatus"
+                value={personalInfo.veteranStatus}
+                onChange={(e) => setPersonalInfo({...personalInfo, veteranStatus: e.target.value})}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="birthDate">Birth Date</Label>
+              <Input
+                id="birthDate"
+                type="date"
+                value={personalInfo.birthDate}
+                onChange={(e) => setPersonalInfo({...personalInfo, birthDate: e.target.value})}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="outline" onClick={() => setActiveSection(null)}>Back to My Stuff</Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
 
   // Render Department form
   const renderDepartmentForm = () => (
@@ -623,6 +708,16 @@ export default function MyStuffPage() {
       )
     }
 
+    if (activeSection === 'personal-info') {
+      return (
+        <Layout userRole={currentUser.role} userName={currentUser.name}>
+          <div className="p-6">
+            {renderPersonalInfoForm()}
+          </div>
+        </Layout>
+      )
+    }
+
     return (
       <Layout userRole={currentUser.role} userName={currentUser.name}>
         <div className="p-6">
@@ -654,6 +749,8 @@ export default function MyStuffPage() {
                         setActiveSection('job-status')
                       } else if (tab.id === 'department') {
                         setActiveSection('department')
+                      } else if (tab.id === 'personal-info') {
+                        setActiveSection('personal-info')
                       } else {
                         console.log(`Navigate to ${tab.label}`)
                       }
