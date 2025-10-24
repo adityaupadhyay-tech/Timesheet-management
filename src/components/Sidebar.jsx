@@ -44,9 +44,15 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
   const { user, setUser } = useUser();
   const [selectedPersona, setSelectedPersona] = useState(userRole);
   const [isMyStuffOpen, setIsMyStuffOpen] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   
   // Get current section from URL if on my-stuff page
   const currentSection = searchParams.get('section');
+
+  // Handle hydration
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // Update selectedPersona when userRole changes
   useEffect(() => {
@@ -55,10 +61,10 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
 
   // Keep My Stuff dropdown open when on my-stuff page with any section
   useEffect(() => {
-    if (pathname === '/my-stuff') {
+    if (isHydrated && pathname === '/my-stuff') {
       setIsMyStuffOpen(true);
     }
-  }, [pathname]);
+  }, [pathname, isHydrated]);
 
   const handlePersonaChange = useCallback((persona) => {
     setSelectedPersona(persona);
@@ -210,7 +216,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                   </button>
                   
                   {/* Dropdown submenu */}
-                  {isMyStuffOpen && isOpen && (
+                  {isHydrated && isMyStuffOpen && isOpen && (
                     <div className="ml-4 mt-1 space-y-1">
                       {/* My Profile Section */}
                       <div className="px-3 py-2">
