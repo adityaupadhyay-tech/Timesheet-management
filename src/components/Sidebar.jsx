@@ -44,6 +44,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
   const { user, setUser } = useUser();
   const [selectedPersona, setSelectedPersona] = useState(userRole);
   const [isMyStuffOpen, setIsMyStuffOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   
   // Get current section from URL if on my-stuff page
   const currentSection = searchParams.get('section');
@@ -53,6 +54,11 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     const shouldBeOpen = pathname === '/my-stuff' || pathname.startsWith('/my-stuff');
     setIsMyStuffOpen(shouldBeOpen);
   }, [pathname]);
+
+  // Handle mounting to prevent hydration issues
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Update selectedPersona when userRole changes
   useEffect(() => {
@@ -130,6 +136,26 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     return null
   }, [userRole]);
 
+  // Don't render until mounted to prevent hydration issues
+  if (!isMounted) {
+    return (
+      <div className="fixed top-0 left-0 h-full bg-white shadow-lg z-50 w-64 lg:relative lg:translate-x-0 flex flex-col">
+        <div className="flex items-center justify-between h-16 px-4 border-b">
+          <div className="flex items-center space-x-3">
+            <h1 className="text-lg font-semibold text-gray-900">Timesheet</h1>
+          </div>
+        </div>
+        <div className="flex-1 px-2 py-4">
+          <div className="animate-pulse space-y-2">
+            <div className="h-8 bg-gray-200 rounded"></div>
+            <div className="h-8 bg-gray-200 rounded"></div>
+            <div className="h-8 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Mobile overlay */}
@@ -145,12 +171,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
         className={`
         fixed top-0 left-0 h-full bg-white shadow-lg z-50 transition-all duration-300 ease-in-out flex flex-col
         lg:relative lg:translate-x-0
-        ${
-          isOpen
-            ? "w-64 translate-x-0"
-            : "w-16 -translate-x-full lg:translate-x-0"
-        }
-        ${!isOpen && "lg:w-16"}
+        ${isOpen ? "w-64 translate-x-0" : "w-16 -translate-x-full lg:translate-x-0 lg:w-16"}
       `}
       >
         {/* Header */}
