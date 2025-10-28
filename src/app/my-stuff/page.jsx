@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useState, useEffect, Suspense } from 'react'
+import { useMemo, useState, useEffect, useRef, Suspense } from 'react'
+import { createPortal } from 'react-dom'
 import { useSearchParams } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { useUser } from '@/contexts/UserContext'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Download, X, Filter, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
+import { DatePickerComponent } from '@/components/ui/date-picker'
 import PersonIcon from '@mui/icons-material/Person'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import SettingsIcon from '@mui/icons-material/Settings'
@@ -131,6 +133,128 @@ function MyStuffContent() {
     relationship: '',
     phoneNumber: ''
   })
+
+  // Earning Statement data
+  const [earningStatements] = useState([
+    {
+      id: 1,
+      employeeName: 'John Doe',
+      date: '2025-02-15',
+      gross: 4500.00,
+      deductions: 450.00,
+      taxes: 1125.00,
+      net: 2925.00
+    },
+    {
+      id: 2,
+      employeeName: 'John Doe',
+      date: '2025-02-01',
+      gross: 4500.00,
+      deductions: 450.00,
+      taxes: 1125.00,
+      net: 2925.00
+    },
+    {
+      id: 3,
+      employeeName: 'John Doe',
+      date: '2025-01-15',
+      gross: 4500.00,
+      deductions: 450.00,
+      taxes: 1125.00,
+      net: 2925.00
+    },
+    {
+      id: 4,
+      employeeName: 'John Doe',
+      date: '2025-01-01',
+      gross: 4500.00,
+      deductions: 450.00,
+      taxes: 1125.00,
+      net: 2925.00
+    }
+  ])
+
+  // Earning Statement filters
+  const [earningFilters, setEarningFilters] = useState({
+    employeeName: '',
+    date: null, // Date object for date picker
+    grossMin: '',
+    grossMax: '',
+    deductionsMin: '',
+    deductionsMax: '',
+    taxesMin: '',
+    taxesMax: '',
+    netMin: '',
+    netMax: ''
+  })
+  
+  // Track which filter dropdown is open
+  const [openFilter, setOpenFilter] = useState(null)
+  // Track dropdown positions for fixed positioning
+  const [dropdownPositions, setDropdownPositions] = useState({})
+  const filterButtonRefs = useRef({})
+  
+  // Sort state
+  const [sortColumn, setSortColumn] = useState(null)
+  const [sortDirection, setSortDirection] = useState('asc') // 'asc' or 'desc'
+  
+  // Handle opening filter and calculate position
+  const handleFilterClick = (filterKey, event) => {
+    if (openFilter === filterKey) {
+      setOpenFilter(null)
+      return
+    }
+    
+    const button = event.currentTarget
+    const rect = button.getBoundingClientRect()
+    
+    // Calculate if dropdown should open on left or right
+    const isRightAligned = ['gross', 'deductions', 'taxes', 'net'].includes(filterKey)
+    
+    setDropdownPositions({
+      [filterKey]: {
+        top: rect.bottom + 6,
+        left: isRightAligned ? undefined : rect.left,
+        right: isRightAligned ? window.innerWidth - rect.right : undefined
+      }
+    })
+    
+    setOpenFilter(filterKey)
+  }
+  
+  // Close dropdown when clicking outside (checking both filter container and portal dropdowns)
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openFilter) {
+        // Check if click is outside filter container, portal dropdown, or date picker calendar
+        const isInsideFilterContainer = event.target.closest('.filter-dropdown-container')
+        const isInsidePortalDropdown = event.target.closest('[style*="z-index: 100"]')
+        // Check for react-datepicker calendar and portal elements
+        const isInsideDatePicker = event.target.closest('.react-datepicker') || 
+                                   event.target.closest('.react-datepicker__portal') ||
+                                   event.target.closest('[class*="react-datepicker"]') ||
+                                   event.target.closest('.react-datepicker-popper') ||
+                                   event.target.closest('[class*="react-datepicker-popper"]')
+        
+        // For date filter, don't close when interacting with date picker
+        if (openFilter === 'date') {
+          if (!isInsideFilterContainer && !isInsidePortalDropdown && !isInsideDatePicker) {
+            setOpenFilter(null)
+          }
+        } else {
+          // For other filters
+          if (!isInsideFilterContainer && !isInsidePortalDropdown) {
+            setOpenFilter(null)
+          }
+        }
+      }
+    }
+    if (openFilter) {
+      // Use mousedown instead of click to catch events earlier
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [openFilter])
 
   // Sub-tabs for My Profile
   const profileTabs = useMemo(() => [
@@ -480,6 +604,785 @@ function MyStuffContent() {
       <div className="flex justify-end gap-3 mt-6">
         <Button variant="outline" onClick={() => setActiveSection(null)}>Back to My Stuff</Button>
       </div>
+    </div>
+  )
+
+  // Handle PDF download
+  const handleDownloadPDF = (statement) => {
+    // TODO: Implement PDF download functionality
+    console.log('Downloading PDF for statement:', statement)
+    // For now, just show an alert
+    alert(`Downloading PDF for statement dated ${formatDateToMMDDYYYY(statement.date)}`)
+  }
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2
+    }).format(amount)
+  }
+
+  // Handle sorting
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      // Toggle direction if same column
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // Set new column with ascending by default
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+  
+  // Smart sort function based on column type
+  const getSortValue = (statement, column) => {
+    switch (column) {
+      case 'employeeName':
+        // Text sorting - case insensitive
+        return statement.employeeName.toLowerCase()
+      case 'date':
+        // Date sorting - convert to timestamp
+        return new Date(statement.date).getTime()
+      case 'gross':
+      case 'deductions':
+      case 'taxes':
+      case 'net':
+        // Numeric sorting
+        return parseFloat(statement[column]) || 0
+      default:
+        return null
+    }
+  }
+  
+  // Filter and sort earning statements with smart filters
+  const filteredEarningStatements = useMemo(() => {
+    let results = earningStatements.filter((statement) => {
+      // Employee Name filter (text search)
+      if (earningFilters.employeeName && 
+          !statement.employeeName.toLowerCase().includes(earningFilters.employeeName.toLowerCase())) {
+        return false
+      }
+
+      // Date filter (exact date match)
+      if (earningFilters.date) {
+        const filterDate = new Date(earningFilters.date)
+        const statementDate = new Date(statement.date)
+        if (filterDate.toDateString() !== statementDate.toDateString()) {
+          return false
+        }
+      }
+
+      // Gross filter (numeric range)
+      if (earningFilters.grossMin) {
+        const minValue = parseFloat(earningFilters.grossMin)
+        if (!isNaN(minValue) && statement.gross < minValue) {
+          return false
+        }
+      }
+      if (earningFilters.grossMax) {
+        const maxValue = parseFloat(earningFilters.grossMax)
+        if (!isNaN(maxValue) && statement.gross > maxValue) {
+          return false
+        }
+      }
+
+      // Deductions filter (numeric range)
+      if (earningFilters.deductionsMin) {
+        const minValue = parseFloat(earningFilters.deductionsMin)
+        if (!isNaN(minValue) && statement.deductions < minValue) {
+          return false
+        }
+      }
+      if (earningFilters.deductionsMax) {
+        const maxValue = parseFloat(earningFilters.deductionsMax)
+        if (!isNaN(maxValue) && statement.deductions > maxValue) {
+          return false
+        }
+      }
+
+      // Taxes filter (numeric range)
+      if (earningFilters.taxesMin) {
+        const minValue = parseFloat(earningFilters.taxesMin)
+        if (!isNaN(minValue) && statement.taxes < minValue) {
+          return false
+        }
+      }
+      if (earningFilters.taxesMax) {
+        const maxValue = parseFloat(earningFilters.taxesMax)
+        if (!isNaN(maxValue) && statement.taxes > maxValue) {
+          return false
+        }
+      }
+
+      // Net filter (numeric range)
+      if (earningFilters.netMin) {
+        const minValue = parseFloat(earningFilters.netMin)
+        if (!isNaN(minValue) && statement.net < minValue) {
+          return false
+        }
+      }
+      if (earningFilters.netMax) {
+        const maxValue = parseFloat(earningFilters.netMax)
+        if (!isNaN(maxValue) && statement.net > maxValue) {
+          return false
+        }
+      }
+
+      return true
+    })
+    
+    // Apply sorting if sortColumn is set
+    if (sortColumn) {
+      results = [...results].sort((a, b) => {
+        const aValue = getSortValue(a, sortColumn)
+        const bValue = getSortValue(b, sortColumn)
+        
+        if (aValue === null || bValue === null) return 0
+        
+        if (typeof aValue === 'string') {
+          // String comparison
+          if (sortDirection === 'asc') {
+            return aValue.localeCompare(bValue)
+          } else {
+            return bValue.localeCompare(aValue)
+          }
+        } else {
+          // Numeric/date comparison
+          if (sortDirection === 'asc') {
+            return aValue - bValue
+          } else {
+            return bValue - aValue
+          }
+        }
+      })
+    }
+    
+    return results
+  }, [earningStatements, earningFilters, sortColumn, sortDirection])
+
+  // Handle filter change
+  const handleFilterChange = (field, value) => {
+    setEarningFilters(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  // Clear all filters
+  const clearFilters = () => {
+    setEarningFilters({
+      employeeName: '',
+      date: null,
+      grossMin: '',
+      grossMax: '',
+      deductionsMin: '',
+      deductionsMax: '',
+      taxesMin: '',
+      taxesMax: '',
+      netMin: '',
+      netMax: ''
+    })
+  }
+  
+  // Check if any filter is active
+  const hasActiveFilters = earningFilters.employeeName || earningFilters.date || 
+    earningFilters.grossMin || earningFilters.grossMax ||
+    earningFilters.deductionsMin || earningFilters.deductionsMax ||
+    earningFilters.taxesMin || earningFilters.taxesMax ||
+    earningFilters.netMin || earningFilters.netMax
+  
+  // Check if a specific filter is active
+  const isFilterActive = (filterKey) => {
+    switch (filterKey) {
+      case 'employeeName':
+        return !!earningFilters.employeeName
+      case 'date':
+        return !!earningFilters.date
+      case 'gross':
+        return !!(earningFilters.grossMin || earningFilters.grossMax)
+      case 'deductions':
+        return !!(earningFilters.deductionsMin || earningFilters.deductionsMax)
+      case 'taxes':
+        return !!(earningFilters.taxesMin || earningFilters.taxesMax)
+      case 'net':
+        return !!(earningFilters.netMin || earningFilters.netMax)
+      default:
+        return false
+    }
+  }
+  
+  // Handle clicking outside dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openFilter && !event.target.closest('.filter-dropdown-container')) {
+        setOpenFilter(null)
+      }
+    }
+    if (openFilter) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [openFilter])
+
+  // Render Earning Statement table
+  const renderEarningStatement = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="outline"
+          onClick={() => setActiveSection(null)}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <h2 className="text-2xl font-semibold text-gray-900">Earning Statement</h2>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Earning Statements</CardTitle>
+              <CardDescription>View and download your earning statements</CardDescription>
+            </div>
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+                className="text-sm"
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b-2 border-gray-200 bg-gray-50">
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    <div className="flex items-center gap-1.5">
+                      <span>Employee Name</span>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => handleSort('employeeName')}
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${sortColumn === 'employeeName' ? 'text-blue-600' : 'text-gray-400'}`}
+                          title={sortColumn === 'employeeName' ? `Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by employee name'}
+                        >
+                          {sortColumn === 'employeeName' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <div className="relative filter-dropdown-container inline-flex">
+                          <button
+                            onClick={(e) => handleFilterClick('employeeName', e)}
+                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isFilterActive('employeeName') ? 'text-blue-600' : 'text-gray-400'}`}
+                            title="Filter by employee name"
+                          >
+                            <Filter className="h-3.5 w-3.5" />
+                          </button>
+                        {typeof window !== 'undefined' && openFilter === 'employeeName' && createPortal(
+                          <div 
+                            className="fixed w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3"
+                            style={{
+                              top: `${dropdownPositions.employeeName?.top || 0}px`,
+                              left: dropdownPositions.employeeName?.left !== undefined ? `${dropdownPositions.employeeName.left}px` : 'auto',
+                              right: dropdownPositions.employeeName?.right !== undefined ? `${dropdownPositions.employeeName.right}px` : 'auto'
+                            }}
+                          >
+                            <div className="space-y-3">
+                              <Label className="text-xs font-semibold text-gray-700">Filter by Name</Label>
+                              <Input
+                                type="text"
+                                placeholder="Search name..."
+                                value={earningFilters.employeeName}
+                                onChange={(e) => handleFilterChange('employeeName', e.target.value)}
+                                className="h-9 text-sm w-full"
+                                autoFocus
+                              />
+                              {earningFilters.employeeName && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleFilterChange('employeeName', '')
+                                    setOpenFilter(null)
+                                  }}
+                                  className="w-full h-8 text-xs"
+                                >
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    <div className="flex items-center gap-1.5">
+                      <span>Date</span>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => handleSort('date')}
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${sortColumn === 'date' ? 'text-blue-600' : 'text-gray-400'}`}
+                          title={sortColumn === 'date' ? `Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by date'}
+                        >
+                          {sortColumn === 'date' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <div className="relative filter-dropdown-container inline-flex">
+                          <button
+                            onClick={(e) => handleFilterClick('date', e)}
+                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isFilterActive('date') ? 'text-blue-600' : 'text-gray-400'}`}
+                            title="Filter by date"
+                          >
+                            <Filter className="h-3.5 w-3.5" />
+                          </button>
+                        {typeof window !== 'undefined' && openFilter === 'date' && createPortal(
+                          <div 
+                            className="fixed w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3 overflow-visible"
+                            style={{
+                              top: `${dropdownPositions.date?.top || 0}px`,
+                              left: dropdownPositions.date?.left !== undefined ? `${dropdownPositions.date.left}px` : 'auto',
+                              right: dropdownPositions.date?.right !== undefined ? `${dropdownPositions.date.right}px` : 'auto'
+                            }}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="space-y-3">
+                              <Label className="text-xs font-semibold text-gray-700">Filter by Date</Label>
+                              <div 
+                                className="w-full"
+                                onClick={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                              >
+                                <DatePickerComponent
+                                  value={earningFilters.date}
+                                  onChange={(date) => {
+                                    handleFilterChange('date', date)
+                                    if (date) setOpenFilter(null)
+                                  }}
+                                  placeholder="Select date"
+                                  className="h-9 text-sm w-full"
+                                />
+                              </div>
+                              {earningFilters.date && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleFilterChange('date', null)
+                                    setOpenFilter(null)
+                                  }}
+                                  className="w-full h-8 text-xs"
+                                >
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                  <th className="text-right py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <span>Gross</span>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => handleSort('gross')}
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${sortColumn === 'gross' ? 'text-blue-600' : 'text-gray-400'}`}
+                          title={sortColumn === 'gross' ? `Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by gross amount'}
+                        >
+                          {sortColumn === 'gross' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <div className="relative filter-dropdown-container inline-flex">
+                          <button
+                            onClick={(e) => handleFilterClick('gross', e)}
+                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isFilterActive('gross') ? 'text-blue-600' : 'text-gray-400'}`}
+                            title="Filter by gross amount"
+                          >
+                            <Filter className="h-3.5 w-3.5" />
+                          </button>
+                        {typeof window !== 'undefined' && openFilter === 'gross' && createPortal(
+                          <div 
+                            className="fixed w-72 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3 overflow-x-hidden"
+                            style={{
+                              top: `${dropdownPositions.gross?.top || 0}px`,
+                              left: dropdownPositions.gross?.left !== undefined ? `${dropdownPositions.gross.left}px` : 'auto',
+                              right: dropdownPositions.gross?.right !== undefined ? `${dropdownPositions.gross.right}px` : 'auto'
+                            }}
+                          >
+                            <div className="space-y-3">
+                              <Label className="text-xs font-semibold text-gray-700">Filter by Gross</Label>
+                              <div className="flex gap-2">
+                                <div className="flex-1 space-y-1.5 min-w-0">
+                                  <Label className="text-xs text-gray-600 font-medium">Min</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Min"
+                                    value={earningFilters.grossMin}
+                                    onChange={(e) => handleFilterChange('grossMin', e.target.value)}
+                                    className="h-9 text-sm w-full"
+                                    autoFocus
+                                  />
+                                </div>
+                                <div className="flex-1 space-y-1.5 min-w-0">
+                                  <Label className="text-xs text-gray-600 font-medium">Max</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Max"
+                                    value={earningFilters.grossMax}
+                                    onChange={(e) => handleFilterChange('grossMax', e.target.value)}
+                                    className="h-9 text-sm w-full"
+                                  />
+                                </div>
+                              </div>
+                              {(earningFilters.grossMin || earningFilters.grossMax) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleFilterChange('grossMin', '')
+                                    handleFilterChange('grossMax', '')
+                                    setOpenFilter(null)
+                                  }}
+                                  className="w-full h-8 text-xs"
+                                >
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                  <th className="text-right py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <span>Deductions</span>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => handleSort('deductions')}
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${sortColumn === 'deductions' ? 'text-blue-600' : 'text-gray-400'}`}
+                          title={sortColumn === 'deductions' ? `Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by deductions'}
+                        >
+                          {sortColumn === 'deductions' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <div className="relative filter-dropdown-container inline-flex">
+                          <button
+                            onClick={(e) => handleFilterClick('deductions', e)}
+                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isFilterActive('deductions') ? 'text-blue-600' : 'text-gray-400'}`}
+                            title="Filter by deductions"
+                          >
+                            <Filter className="h-3.5 w-3.5" />
+                          </button>
+                        {typeof window !== 'undefined' && openFilter === 'deductions' && createPortal(
+                          <div 
+                            className="fixed w-72 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3 overflow-x-hidden"
+                            style={{
+                              top: `${dropdownPositions.deductions?.top || 0}px`,
+                              left: dropdownPositions.deductions?.left !== undefined ? `${dropdownPositions.deductions.left}px` : 'auto',
+                              right: dropdownPositions.deductions?.right !== undefined ? `${dropdownPositions.deductions.right}px` : 'auto'
+                            }}
+                          >
+                            <div className="space-y-3">
+                              <Label className="text-xs font-semibold text-gray-700">Filter by Deductions</Label>
+                              <div className="flex gap-2">
+                                <div className="flex-1 space-y-1.5 min-w-0">
+                                  <Label className="text-xs text-gray-600 font-medium">Min</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Min"
+                                    value={earningFilters.deductionsMin}
+                                    onChange={(e) => handleFilterChange('deductionsMin', e.target.value)}
+                                    className="h-9 text-sm w-full"
+                                    autoFocus
+                                  />
+                                </div>
+                                <div className="flex-1 space-y-1.5 min-w-0">
+                                  <Label className="text-xs text-gray-600 font-medium">Max</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Max"
+                                    value={earningFilters.deductionsMax}
+                                    onChange={(e) => handleFilterChange('deductionsMax', e.target.value)}
+                                    className="h-9 text-sm w-full"
+                                  />
+                                </div>
+                              </div>
+                              {(earningFilters.deductionsMin || earningFilters.deductionsMax) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleFilterChange('deductionsMin', '')
+                                    handleFilterChange('deductionsMax', '')
+                                    setOpenFilter(null)
+                                  }}
+                                  className="w-full h-8 text-xs"
+                                >
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                  <th className="text-right py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <span>Taxes</span>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => handleSort('taxes')}
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${sortColumn === 'taxes' ? 'text-blue-600' : 'text-gray-400'}`}
+                          title={sortColumn === 'taxes' ? `Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by taxes'}
+                        >
+                          {sortColumn === 'taxes' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <div className="relative filter-dropdown-container inline-flex">
+                          <button
+                            onClick={(e) => handleFilterClick('taxes', e)}
+                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isFilterActive('taxes') ? 'text-blue-600' : 'text-gray-400'}`}
+                            title="Filter by taxes"
+                          >
+                            <Filter className="h-3.5 w-3.5" />
+                          </button>
+                        {typeof window !== 'undefined' && openFilter === 'taxes' && createPortal(
+                          <div 
+                            className="fixed w-72 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3 overflow-x-hidden"
+                            style={{
+                              top: `${dropdownPositions.taxes?.top || 0}px`,
+                              left: dropdownPositions.taxes?.left !== undefined ? `${dropdownPositions.taxes.left}px` : 'auto',
+                              right: dropdownPositions.taxes?.right !== undefined ? `${dropdownPositions.taxes.right}px` : 'auto'
+                            }}
+                          >
+                            <div className="space-y-3">
+                              <Label className="text-xs font-semibold text-gray-700">Filter by Taxes</Label>
+                              <div className="flex gap-2">
+                                <div className="flex-1 space-y-1.5 min-w-0">
+                                  <Label className="text-xs text-gray-600 font-medium">Min</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Min"
+                                    value={earningFilters.taxesMin}
+                                    onChange={(e) => handleFilterChange('taxesMin', e.target.value)}
+                                    className="h-9 text-sm w-full"
+                                    autoFocus
+                                  />
+                                </div>
+                                <div className="flex-1 space-y-1.5 min-w-0">
+                                  <Label className="text-xs text-gray-600 font-medium">Max</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Max"
+                                    value={earningFilters.taxesMax}
+                                    onChange={(e) => handleFilterChange('taxesMax', e.target.value)}
+                                    className="h-9 text-sm w-full"
+                                  />
+                                </div>
+                              </div>
+                              {(earningFilters.taxesMin || earningFilters.taxesMax) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleFilterChange('taxesMin', '')
+                                    handleFilterChange('taxesMax', '')
+                                    setOpenFilter(null)
+                                  }}
+                                  className="w-full h-8 text-xs"
+                                >
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                  <th className="text-right py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <span>Net</span>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => handleSort('net')}
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${sortColumn === 'net' ? 'text-blue-600' : 'text-gray-400'}`}
+                          title={sortColumn === 'net' ? `Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by net amount'}
+                        >
+                          {sortColumn === 'net' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <div className="relative filter-dropdown-container inline-flex">
+                          <button
+                            onClick={(e) => handleFilterClick('net', e)}
+                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isFilterActive('net') ? 'text-blue-600' : 'text-gray-400'}`}
+                            title="Filter by net amount"
+                          >
+                            <Filter className="h-3.5 w-3.5" />
+                          </button>
+                        {typeof window !== 'undefined' && openFilter === 'net' && createPortal(
+                          <div 
+                            className="fixed w-72 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3 overflow-x-hidden"
+                            style={{
+                              top: `${dropdownPositions.net?.top || 0}px`,
+                              left: dropdownPositions.net?.left !== undefined ? `${dropdownPositions.net.left}px` : 'auto',
+                              right: dropdownPositions.net?.right !== undefined ? `${dropdownPositions.net.right}px` : 'auto'
+                            }}
+                          >
+                            <div className="space-y-3">
+                              <Label className="text-xs font-semibold text-gray-700">Filter by Net</Label>
+                              <div className="flex gap-2">
+                                <div className="flex-1 space-y-1.5 min-w-0">
+                                  <Label className="text-xs text-gray-600 font-medium">Min</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Min"
+                                    value={earningFilters.netMin}
+                                    onChange={(e) => handleFilterChange('netMin', e.target.value)}
+                                    className="h-9 text-sm w-full"
+                                    autoFocus
+                                  />
+                                </div>
+                                <div className="flex-1 space-y-1.5 min-w-0">
+                                  <Label className="text-xs text-gray-600 font-medium">Max</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Max"
+                                    value={earningFilters.netMax}
+                                    onChange={(e) => handleFilterChange('netMax', e.target.value)}
+                                    className="h-9 text-sm w-full"
+                                  />
+                                </div>
+                              </div>
+                              {(earningFilters.netMin || earningFilters.netMax) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleFilterChange('netMin', '')
+                                    handleFilterChange('netMax', '')
+                                    setOpenFilter(null)
+                                  }}
+                                  className="w-full h-8 text-xs"
+                                >
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                  <th className="text-center py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredEarningStatements.map((statement) => (
+                  <tr 
+                    key={statement.id} 
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="py-4 px-6 text-sm text-gray-900 align-middle">
+                      {statement.employeeName}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-900 align-middle">
+                      {formatDateToMMDDYYYY(statement.date)}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-right text-gray-900 font-medium align-middle tabular-nums">
+                      {formatCurrency(statement.gross)}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-right text-gray-900 align-middle tabular-nums">
+                      {formatCurrency(statement.deductions)}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-right text-gray-900 align-middle tabular-nums">
+                      {formatCurrency(statement.taxes)}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-right text-gray-900 font-semibold align-middle tabular-nums">
+                      {formatCurrency(statement.net)}
+                    </td>
+                    <td className="py-4 px-6 text-center align-middle">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadPDF(statement)}
+                        className="inline-flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span className="hidden sm:inline">PDF</span>
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredEarningStatements.length === 0 && (
+            <div className="text-center py-12">
+              <ReceiptIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 text-sm">
+                {earningStatements.length === 0 
+                  ? 'No earning statements found' 
+                  : 'No earning statements match your filters'}
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setActiveSection(null)}
+            >
+              Back to My Stuff
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 
@@ -1071,6 +1974,16 @@ function MyStuffContent() {
       )
     }
 
+    if (activeSection === 'earning-statement') {
+      return (
+        <Layout userRole={currentUser.role} userName={currentUser.name}>
+          <div className="p-6">
+            {renderEarningStatement()}
+          </div>
+        </Layout>
+      )
+    }
+
     return (
       <Layout userRole={currentUser.role} userName={currentUser.name}>
         <div className="p-6">
@@ -1154,8 +2067,18 @@ function MyStuffContent() {
                 {payrollTabs.map((tab) => (
                   <Card
                     key={tab.id}
-                    className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => console.log(`Navigate to ${tab.label}`)}
+                    className={`cursor-pointer hover:shadow-md transition-all ${
+                      activeSection === tab.id
+                        ? 'border-2 border-blue-500 bg-blue-50'
+                        : ''
+                    }`}
+                    onClick={() => {
+                      if (tab.id === 'earning-statement') {
+                        setActiveSection('earning-statement')
+                      } else {
+                        console.log(`Navigate to ${tab.label}`)
+                      }
+                    }}
                   >
                     <CardHeader>
                       <CardTitle className="flex items-center">
