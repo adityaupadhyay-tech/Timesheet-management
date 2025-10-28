@@ -64,7 +64,7 @@ export function DatePickerComponent({ value, onChange, className, placeholder = 
         yearDropdownItemNumber={20}
         scrollableYearDropdown
         maxDate={new Date()}
-        dateFormat="MMM dd, yyyy"
+        dateFormat="MM/dd/yyyy"
         placeholderText={placeholder}
         autoComplete="off"
       />

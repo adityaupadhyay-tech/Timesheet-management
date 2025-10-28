@@ -173,7 +173,13 @@ export default function WeeklyTimesheet({
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <h3 className="font-semibold text-gray-900">
-                    {day.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                    {(() => {
+                      const weekday = day.toLocaleDateString('en-US', { weekday: 'long' });
+                      const month = String(day.getMonth() + 1).padStart(2, '0');
+                      const dayNum = String(day.getDate()).padStart(2, '0');
+                      const year = day.getFullYear();
+                      return `${weekday}, ${month}/${dayNum}/${year}`;
+                    })()}
                   </h3>
                   <span className="text-sm text-gray-500">
                     Total: {formatDuration(getTotalHoursForDay(day))}

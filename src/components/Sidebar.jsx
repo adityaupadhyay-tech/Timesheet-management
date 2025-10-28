@@ -49,6 +49,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
   // Get current section from URL if on my-stuff page
   const currentSection = searchParams.get('section');
   
+<<<<<<< HEAD
   // Initialize dropdown state based on URL
   useEffect(() => {
     const shouldBeOpen = pathname === '/my-stuff' || pathname.startsWith('/my-stuff');
@@ -60,6 +61,13 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     setIsMounted(true);
   }, []);
 
+=======
+  // Track client-side mounting to prevent hydration mismatches
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
+>>>>>>> TTT-AdityaDevBranch
   // Update selectedPersona when userRole changes
   useEffect(() => {
     setSelectedPersona(userRole);
@@ -158,8 +166,8 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
 
   return (
     <>
-      {/* Mobile overlay */}
-      {isOpen && (
+      {/* Mobile overlay - only render after mount to prevent hydration mismatch */}
+      {isMounted && isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={onToggle}
@@ -181,7 +189,8 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
       >
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-4 border-b">
-          {isOpen ? (
+          {/* Only render conditional content after mount to prevent hydration mismatch */}
+          {isMounted && isOpen ? (
             <Link href="/dashboard" className="flex items-center space-x-3">
               <h1 className="text-lg font-semibold text-gray-900">Timesheet</h1>
             </Link>
@@ -232,15 +241,15 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                   >
                     <div className="flex items-center">
                       <span className="text-lg mr-3">{item.icon}</span>
-                      {isOpen && <span>{item.label}</span>}
+                      {isMounted && isOpen && <span>{item.label}</span>}
                     </div>
-                    {isOpen && (
+                    {isMounted && isOpen && (
                       isMyStuffOpen ? <ExpandMoreIcon className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />
                     )}
                   </button>
                   
                   {/* Dropdown submenu */}
-                  {isMyStuffOpen && isOpen && (
+                  {isMounted && isMyStuffOpen && isOpen && (
                     <div className="ml-4 mt-1 space-y-1">
                       {/* My Profile Section */}
                       <div className="px-3 py-2">
@@ -304,7 +313,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                 `}
               >
                 <span className="text-lg mr-3">{item.icon}</span>
-                {isOpen && <span>{item.label}</span>}
+                {isMounted && isOpen && <span>{item.label}</span>}
               </Link>
             );
           })}
@@ -314,7 +323,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
         <div className="border-t px-2 py-4 flex-shrink-0">
           {/* User Info */}
           <div className="px-3 py-2">
-            {isOpen ? (
+            {isMounted && isOpen ? (
               <div className="text-sm text-gray-700">
                 <div className="font-medium truncate">{userName}</div>
                 <div className="text-xs bg-gray-100 px-2 py-1 rounded-full font-medium mt-1 inline-block">
@@ -333,7 +342,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
           </div>
 
           {/* Persona Switcher */}
-          {isOpen && (
+          {isMounted && isOpen && (
             <div className="px-3 py-1">
               <div className="text-xs text-gray-500 font-medium mb-1">Switch View</div>
               <div className="space-y-0.5">

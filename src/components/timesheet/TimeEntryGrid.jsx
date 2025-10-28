@@ -827,13 +827,13 @@ export default function TimeEntryGrid({
 
   const formatDate = (dateString) => {
     if (!dateString) return ''
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    const date = new Date(dateString)
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const year = date.getFullYear()
+    const hour = String(date.getHours()).padStart(2, '0')
+    const minute = String(date.getMinutes()).padStart(2, '0')
+    return `${month}/${day}/${year} ${hour}:${minute}`
   }
 
   const cycleDays = getCycleDays()
@@ -1369,7 +1369,7 @@ export default function TimeEntryGrid({
               onClick={() => {
                 // Convert grid rows to CSV
                 const csvRows = [
-                  ['Department', 'Account', 'Code', ...cycleDays.map(d => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })), 'Total']
+                  ['Department', 'Account', 'Code', ...cycleDays.map(d => formatDateForDisplay(d)), 'Total']
                 ]
                 
                 localGridRows.forEach(row => {
