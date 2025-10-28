@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { useUser } from '@/contexts/UserContext'
-import { ArrowLeft, Save, Download, X, Filter, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
+import { ArrowLeft, Save, Download, X, Filter, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown, TrendingUp, TrendingDown } from 'lucide-react'
 import { DatePickerComponent } from '@/components/ui/date-picker'
 import PersonIcon from '@mui/icons-material/Person'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
@@ -154,6 +154,38 @@ function MyStuffContent() {
       reciprocityMethod: 'Standard'
     }
   })
+  
+  // Year to Date Information state
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString())
+  const [ytdInfo, setYtdInfo] = useState({
+    earnings: {
+      regular: 45000.00,
+      extraMoney: 3500.00,
+      total: 48500.00
+    },
+    deductions: {
+      directDeposit: 36000.00,
+      eeInsPreTax: 2400.00,
+      total: 38400.00
+    },
+    taxes: {
+      alabama: 2250.00,
+      federal: 7250.00,
+      ficaOasdi: 3006.00,
+      ficaMedicare: 703.25,
+      total: 13209.25
+    }
+  })
+  
+  // Generate list of years (current year and 9 previous years)
+  const availableYears = useMemo(() => {
+    const currentYear = new Date().getFullYear()
+    const years = []
+    for (let i = 0; i < 10; i++) {
+      years.push((currentYear - i).toString())
+    }
+    return years
+  }, [])
   
   // Direct Deposit state
   const [directDeposits, setDirectDeposits] = useState([
@@ -2726,6 +2758,170 @@ function MyStuffContent() {
     </div>
   )
 
+  // Render Year to Date Information
+  const renderYearToDateInfo = () => (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setActiveSection(null)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900">Year to Date Information</h2>
+            <p className="text-sm text-gray-600 mt-1">Financial summary for {selectedYear}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Label htmlFor="yearFilter" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+            Year:
+          </Label>
+          <select
+            id="yearFilter"
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="h-10 px-3 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors cursor-pointer"
+          >
+            {availableYears.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Earnings Section */}
+        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+              </div>
+              Earnings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Regular</span>
+                <span className="text-sm font-medium text-gray-900 tabular-nums">
+                  {formatCurrency(ytdInfo.earnings.regular)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Extra Money</span>
+                <span className="text-sm font-medium text-gray-900 tabular-nums">
+                  {formatCurrency(ytdInfo.earnings.extraMoney)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-3 border-t-2 border-gray-200">
+                <span className="text-base font-semibold text-gray-900">Total</span>
+                <span className="text-lg font-bold text-green-600 tabular-nums">
+                  {formatCurrency(ytdInfo.earnings.total)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Deductions Section */}
+        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <TrendingDown className="h-5 w-5 text-orange-600" />
+              </div>
+              Deductions
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Direct Deposit</span>
+                <span className="text-sm font-medium text-gray-900 tabular-nums">
+                  {formatCurrency(ytdInfo.deductions.directDeposit)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm text-gray-600">EE Ins PreTax</span>
+                <span className="text-sm font-medium text-gray-900 tabular-nums">
+                  {formatCurrency(ytdInfo.deductions.eeInsPreTax)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-3 border-t-2 border-gray-200">
+                <span className="text-base font-semibold text-gray-900">Total</span>
+                <span className="text-lg font-bold text-orange-600 tabular-nums">
+                  {formatCurrency(ytdInfo.deductions.total)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Taxes Section */}
+        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow md:col-span-2 lg:col-span-1">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <ReceiptIcon className="h-5 w-5 text-blue-600" />
+              </div>
+              Taxes
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Alabama</span>
+                <span className="text-sm font-medium text-gray-900 tabular-nums">
+                  {formatCurrency(ytdInfo.taxes.alabama)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Federal</span>
+                <span className="text-sm font-medium text-gray-900 tabular-nums">
+                  {formatCurrency(ytdInfo.taxes.federal)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm text-gray-600">FICA - OASDI</span>
+                <span className="text-sm font-medium text-gray-900 tabular-nums">
+                  {formatCurrency(ytdInfo.taxes.ficaOasdi)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm text-gray-600">FICA - Medicare</span>
+                <span className="text-sm font-medium text-gray-900 tabular-nums">
+                  {formatCurrency(ytdInfo.taxes.ficaMedicare)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-3 border-t-2 border-gray-200">
+                <span className="text-base font-semibold text-gray-900">Total</span>
+                <span className="text-lg font-bold text-blue-600 tabular-nums">
+                  {formatCurrency(ytdInfo.taxes.total)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex justify-end gap-3 mt-6">
+        <Button
+          variant="outline"
+          onClick={() => setActiveSection(null)}
+        >
+          Back to My Stuff
+        </Button>
+      </div>
+    </div>
+  )
+
   // Render Emergency Contact form
   const renderEmergencyContactForm = () => (
     <div className="space-y-6">
@@ -3354,6 +3550,16 @@ function MyStuffContent() {
       )
     }
 
+    if (activeSection === 'ytd-info') {
+      return (
+        <Layout userRole={currentUser.role} userName={currentUser.name}>
+          <div className="p-6">
+            {renderYearToDateInfo()}
+          </div>
+        </Layout>
+      )
+    }
+
     return (
       <Layout userRole={currentUser.role} userName={currentUser.name}>
         <div className="p-6">
@@ -3451,6 +3657,8 @@ function MyStuffContent() {
                         setActiveSection('tax-settings')
                       } else if (tab.id === 'direct-deposits') {
                         setActiveSection('direct-deposits')
+                      } else if (tab.id === 'ytd-info') {
+                        setActiveSection('ytd-info')
                       } else {
                         console.log(`Navigate to ${tab.label}`)
                       }
