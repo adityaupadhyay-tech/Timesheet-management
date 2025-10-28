@@ -173,10 +173,9 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
         lg:relative lg:translate-x-0
         ${
           isOpen
-            ? "w-64 translate-x-0"
-            : "w-16 -translate-x-full lg:translate-x-0"
+            ? "w-64 translate-x-0 lg:w-64"
+            : "w-16 -translate-x-full lg:translate-x-0 lg:w-16"
         }
-        ${!isOpen && "lg:w-16"}
       `}
         suppressHydrationWarning
       >
