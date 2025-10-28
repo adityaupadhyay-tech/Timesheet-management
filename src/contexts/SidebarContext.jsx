@@ -1,6 +1,10 @@
 'use client'
 
+<<<<<<< HEAD
 import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
+=======
+import { createContext, useContext, useState, useCallback, useMemo, useLayoutEffect } from 'react'
+>>>>>>> TTT-AdityaDevBranch
 
 /**
  * @typedef {Object} SidebarContextType
@@ -16,6 +20,7 @@ const SidebarContext = createContext(undefined)
  * @property {React.ReactNode} children
  */
 export function SidebarProvider({ children }) {
+<<<<<<< HEAD
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
 
@@ -52,6 +57,30 @@ export function SidebarProvider({ children }) {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [isMounted, sidebarOpen])
+=======
+  // Initialize based on screen size if available (client-side), otherwise false (SSR)
+  // Using lazy initialization function to safely check window during SSR
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      // Use media query to match Tailwind's lg breakpoint (1024px)
+      const mediaQuery = window.matchMedia('(min-width: 1024px)')
+      return mediaQuery.matches
+    }
+    return false // Default for SSR
+  })
+
+  // Ensure state is synced with screen size on mount (only for initial load)
+  // This handles cases where the lazy initializer didn't run correctly
+  useLayoutEffect(() => {
+    if (typeof window !== 'undefined') {
+      const mediaQuery = window.matchMedia('(min-width: 1024px)')
+      // Always set initial state based on media query on mount
+      // This ensures desktop starts open, mobile starts closed
+      setSidebarOpen(mediaQuery.matches)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount to set initial state
+>>>>>>> TTT-AdityaDevBranch
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen(prev => !prev)

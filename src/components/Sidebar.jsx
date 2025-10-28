@@ -171,8 +171,14 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
         className={`
         fixed top-0 left-0 h-full bg-white shadow-lg z-50 transition-all duration-300 ease-in-out flex flex-col
         lg:relative lg:translate-x-0
-        ${isOpen ? "w-64 translate-x-0" : "w-16 -translate-x-full lg:translate-x-0 lg:w-16"}
+        ${
+          isOpen
+            ? "w-64 translate-x-0"
+            : "w-16 -translate-x-full lg:translate-x-0"
+        }
+        ${!isOpen && "lg:w-16"}
       `}
+        suppressHydrationWarning
       >
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-4 border-b">
