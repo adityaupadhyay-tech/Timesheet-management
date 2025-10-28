@@ -194,9 +194,65 @@ function MyStuffContent() {
   const [dropdownPositions, setDropdownPositions] = useState({})
   const filterButtonRefs = useRef({})
   
-  // Sort state
+  // Sort state for Earning Statements
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc') // 'asc' or 'desc'
+  
+  // W-2 Register data
+  const [w2Statements, setW2Statements] = useState([
+    {
+      id: 1,
+      company: 'Tech Solutions Inc',
+      employee: 'John Doe',
+      year: 2024,
+      hasW2: true,
+      hasW2c: false
+    },
+    {
+      id: 2,
+      company: 'Tech Solutions Inc',
+      employee: 'John Doe',
+      year: 2023,
+      hasW2: true,
+      hasW2c: true
+    },
+    {
+      id: 3,
+      company: 'Digital Innovations',
+      employee: 'Jane Smith',
+      year: 2024,
+      hasW2: true,
+      hasW2c: false
+    },
+    {
+      id: 4,
+      company: 'Digital Innovations',
+      employee: 'Jane Smith',
+      year: 2023,
+      hasW2: true,
+      hasW2c: false
+    },
+    {
+      id: 5,
+      company: 'Tech Solutions Inc',
+      employee: 'Bob Johnson',
+      year: 2024,
+      hasW2: true,
+      hasW2c: false
+    }
+  ])
+  
+  // W-2 Register filters
+  const [w2Filters, setW2Filters] = useState({
+    company: '',
+    employee: '',
+    yearMin: '',
+    yearMax: ''
+  })
+  
+  // Sort state for W-2 Register
+  const [w2SortColumn, setW2SortColumn] = useState(null)
+  const [w2SortDirection, setW2SortDirection] = useState('asc')
   
   // Handle opening filter and calculate position
   const handleFilterClick = (filterKey, event) => {
@@ -216,6 +272,28 @@ function MyStuffContent() {
         top: rect.bottom + 6,
         left: isRightAligned ? undefined : rect.left,
         right: isRightAligned ? window.innerWidth - rect.right : undefined
+      }
+    })
+    
+    setOpenFilter(filterKey)
+  }
+  
+  // Handle opening filter for W-2 Register (separate to avoid conflicts)
+  const handleW2FilterClick = (filterKey, event) => {
+    if (openFilter === filterKey) {
+      setOpenFilter(null)
+      return
+    }
+    
+    const button = event.currentTarget
+    const rect = button.getBoundingClientRect()
+    
+    // W-2 filters open on left side
+    setDropdownPositions({
+      [filterKey]: {
+        top: rect.bottom + 6,
+        left: rect.left,
+        right: undefined
       }
     })
     
@@ -624,7 +702,7 @@ function MyStuffContent() {
     }).format(amount)
   }
 
-  // Handle sorting
+  // Handle sorting for Earning Statements
   const handleSort = (column) => {
     if (sortColumn === column) {
       // Toggle direction if same column
@@ -636,7 +714,7 @@ function MyStuffContent() {
     }
   }
   
-  // Smart sort function based on column type
+  // Smart sort function based on column type for Earning Statements
   const getSortValue = (statement, column) => {
     switch (column) {
       case 'employeeName':
@@ -651,6 +729,33 @@ function MyStuffContent() {
       case 'net':
         // Numeric sorting
         return parseFloat(statement[column]) || 0
+      default:
+        return null
+    }
+  }
+  
+  // Handle sorting for W-2 Register
+  const handleW2Sort = (column) => {
+    if (w2SortColumn === column) {
+      // Toggle direction if same column
+      setW2SortDirection(w2SortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // Set new column with ascending by default
+      setW2SortColumn(column)
+      setW2SortDirection('asc')
+    }
+  }
+  
+  // Smart sort function for W-2 Register
+  const getW2SortValue = (statement, column) => {
+    switch (column) {
+      case 'company':
+      case 'employee':
+        // Text sorting - case insensitive
+        return statement[column].toLowerCase()
+      case 'year':
+        // Numeric sorting for year
+        return parseInt(statement.year) || 0
       default:
         return null
     }
@@ -762,9 +867,17 @@ function MyStuffContent() {
     return results
   }, [earningStatements, earningFilters, sortColumn, sortDirection])
 
-  // Handle filter change
+  // Handle filter change for Earning Statements
   const handleFilterChange = (field, value) => {
     setEarningFilters(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+  
+  // Handle filter change for W-2 Register
+  const handleW2FilterChange = (field, value) => {
+    setW2Filters(prev => ({
       ...prev,
       [field]: value
     }))
@@ -786,14 +899,14 @@ function MyStuffContent() {
     })
   }
   
-  // Check if any filter is active
+  // Check if any filter is active for Earning Statements
   const hasActiveFilters = earningFilters.employeeName || earningFilters.date || 
     earningFilters.grossMin || earningFilters.grossMax ||
     earningFilters.deductionsMin || earningFilters.deductionsMax ||
     earningFilters.taxesMin || earningFilters.taxesMax ||
     earningFilters.netMin || earningFilters.netMax
   
-  // Check if a specific filter is active
+  // Check if a specific filter is active for Earning Statements
   const isFilterActive = (filterKey) => {
     switch (filterKey) {
       case 'employeeName':
@@ -811,6 +924,95 @@ function MyStuffContent() {
       default:
         return false
     }
+  }
+  
+  // Check if any filter is active for W-2 Register
+  const hasActiveW2Filters = w2Filters.company || w2Filters.employee || 
+    w2Filters.yearMin || w2Filters.yearMax
+  
+  // Check if a specific filter is active for W-2 Register
+  const isW2FilterActive = (filterKey) => {
+    switch (filterKey) {
+      case 'company':
+        return !!w2Filters.company
+      case 'employee':
+        return !!w2Filters.employee
+      case 'year':
+        return !!(w2Filters.yearMin || w2Filters.yearMax)
+      default:
+        return false
+    }
+  }
+  
+  // Filter and sort W-2 statements
+  const filteredW2Statements = useMemo(() => {
+    let results = w2Statements.filter((statement) => {
+      // Company filter (text search)
+      if (w2Filters.company && 
+          !statement.company.toLowerCase().includes(w2Filters.company.toLowerCase())) {
+        return false
+      }
+
+      // Employee filter (text search)
+      if (w2Filters.employee && 
+          !statement.employee.toLowerCase().includes(w2Filters.employee.toLowerCase())) {
+        return false
+      }
+
+      // Year filter (numeric range)
+      if (w2Filters.yearMin) {
+        const minValue = parseInt(w2Filters.yearMin)
+        if (!isNaN(minValue) && statement.year < minValue) {
+          return false
+        }
+      }
+      if (w2Filters.yearMax) {
+        const maxValue = parseInt(w2Filters.yearMax)
+        if (!isNaN(maxValue) && statement.year > maxValue) {
+          return false
+        }
+      }
+
+      return true
+    })
+    
+    // Apply sorting if sortColumn is set
+    if (w2SortColumn) {
+      results = [...results].sort((a, b) => {
+        const aValue = getW2SortValue(a, w2SortColumn)
+        const bValue = getW2SortValue(b, w2SortColumn)
+        
+        if (aValue === null || bValue === null) return 0
+        
+        if (typeof aValue === 'string') {
+          // String comparison
+          if (w2SortDirection === 'asc') {
+            return aValue.localeCompare(bValue)
+          } else {
+            return bValue.localeCompare(aValue)
+          }
+        } else {
+          // Numeric comparison
+          if (w2SortDirection === 'asc') {
+            return aValue - bValue
+          } else {
+            return bValue - aValue
+          }
+        }
+      })
+    }
+    
+    return results
+  }, [w2Statements, w2Filters, w2SortColumn, w2SortDirection])
+  
+  // Clear W-2 filters
+  const clearW2Filters = () => {
+    setW2Filters({
+      company: '',
+      employee: '',
+      yearMin: '',
+      yearMax: ''
+    })
   }
   
   // Handle clicking outside dropdowns
@@ -1369,6 +1571,347 @@ function MyStuffContent() {
                 {earningStatements.length === 0 
                   ? 'No earning statements found' 
                   : 'No earning statements match your filters'}
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setActiveSection(null)}
+            >
+              Back to My Stuff
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+
+  // Handle W-2 PDF download
+  const handleDownloadW2 = (statement) => {
+    // TODO: Implement W-2 PDF download functionality
+    console.log('Downloading W-2 PDF for statement:', statement)
+    alert(`Downloading W-2 PDF for ${statement.company} - ${statement.year}`)
+  }
+  
+  // Handle W-2c PDF download
+  const handleDownloadW2c = (statement) => {
+    // TODO: Implement W-2c PDF download functionality
+    console.log('Downloading W-2c PDF for statement:', statement)
+    alert(`Downloading W-2c PDF for ${statement.company} - ${statement.year}`)
+  }
+  
+  // Render W-2 Register table
+  const renderW2Register = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="outline"
+          onClick={() => setActiveSection(null)}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <h2 className="text-2xl font-semibold text-gray-900">W-2 Register</h2>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>W-2 Forms</CardTitle>
+              <CardDescription>View and download your W-2 and W-2c forms</CardDescription>
+            </div>
+            {hasActiveW2Filters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearW2Filters}
+                className="text-sm"
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b-2 border-gray-200 bg-gray-50">
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    <div className="flex items-center gap-1.5">
+                      <span>Company</span>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => handleW2Sort('company')}
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${w2SortColumn === 'company' ? 'text-blue-600' : 'text-gray-400'}`}
+                          title={w2SortColumn === 'company' ? `Sort ${w2SortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by company'}
+                        >
+                          {w2SortColumn === 'company' ? (
+                            w2SortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <div className="relative filter-dropdown-container inline-flex">
+                          <button
+                            onClick={(e) => handleW2FilterClick('w2Company', e)}
+                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isW2FilterActive('company') ? 'text-blue-600' : 'text-gray-400'}`}
+                            title="Filter by company"
+                          >
+                            <Filter className="h-3.5 w-3.5" />
+                          </button>
+                        {typeof window !== 'undefined' && openFilter === 'w2Company' && createPortal(
+                          <div 
+                            className="fixed w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3"
+                            style={{
+                              top: `${dropdownPositions.w2Company?.top || 0}px`,
+                              left: dropdownPositions.w2Company?.left !== undefined ? `${dropdownPositions.w2Company.left}px` : 'auto',
+                              right: dropdownPositions.w2Company?.right !== undefined ? `${dropdownPositions.w2Company.right}px` : 'auto'
+                            }}
+                          >
+                            <div className="space-y-3">
+                              <Label className="text-xs font-semibold text-gray-700">Filter by Company</Label>
+                              <Input
+                                type="text"
+                                placeholder="Search company..."
+                                value={w2Filters.company}
+                                onChange={(e) => handleW2FilterChange('company', e.target.value)}
+                                className="h-9 text-sm w-full"
+                                autoFocus
+                              />
+                              {w2Filters.company && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleW2FilterChange('company', '')
+                                    setOpenFilter(null)
+                                  }}
+                                  className="w-full h-8 text-xs"
+                                >
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    <div className="flex items-center gap-1.5">
+                      <span>Employee</span>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => handleW2Sort('employee')}
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${w2SortColumn === 'employee' ? 'text-blue-600' : 'text-gray-400'}`}
+                          title={w2SortColumn === 'employee' ? `Sort ${w2SortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by employee'}
+                        >
+                          {w2SortColumn === 'employee' ? (
+                            w2SortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <div className="relative filter-dropdown-container inline-flex">
+                          <button
+                            onClick={(e) => handleW2FilterClick('w2Employee', e)}
+                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isW2FilterActive('employee') ? 'text-blue-600' : 'text-gray-400'}`}
+                            title="Filter by employee"
+                          >
+                            <Filter className="h-3.5 w-3.5" />
+                          </button>
+                        {typeof window !== 'undefined' && openFilter === 'w2Employee' && createPortal(
+                          <div 
+                            className="fixed w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3"
+                            style={{
+                              top: `${dropdownPositions.w2Employee?.top || 0}px`,
+                              left: dropdownPositions.w2Employee?.left !== undefined ? `${dropdownPositions.w2Employee.left}px` : 'auto',
+                              right: dropdownPositions.w2Employee?.right !== undefined ? `${dropdownPositions.w2Employee.right}px` : 'auto'
+                            }}
+                          >
+                            <div className="space-y-3">
+                              <Label className="text-xs font-semibold text-gray-700">Filter by Employee</Label>
+                              <Input
+                                type="text"
+                                placeholder="Search employee..."
+                                value={w2Filters.employee}
+                                onChange={(e) => handleW2FilterChange('employee', e.target.value)}
+                                className="h-9 text-sm w-full"
+                                autoFocus
+                              />
+                              {w2Filters.employee && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleW2FilterChange('employee', '')
+                                    setOpenFilter(null)
+                                  }}
+                                  className="w-full h-8 text-xs"
+                                >
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                  <th className="text-center py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    <div className="flex items-center gap-1.5 justify-center">
+                      <span>Year</span>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => handleW2Sort('year')}
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${w2SortColumn === 'year' ? 'text-blue-600' : 'text-gray-400'}`}
+                          title={w2SortColumn === 'year' ? `Sort ${w2SortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by year'}
+                        >
+                          {w2SortColumn === 'year' ? (
+                            w2SortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <div className="relative filter-dropdown-container inline-flex">
+                          <button
+                            onClick={(e) => handleW2FilterClick('w2Year', e)}
+                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isW2FilterActive('year') ? 'text-blue-600' : 'text-gray-400'}`}
+                            title="Filter by year"
+                          >
+                            <Filter className="h-3.5 w-3.5" />
+                          </button>
+                        {typeof window !== 'undefined' && openFilter === 'w2Year' && createPortal(
+                          <div 
+                            className="fixed w-72 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3 overflow-x-hidden"
+                            style={{
+                              top: `${dropdownPositions.w2Year?.top || 0}px`,
+                              left: dropdownPositions.w2Year?.left !== undefined ? `${dropdownPositions.w2Year.left}px` : 'auto',
+                              right: dropdownPositions.w2Year?.right !== undefined ? `${dropdownPositions.w2Year.right}px` : 'auto'
+                            }}
+                          >
+                            <div className="space-y-3">
+                              <Label className="text-xs font-semibold text-gray-700">Filter by Year</Label>
+                              <div className="flex gap-2">
+                                <div className="flex-1 space-y-1.5 min-w-0">
+                                  <Label className="text-xs text-gray-600 font-medium">Min</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Min Year"
+                                    value={w2Filters.yearMin}
+                                    onChange={(e) => handleW2FilterChange('yearMin', e.target.value)}
+                                    className="h-9 text-sm w-full"
+                                    autoFocus
+                                  />
+                                </div>
+                                <div className="flex-1 space-y-1.5 min-w-0">
+                                  <Label className="text-xs text-gray-600 font-medium">Max</Label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Max Year"
+                                    value={w2Filters.yearMax}
+                                    onChange={(e) => handleW2FilterChange('yearMax', e.target.value)}
+                                    className="h-9 text-sm w-full"
+                                  />
+                                </div>
+                              </div>
+                              {(w2Filters.yearMin || w2Filters.yearMax) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleW2FilterChange('yearMin', '')
+                                    handleW2FilterChange('yearMax', '')
+                                    setOpenFilter(null)
+                                  }}
+                                  className="w-full h-8 text-xs"
+                                >
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                  <th className="text-center py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    W-2
+                  </th>
+                  <th className="text-center py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    W-2c
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredW2Statements.map((statement) => (
+                  <tr 
+                    key={statement.id} 
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="py-4 px-6 text-sm text-gray-900 align-middle">
+                      {statement.company}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-900 align-middle">
+                      {statement.employee}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-900 align-middle text-center tabular-nums">
+                      {statement.year}
+                    </td>
+                    <td className="py-4 px-6 text-center align-middle">
+                      {statement.hasW2 ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadW2(statement)}
+                          className="inline-flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                        >
+                          <Download className="h-4 w-4" />
+                          <span className="hidden sm:inline">PDF</span>
+                        </Button>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
+                    </td>
+                    <td className="py-4 px-6 text-center align-middle">
+                      {statement.hasW2c ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadW2c(statement)}
+                          className="inline-flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                        >
+                          <Download className="h-4 w-4" />
+                          <span className="hidden sm:inline">PDF</span>
+                        </Button>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredW2Statements.length === 0 && (
+            <div className="text-center py-12">
+              <Description className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 text-sm">
+                {w2Statements.length === 0 
+                  ? 'No W-2 forms found' 
+                  : 'No W-2 forms match your filters'}
               </p>
             </div>
           )}
@@ -1984,6 +2527,16 @@ function MyStuffContent() {
       )
     }
 
+    if (activeSection === 'w2-register') {
+      return (
+        <Layout userRole={currentUser.role} userName={currentUser.name}>
+          <div className="p-6">
+            {renderW2Register()}
+          </div>
+        </Layout>
+      )
+    }
+
     return (
       <Layout userRole={currentUser.role} userName={currentUser.name}>
         <div className="p-6">
@@ -2075,6 +2628,8 @@ function MyStuffContent() {
                     onClick={() => {
                       if (tab.id === 'earning-statement') {
                         setActiveSection('earning-statement')
+                      } else if (tab.id === 'w2-register') {
+                        setActiveSection('w2-register')
                       } else {
                         console.log(`Navigate to ${tab.label}`)
                       }
