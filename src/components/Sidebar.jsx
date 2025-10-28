@@ -49,25 +49,18 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
   // Get current section from URL if on my-stuff page
   const currentSection = searchParams.get('section');
   
-<<<<<<< HEAD
-  // Initialize dropdown state based on URL
-  useEffect(() => {
-    const shouldBeOpen = pathname === '/my-stuff' || pathname.startsWith('/my-stuff');
-    setIsMyStuffOpen(shouldBeOpen);
-  }, [pathname]);
-
-  // Handle mounting to prevent hydration issues
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-=======
   // Track client-side mounting to prevent hydration mismatches
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  
->>>>>>> TTT-AdityaDevBranch
+
+  // Keep My Stuff dropdown open when on my-stuff page with any section
+  useEffect(() => {
+    if (pathname === '/my-stuff') {
+      setIsMyStuffOpen(true);
+    }
+  }, [pathname]);
+
   // Update selectedPersona when userRole changes
   useEffect(() => {
     setSelectedPersona(userRole);
