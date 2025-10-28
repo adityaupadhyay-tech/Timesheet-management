@@ -125,6 +125,13 @@ function MyStuffContent() {
     { checkDate: '2024-10-30', type: 'PTO/Vacation', hoursTaken: '8.0' }
   ])
 
+  // Emergency Contact form state
+  const [emergencyContact, setEmergencyContact] = useState({
+    contact: '',
+    relationship: '',
+    phoneNumber: ''
+  })
+
   // Sub-tabs for My Profile
   const profileTabs = useMemo(() => [
     { id: 'basic-info', label: 'Basic Information', icon: <InfoIcon /> },
@@ -473,6 +480,79 @@ function MyStuffContent() {
       <div className="flex justify-end gap-3 mt-6">
         <Button variant="outline" onClick={() => setActiveSection(null)}>Back to My Stuff</Button>
       </div>
+    </div>
+  )
+
+  // Render Emergency Contact form
+  const renderEmergencyContactForm = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="outline"
+          onClick={() => setActiveSection(null)}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <h2 className="text-2xl font-semibold text-gray-900">Emergency Contact</h2>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Emergency Contact Information</CardTitle>
+          <CardDescription>View your emergency contact details</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="contact">Contact</Label>
+              <Input
+                id="contact"
+                value={emergencyContact.contact}
+                onChange={(e) => setEmergencyContact({...emergencyContact, contact: e.target.value})}
+                placeholder="Enter contact name"
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="relationship">Relationship</Label>
+              <Input
+                id="relationship"
+                value={emergencyContact.relationship}
+                onChange={(e) => setEmergencyContact({...emergencyContact, relationship: e.target.value})}
+                placeholder="Enter relationship"
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                value={emergencyContact.phoneNumber}
+                onChange={(e) => setEmergencyContact({...emergencyContact, phoneNumber: e.target.value})}
+                placeholder="Enter phone number"
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setActiveSection(null)}
+            >
+              Back to My Stuff
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 
@@ -981,6 +1061,16 @@ function MyStuffContent() {
       )
     }
 
+    if (activeSection === 'emergency-contact') {
+      return (
+        <Layout userRole={currentUser.role} userName={currentUser.name}>
+          <div className="p-6">
+            {renderEmergencyContactForm()}
+          </div>
+        </Layout>
+      )
+    }
+
     return (
       <Layout userRole={currentUser.role} userName={currentUser.name}>
         <div className="p-6">
@@ -1016,6 +1106,8 @@ function MyStuffContent() {
                                 setActiveSection('personal-info')
                               } else if (tab.id === 'paid-leave') {
                                 setActiveSection('paid-leave')
+                              } else if (tab.id === 'emergency-contact') {
+                                setActiveSection('emergency-contact')
                               } else {
                                 console.log(`Navigate to ${tab.label}`)
                               }
