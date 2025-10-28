@@ -241,11 +241,10 @@ export function formatCyclePeriod(date, cycleType) {
   const endDate = getCycleEndDate(date, cycleType)
   
   const formatDate = (d) => {
-    return d.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-    })
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    const year = d.getFullYear()
+    return `${month}/${day}/${year}`
   }
   
   switch (cycleType) {
@@ -258,10 +257,9 @@ export function formatCyclePeriod(date, cycleType) {
     case 'bi-weekly':
       return `${formatDate(startDate)} - ${formatDate(endDate)}`
     case 'monthly':
-      return startDate.toLocaleDateString('en-US', { 
-        month: 'long', 
-        year: 'numeric' 
-      })
+      const month = String(startDate.getMonth() + 1).padStart(2, '0')
+      const year = startDate.getFullYear()
+      return `${month}/${year}`
     default:
       return formatDate(startDate)
   }

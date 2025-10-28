@@ -266,9 +266,10 @@ export default function MyStuffPage() {
               <Label htmlFor="birthDate">Birth Date</Label>
               <Input
                 id="birthDate"
-                type="date"
-                value={personalInfo.birthDate}
+                type="text"
+                value={formatDateToMMDDYYYY(personalInfo.birthDate)}
                 onChange={(e) => setPersonalInfo({...personalInfo, birthDate: e.target.value})}
+                placeholder="MM-dd-yyyy"
                 disabled
                 className="bg-gray-50 cursor-not-allowed"
               />
@@ -309,11 +310,11 @@ export default function MyStuffPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">As of Date</Label>
-                <div className="text-sm font-mono text-gray-900">{paidLeave.ptoVacation.asOfDate}</div>
+                <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.asOfDate)}</div>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Date</Label>
-                <div className="text-sm font-mono text-gray-900">{paidLeave.ptoVacation.resetDate}</div>
+                <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.resetDate)}</div>
               </div>
             </div>
             
@@ -365,11 +366,11 @@ export default function MyStuffPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">As of Date</Label>
-                <div className="text-sm font-mono text-gray-900">{paidLeave.pacWestSickLeave.asOfDate}</div>
+                <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.asOfDate)}</div>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Date</Label>
-                <div className="text-sm font-mono text-gray-900">{paidLeave.pacWestSickLeave.resetDate}</div>
+                <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.resetDate)}</div>
               </div>
             </div>
             
@@ -444,7 +445,7 @@ export default function MyStuffPage() {
               <tbody>
                 {historicalUsage.map((entry, index) => (
                   <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm text-gray-900 font-mono">{entry.checkDate}</td>
+                    <td className="py-3 px-4 text-sm text-gray-900 font-mono">{formatDateToMMDDYYYY(entry.checkDate)}</td>
                     <td className="py-3 px-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         entry.type === 'PTO/Vacation' 
@@ -603,6 +604,17 @@ export default function MyStuffPage() {
     </div>
   )
 
+  // Helper function to format date to MM-dd-yyyy
+  const formatDateToMMDDYYYY = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}-${day}-${year}`;
+  };
+
   // Render Job Status form
   const renderJobStatusForm = () => (
     <div className="space-y-6">
@@ -662,8 +674,9 @@ export default function MyStuffPage() {
               <Label htmlFor="clientHireDate">Client Hire Date</Label>
               <Input
                 id="clientHireDate"
-                type="date"
-                value={jobStatus.clientHireDate}
+                type="text"
+                value={formatDateToMMDDYYYY(jobStatus.clientHireDate)}
+                placeholder="MM-dd-yyyy"
                 disabled
                 className="bg-gray-50 cursor-not-allowed"
               />
@@ -673,8 +686,9 @@ export default function MyStuffPage() {
               <Label htmlFor="companyHireDate">Company Hire Date</Label>
               <Input
                 id="companyHireDate"
-                type="date"
-                value={jobStatus.companyHireDate}
+                type="text"
+                value={formatDateToMMDDYYYY(jobStatus.companyHireDate)}
+                placeholder="MM-dd-yyyy"
                 disabled
                 className="bg-gray-50 cursor-not-allowed"
               />
@@ -684,8 +698,9 @@ export default function MyStuffPage() {
               <Label htmlFor="terminationDate">Termination Date</Label>
               <Input
                 id="terminationDate"
-                type="date"
-                value={jobStatus.terminationDate}
+                type="text"
+                value={formatDateToMMDDYYYY(jobStatus.terminationDate)}
+                placeholder="MM-dd-yyyy"
                 disabled
                 className="bg-gray-50 cursor-not-allowed"
               />
@@ -695,8 +710,9 @@ export default function MyStuffPage() {
               <Label htmlFor="anniversaryDate">Anniversary Date</Label>
               <Input
                 id="anniversaryDate"
-                type="date"
-                value={jobStatus.anniversaryDate}
+                type="text"
+                value={formatDateToMMDDYYYY(jobStatus.anniversaryDate)}
+                placeholder="MM-dd-yyyy"
                 disabled
                 className="bg-gray-50 cursor-not-allowed"
               />
@@ -706,8 +722,9 @@ export default function MyStuffPage() {
               <Label htmlFor="reviewDate">Review Date</Label>
               <Input
                 id="reviewDate"
-                type="date"
-                value={jobStatus.reviewDate}
+                type="text"
+                value={formatDateToMMDDYYYY(jobStatus.reviewDate)}
+                placeholder="MM-dd-yyyy"
                 disabled
                 className="bg-gray-50 cursor-not-allowed"
               />

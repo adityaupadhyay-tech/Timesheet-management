@@ -1068,11 +1068,12 @@ function TimesheetContent() {
                       <span className="font-semibold text-gray-900">
                         {selectedCompany?.timesheetCycle ? 
                           formatCyclePeriod(selectedDate, selectedCompany.timesheetCycle) :
-                          selectedDate.toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric',
-                            year: 'numeric'
-                          })
+                          (() => {
+                            const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
+                            const day = String(selectedDate.getDate()).padStart(2, '0')
+                            const year = selectedDate.getFullYear()
+                            return `${month}/${day}/${year}`
+                          })()
                         }
                       </span>
                     </div>

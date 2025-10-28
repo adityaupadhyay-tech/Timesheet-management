@@ -2044,7 +2044,13 @@ export default function ResourceAdminPage() {
                           </p>
                           <p className="text-sm text-gray-500">
                             Updated{" "}
-                            {new Date(doc.updatedAt).toLocaleDateString()}
+                            {(() => {
+                              const date = new Date(doc.updatedAt);
+                              const month = String(date.getMonth() + 1).padStart(2, '0');
+                              const day = String(date.getDate()).padStart(2, '0');
+                              const year = date.getFullYear();
+                              return `${month}/${day}/${year}`;
+                            })()}
                           </p>
                         </div>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

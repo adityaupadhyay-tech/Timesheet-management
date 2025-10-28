@@ -11,13 +11,21 @@
 export function formatDate(date, options = {}) {
   const defaultOptions = {
     year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
     ...options
   };
   
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return dateObj.toLocaleDateString('en-US', defaultOptions);
+  const formatted = dateObj.toLocaleDateString('en-US', defaultOptions);
+  
+  // If no custom options, ensure MM/dd/yyyy format
+  if (Object.keys(options).length === 0) {
+    const [month, day, year] = formatted.split('/');
+    return `${month}/${day}/${year}`;
+  }
+  
+  return formatted;
 }
 
 /**
