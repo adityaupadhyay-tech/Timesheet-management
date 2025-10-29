@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useUser } from '@/contexts/UserContext'
-import { ArrowLeft, Save, Download, X, Filter, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown, TrendingUp, TrendingDown, Calendar, Clock, Target, FolderOpen, Send, CheckCircle, XCircle, Play, Square, Plus, Trash2, Edit, FileText, RotateCcw, ChevronLeft, ChevronRight, AlertCircle, ThumbsUp, ThumbsDown, MessageSquare, Printer } from 'lucide-react'
+import { ArrowLeft, Save, Download, X, Filter, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown, TrendingUp, TrendingDown, Calendar, Clock, Target, FolderOpen, Send, CheckCircle, XCircle, Play, Square, Plus, Trash2, Edit, FileText, RotateCcw, ChevronLeft, ChevronRight, AlertCircle, AlertTriangle, ThumbsUp, ThumbsDown, MessageSquare, Printer } from 'lucide-react'
 import { DatePickerComponent } from '@/components/ui/date-picker'
 import PersonIcon from '@mui/icons-material/Person'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
@@ -243,6 +243,7 @@ function MyStuffContent() {
   // Direct Deposit state
   const [directDeposits, setDirectDeposits] = useState([
     {
+      id: 1,
       routingNumber: '123456789',
       account: '********1234',
       checkingSavings: 'Checking',
@@ -251,6 +252,7 @@ function MyStuffContent() {
       code: 'A'
     },
     {
+      id: 2,
       routingNumber: '987654321',
       account: '********5678',
       checkingSavings: 'Savings',
@@ -259,6 +261,7 @@ function MyStuffContent() {
       code: 'B'
     },
     {
+      id: 3,
       routingNumber: '',
       account: '',
       checkingSavings: '',
@@ -267,6 +270,7 @@ function MyStuffContent() {
       code: ''
     },
     {
+      id: 4,
       routingNumber: '',
       account: '',
       checkingSavings: '',
@@ -275,6 +279,7 @@ function MyStuffContent() {
       code: ''
     },
     {
+      id: 5,
       routingNumber: '',
       account: '',
       checkingSavings: '',
@@ -283,6 +288,50 @@ function MyStuffContent() {
       code: ''
     }
   ])
+
+  // Direct Deposit management state
+  const [showRemoveWarning, setShowRemoveWarning] = useState(false)
+  const [depositToRemove, setDepositToRemove] = useState(null)
+  const [nextDepositId, setNextDepositId] = useState(6)
+
+  // Add new direct deposit
+  const addDirectDeposit = () => {
+    const newDeposit = {
+      id: nextDepositId,
+      routingNumber: '',
+      account: '',
+      checkingSavings: '',
+      amount: '',
+      amountPercent: '',
+      code: ''
+    }
+    setDirectDeposits([...directDeposits, newDeposit])
+    setNextDepositId(nextDepositId + 1)
+  }
+
+  // Remove direct deposit with warning
+  const handleRemoveDeposit = (depositId) => {
+    setDepositToRemove(depositId)
+    setShowRemoveWarning(true)
+    setEmployeeEmail('')
+  }
+
+  // Confirm removal after email verification
+  const confirmRemoveDeposit = () => {
+    if (employeeEmail.trim()) {
+      setDirectDeposits(directDeposits.filter(deposit => deposit.id !== depositToRemove))
+      setShowRemoveWarning(false)
+      setDepositToRemove(null)
+      setEmployeeEmail('')
+    }
+  }
+
+  // Cancel removal
+  const cancelRemoveDeposit = () => {
+    setShowRemoveWarning(false)
+    setDepositToRemove(null)
+    setEmployeeEmail('')
+  }
 
   // Earning Statement data
   const [earningStatements] = useState([
@@ -2206,499 +2255,187 @@ function MyStuffContent() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Direct Deposit Information</CardTitle>
-          <CardDescription>View your direct deposit accounts and settings</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Direct Deposit Information</CardTitle>
+              <CardDescription>View your direct deposit accounts and settings</CardDescription>
+            </div>
+            <Button
+              onClick={addDirectDeposit}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Direct Deposit
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-8">
-            {/* 1st Direct Deposit */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">1st Direct Deposit</h3>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="firstRoutingNumber">Routing Number</Label>
-                  <Input
-                    id="firstRoutingNumber"
-                    value={directDeposits[0]?.routingNumber || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[0] = { ...updated[0], routingNumber: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter routing number"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
+            {directDeposits.map((deposit, index) => (
+              <div key={deposit.id} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 flex-1">
+                    {index + 1}{index === 0 ? 'st' : index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'} Direct Deposit
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRemoveDeposit(deposit.id)}
+                    className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Remove
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="firstAccount">Account</Label>
-                  <Input
-                    id="firstAccount"
-                    value={directDeposits[0]?.account || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[0] = { ...updated[0], account: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter account number"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="firstCheckingSavings">Checking/Savings</Label>
-                  <Input
-                    id="firstCheckingSavings"
-                    value={directDeposits[0]?.checkingSavings || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[0] = { ...updated[0], checkingSavings: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter type"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="firstAmount">Amount</Label>
-                  <Input
-                    id="firstAmount"
-                    value={directDeposits[0]?.amount || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[0] = { ...updated[0], amount: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter amount"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="firstAmountPercent">Amount/Percent</Label>
-                  <Input
-                    id="firstAmountPercent"
-                    value={directDeposits[0]?.amountPercent || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[0] = { ...updated[0], amountPercent: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter amount/percent"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="firstCode">Code</Label>
-                  <Input
-                    id="firstCode"
-                    value={directDeposits[0]?.code || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[0] = { ...updated[0], code: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter code"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 2nd Direct Deposit */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">2nd Direct Deposit</h3>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="secondRoutingNumber">Routing Number</Label>
-                  <Input
-                    id="secondRoutingNumber"
-                    value={directDeposits[1]?.routingNumber || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[1] = { ...updated[1], routingNumber: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter routing number"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="secondAccount">Account</Label>
-                  <Input
-                    id="secondAccount"
-                    value={directDeposits[1]?.account || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[1] = { ...updated[1], account: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter account number"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="secondCheckingSavings">Checking/Savings</Label>
-                  <Input
-                    id="secondCheckingSavings"
-                    value={directDeposits[1]?.checkingSavings || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[1] = { ...updated[1], checkingSavings: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter type"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="secondAmount">Amount</Label>
-                  <Input
-                    id="secondAmount"
-                    value={directDeposits[1]?.amount || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[1] = { ...updated[1], amount: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter amount"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="secondAmountPercent">Amount/Percent</Label>
-                  <Input
-                    id="secondAmountPercent"
-                    value={directDeposits[1]?.amountPercent || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[1] = { ...updated[1], amountPercent: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter amount/percent"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="secondCode">Code</Label>
-                  <Input
-                    id="secondCode"
-                    value={directDeposits[1]?.code || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[1] = { ...updated[1], code: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter code"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor={`routingNumber-${deposit.id}`}>Routing Number</Label>
+                    <Input
+                      id={`routingNumber-${deposit.id}`}
+                      value={deposit.routingNumber || ''}
+                      onChange={(e) => {
+                        const updated = [...directDeposits]
+                        const depositIndex = updated.findIndex(d => d.id === deposit.id)
+                        updated[depositIndex] = { ...updated[depositIndex], routingNumber: e.target.value }
+                        setDirectDeposits(updated)
+                      }}
+                      placeholder="Enter routing number"
+                      disabled
+                      className="bg-gray-50 cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`account-${deposit.id}`}>Account</Label>
+                    <Input
+                      id={`account-${deposit.id}`}
+                      value={deposit.account || ''}
+                      onChange={(e) => {
+                        const updated = [...directDeposits]
+                        const depositIndex = updated.findIndex(d => d.id === deposit.id)
+                        updated[depositIndex] = { ...updated[depositIndex], account: e.target.value }
+                        setDirectDeposits(updated)
+                      }}
+                      placeholder="Enter account number"
+                      disabled
+                      className="bg-gray-50 cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`checkingSavings-${deposit.id}`}>Checking/Savings</Label>
+                    <Input
+                      id={`checkingSavings-${deposit.id}`}
+                      value={deposit.checkingSavings || ''}
+                      onChange={(e) => {
+                        const updated = [...directDeposits]
+                        const depositIndex = updated.findIndex(d => d.id === deposit.id)
+                        updated[depositIndex] = { ...updated[depositIndex], checkingSavings: e.target.value }
+                        setDirectDeposits(updated)
+                      }}
+                      placeholder="Enter checking/savings"
+                      disabled
+                      className="bg-gray-50 cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`amount-${deposit.id}`}>Amount</Label>
+                    <Input
+                      id={`amount-${deposit.id}`}
+                      value={deposit.amount || ''}
+                      onChange={(e) => {
+                        const updated = [...directDeposits]
+                        const depositIndex = updated.findIndex(d => d.id === deposit.id)
+                        updated[depositIndex] = { ...updated[depositIndex], amount: e.target.value }
+                        setDirectDeposits(updated)
+                      }}
+                      placeholder="Enter amount"
+                      disabled
+                      className="bg-gray-50 cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`amountPercent-${deposit.id}`}>Amount/Percent</Label>
+                    <Input
+                      id={`amountPercent-${deposit.id}`}
+                      value={deposit.amountPercent || ''}
+                      onChange={(e) => {
+                        const updated = [...directDeposits]
+                        const depositIndex = updated.findIndex(d => d.id === deposit.id)
+                        updated[depositIndex] = { ...updated[depositIndex], amountPercent: e.target.value }
+                        setDirectDeposits(updated)
+                      }}
+                      placeholder="Enter amount/percent"
+                      disabled
+                      className="bg-gray-50 cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`code-${deposit.id}`}>Code</Label>
+                    <Input
+                      id={`code-${deposit.id}`}
+                      value={deposit.code || ''}
+                      onChange={(e) => {
+                        const updated = [...directDeposits]
+                        const depositIndex = updated.findIndex(d => d.id === deposit.id)
+                        updated[depositIndex] = { ...updated[depositIndex], code: e.target.value }
+                        setDirectDeposits(updated)
+                      }}
+                      placeholder="Enter code"
+                      disabled
+                      className="bg-gray-50 cursor-not-allowed"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-            {/* 3rd Direct Deposit */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">3rd Direct Deposit</h3>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="thirdRoutingNumber">Routing Number</Label>
-                  <Input
-                    id="thirdRoutingNumber"
-                    value={directDeposits[2]?.routingNumber || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[2] = { ...updated[2], routingNumber: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter routing number"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="thirdAccount">Account</Label>
-                  <Input
-                    id="thirdAccount"
-                    value={directDeposits[2]?.account || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[2] = { ...updated[2], account: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter account number"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="thirdCheckingSavings">Checking/Savings</Label>
-                  <Input
-                    id="thirdCheckingSavings"
-                    value={directDeposits[2]?.checkingSavings || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[2] = { ...updated[2], checkingSavings: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter type"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="thirdAmount">Amount</Label>
-                  <Input
-                    id="thirdAmount"
-                    value={directDeposits[2]?.amount || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[2] = { ...updated[2], amount: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter amount"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="thirdAmountPercent">Amount/Percent</Label>
-                  <Input
-                    id="thirdAmountPercent"
-                    value={directDeposits[2]?.amountPercent || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[2] = { ...updated[2], amountPercent: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter amount/percent"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="thirdCode">Code</Label>
-                  <Input
-                    id="thirdCode"
-                    value={directDeposits[2]?.code || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[2] = { ...updated[2], code: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter code"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
+      {/* Remove Warning Modal */}
+      {showRemoveWarning && typeof window !== 'undefined' && createPortal(
+        <div className="fixed inset-0 w-screen h-screen bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-[9999]" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 rounded-full">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
               </div>
+              <h3 className="text-lg font-semibold text-gray-900">Remove Direct Deposit</h3>
             </div>
-
-            {/* 4th Direct Deposit */}
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to remove this direct deposit? This action cannot be undone.
+            </p>
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">4th Direct Deposit</h3>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="fourthRoutingNumber">Routing Number</Label>
-                  <Input
-                    id="fourthRoutingNumber"
-                    value={directDeposits[3]?.routingNumber || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[3] = { ...updated[3], routingNumber: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter routing number"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fourthAccount">Account</Label>
-                  <Input
-                    id="fourthAccount"
-                    value={directDeposits[3]?.account || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[3] = { ...updated[3], account: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter account number"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fourthCheckingSavings">Checking/Savings</Label>
-                  <Input
-                    id="fourthCheckingSavings"
-                    value={directDeposits[3]?.checkingSavings || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[3] = { ...updated[3], checkingSavings: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter type"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fourthAmount">Amount</Label>
-                  <Input
-                    id="fourthAmount"
-                    value={directDeposits[3]?.amount || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[3] = { ...updated[3], amount: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter amount"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fourthAmountPercent">Amount/Percent</Label>
-                  <Input
-                    id="fourthAmountPercent"
-                    value={directDeposits[3]?.amountPercent || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[3] = { ...updated[3], amountPercent: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter amount/percent"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fourthCode">Code</Label>
-                  <Input
-                    id="fourthCode"
-                    value={directDeposits[3]?.code || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[3] = { ...updated[3], code: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter code"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="employeeEmail">Employee Email</Label>
+                <Input
+                  id="employeeEmail"
+                  type="email"
+                  value={employeeEmail}
+                  onChange={(e) => setEmployeeEmail(e.target.value)}
+                  placeholder="Enter your email address"
+                  className="w-full"
+                />
               </div>
-            </div>
-
-            {/* 5th Direct Deposit */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">5th Direct Deposit</h3>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="fifthRoutingNumber">Routing Number</Label>
-                  <Input
-                    id="fifthRoutingNumber"
-                    value={directDeposits[4]?.routingNumber || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[4] = { ...updated[4], routingNumber: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter routing number"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fifthAccount">Account</Label>
-                  <Input
-                    id="fifthAccount"
-                    value={directDeposits[4]?.account || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[4] = { ...updated[4], account: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter account number"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fifthCheckingSavings">Checking/Savings</Label>
-                  <Input
-                    id="fifthCheckingSavings"
-                    value={directDeposits[4]?.checkingSavings || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[4] = { ...updated[4], checkingSavings: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter type"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fifthAmount">Amount</Label>
-                  <Input
-                    id="fifthAmount"
-                    value={directDeposits[4]?.amount || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[4] = { ...updated[4], amount: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter amount"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fifthAmountPercent">Amount/Percent</Label>
-                  <Input
-                    id="fifthAmountPercent"
-                    value={directDeposits[4]?.amountPercent || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[4] = { ...updated[4], amountPercent: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter amount/percent"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fifthCode">Code</Label>
-                  <Input
-                    id="fifthCode"
-                    value={directDeposits[4]?.code || ''}
-                    onChange={(e) => {
-                      const updated = [...directDeposits]
-                      updated[4] = { ...updated[4], code: e.target.value }
-                      setDirectDeposits(updated)
-                    }}
-                    placeholder="Enter code"
-                    disabled
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                </div>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={cancelRemoveDeposit}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmRemoveDeposit}
+                  disabled={!employeeEmail.trim()}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Remove Direct Deposit
+                </Button>
               </div>
             </div>
           </div>
-
-        </CardContent>
-      </Card>
+        </div>,
+        document.body
+      )}
     </div>
   )
 
