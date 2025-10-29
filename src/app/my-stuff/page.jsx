@@ -58,17 +58,17 @@ function MyStuffContent() {
   
   // Basic Information form state
   const [basicInfo, setBasicInfo] = useState({
-    company: '',
-    firstName: '',
-    lastName: '',
-    address1: '',
-    address2: '',
-    city: '',
-    state: '',
-    zipcode: '',
-    homePhone: '',
-    workPhone: '',
-    workEmail: ''
+    company: 'Acme Corporation',
+    firstName: 'John',
+    lastName: 'Doe',
+    address1: '123 Main Street',
+    address2: 'Suite 100',
+    city: 'Birmingham',
+    state: 'Alabama',
+    zipcode: '35201',
+    homePhone: '(205) 555-0123',
+    workPhone: '(205) 555-0124',
+    workEmail: 'john.doe@acmecorp.com'
   })
 
   // Job Status form state
@@ -3505,160 +3505,183 @@ function MyStuffContent() {
   // Render Basic Information form
   const renderBasicInfoForm = () => (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          onClick={() => setActiveSection(null)}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        <h2 className="text-2xl font-semibold text-gray-900">Basic Information</h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setActiveSection(null)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <h2 className="text-2xl font-semibold text-gray-900">Basic Information</h2>
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="p-1.5 bg-blue-100 rounded-md">
+            <WorkIcon className="h-4 w-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+            <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
+          </div>
+        </div>
       </div>
 
+      {/* Personal Details */}
       <Card>
         <CardHeader>
           <CardTitle>Personal Details</CardTitle>
-          <CardDescription>Update your basic personal information</CardDescription>
+          <CardDescription>Your personal information and contact details</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="company">Company</Label>
-              <Input
-                id="company"
-                value={basicInfo.company}
-                disabled
-                placeholder="Enter company name"
-                className="bg-gray-50 cursor-not-allowed"
-              />
+          <div className="space-y-6">
+            {/* Name Section */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={basicInfo.firstName}
+                  disabled
+                  placeholder="Enter first name"
+                  className="bg-gray-50 cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={basicInfo.lastName}
+                  disabled
+                  placeholder="Enter last name"
+                  className="bg-gray-50 cursor-not-allowed"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                value={basicInfo.firstName}
-                disabled
-                placeholder="Enter first name"
-                className="bg-gray-50 cursor-not-allowed"
-              />
+            {/* Contact Information */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="homePhone">Home Phone</Label>
+                <Input
+                  id="homePhone"
+                  type="tel"
+                  value={basicInfo.homePhone}
+                  disabled
+                  placeholder="Enter home phone"
+                  className="bg-gray-50 cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="workPhone">Work Phone</Label>
+                <Input
+                  id="workPhone"
+                  type="tel"
+                  value={basicInfo.workPhone}
+                  disabled
+                  placeholder="Enter work phone"
+                  className="bg-gray-50 cursor-not-allowed"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                value={basicInfo.lastName}
-                disabled
-                placeholder="Enter last name"
-                className="bg-gray-50 cursor-not-allowed"
-              />
+            {/* Work Email */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="workEmail">Work Email</Label>
+                <Input
+                  id="workEmail"
+                  type="email"
+                  value={basicInfo.workEmail}
+                  disabled
+                  placeholder="Enter work email"
+                  className="bg-gray-50 cursor-not-allowed"
+                />
+              </div>
+              <div></div> {/* Empty div for alignment */}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="workEmail">Work Email</Label>
-              <Input
-                id="workEmail"
-                type="email"
-                value={basicInfo.workEmail}
-                disabled
-                placeholder="Enter work email"
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address1">Address Line 1</Label>
-              <Input
-                id="address1"
-                value={basicInfo.address1}
-                disabled
-                placeholder="Enter street address"
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address2">Address Line 2</Label>
-              <Input
-                id="address2"
-                value={basicInfo.address2}
-                disabled
-                placeholder="Apartment, suite, etc. (optional)"
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                value={basicInfo.city}
-                disabled
-                placeholder="Enter city"
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="state">State</Label>
-              <Input
-                id="state"
-                value={basicInfo.state}
-                disabled
-                placeholder="Enter state"
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="zipcode">Zip Code</Label>
-              <Input
-                id="zipcode"
-                value={basicInfo.zipcode}
-                disabled
-                placeholder="Enter zip code"
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="homePhone">Home Phone</Label>
-              <Input
-                id="homePhone"
-                type="tel"
-                value={basicInfo.homePhone}
-                disabled
-                placeholder="Enter home phone"
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="workPhone">Work Phone</Label>
-              <Input
-                id="workPhone"
-                type="tel"
-                value={basicInfo.workPhone}
-                disabled
-                placeholder="Enter work phone"
-                className="bg-gray-50 cursor-not-allowed"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setActiveSection(null)}
-            >
-              Back to My Stuff
-            </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Address Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Address Information</CardTitle>
+          <CardDescription>Your residential address details</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {/* Address Lines */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="address1">Address Line 1</Label>
+                <Input
+                  id="address1"
+                  value={basicInfo.address1}
+                  disabled
+                  placeholder="Enter street address"
+                  className="bg-gray-50 cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address2">Address Line 2</Label>
+                <Input
+                  id="address2"
+                  value={basicInfo.address2}
+                  disabled
+                  placeholder="Apartment, suite, etc. (optional)"
+                  className="bg-gray-50 cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            {/* City, State, Zip */}
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  value={basicInfo.city}
+                  disabled
+                  placeholder="Enter city"
+                  className="bg-gray-50 cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  value={basicInfo.state}
+                  disabled
+                  placeholder="Enter state"
+                  className="bg-gray-50 cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zipcode">Zip Code</Label>
+                <Input
+                  id="zipcode"
+                  value={basicInfo.zipcode}
+                  disabled
+                  placeholder="Enter zip code"
+                  className="bg-gray-50 cursor-not-allowed"
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end gap-3 mt-6">
+        <Button
+          variant="outline"
+          onClick={() => setActiveSection(null)}
+        >
+          Back to My Stuff
+        </Button>
+      </div>
     </div>
   )
 
