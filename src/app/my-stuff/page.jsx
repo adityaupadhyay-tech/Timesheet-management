@@ -375,7 +375,6 @@ function MyStuffContent() {
 
   // Earning Statement filters
   const [earningFilters, setEarningFilters] = useState({
-    employeeName: '',
     date: null, // Date object for date picker
     grossMin: '',
     grossMax: '',
@@ -909,9 +908,6 @@ function MyStuffContent() {
   // Smart sort function based on column type for Earning Statements
   const getSortValue = (statement, column) => {
     switch (column) {
-      case 'employeeName':
-        // Text sorting - case insensitive
-        return statement.employeeName.toLowerCase()
       case 'date':
         // Date sorting - convert to timestamp
         return new Date(statement.date).getTime()
@@ -955,11 +951,6 @@ function MyStuffContent() {
   // Filter and sort earning statements with smart filters
   const filteredEarningStatements = useMemo(() => {
     let results = earningStatements.filter((statement) => {
-      // Employee Name filter (text search)
-      if (earningFilters.employeeName && 
-          !statement.employeeName.toLowerCase().includes(earningFilters.employeeName.toLowerCase())) {
-        return false
-      }
 
       // Date filter (exact date match)
       if (earningFilters.date) {
@@ -1077,7 +1068,6 @@ function MyStuffContent() {
   // Clear all filters
   const clearFilters = () => {
     setEarningFilters({
-      employeeName: '',
       date: null,
       grossMin: '',
       grossMax: '',
@@ -1091,7 +1081,7 @@ function MyStuffContent() {
   }
   
   // Check if any filter is active for Earning Statements
-  const hasActiveFilters = earningFilters.employeeName || earningFilters.date || 
+  const hasActiveFilters = earningFilters.date || 
     earningFilters.grossMin || earningFilters.grossMax ||
     earningFilters.deductionsMin || earningFilters.deductionsMax ||
     earningFilters.taxesMin || earningFilters.taxesMax ||
@@ -1100,8 +1090,6 @@ function MyStuffContent() {
   // Check if a specific filter is active for Earning Statements
   const isFilterActive = (filterKey) => {
     switch (filterKey) {
-      case 'employeeName':
-        return !!earningFilters.employeeName
       case 'date':
         return !!earningFilters.date
       case 'gross':
@@ -1229,7 +1217,13 @@ function MyStuffContent() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Earning Statements</CardTitle>
+              <div className="flex items-center gap-4">
+                <CardTitle>Earning Statements</CardTitle>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <PersonIcon className="h-4 w-4" />
+                  <span className="text-sm font-medium">John Doe</span>
+                </div>
+              </div>
               <CardDescription>View and download your earning statements</CardDescription>
             </div>
             {hasActiveFilters && (
@@ -1249,69 +1243,6 @@ function MyStuffContent() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b-2 border-gray-200 bg-gray-50">
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
-                    <div className="flex items-center gap-1.5">
-                      <span>Employee Name</span>
-                      <div className="flex items-center gap-0.5">
-                        <button
-                          onClick={() => handleSort('employeeName')}
-                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${sortColumn === 'employeeName' ? 'text-blue-600' : 'text-gray-400'}`}
-                          title={sortColumn === 'employeeName' ? `Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by employee name'}
-                        >
-                          {sortColumn === 'employeeName' ? (
-                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
-                          ) : (
-                            <ArrowUpDown className="h-3.5 w-3.5" />
-                          )}
-                        </button>
-                        <div className="relative filter-dropdown-container inline-flex">
-                          <button
-                            onClick={(e) => handleFilterClick('employeeName', e)}
-                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isFilterActive('employeeName') ? 'text-blue-600' : 'text-gray-400'}`}
-                            title="Filter by employee name"
-                          >
-                            <Filter className="h-3.5 w-3.5" />
-                          </button>
-                        {typeof window !== 'undefined' && openFilter === 'employeeName' && createPortal(
-                          <div 
-                            className="fixed w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3"
-                            style={{
-                              top: `${dropdownPositions.employeeName?.top || 0}px`,
-                              left: dropdownPositions.employeeName?.left !== undefined ? `${dropdownPositions.employeeName.left}px` : 'auto',
-                              right: dropdownPositions.employeeName?.right !== undefined ? `${dropdownPositions.employeeName.right}px` : 'auto'
-                            }}
-                          >
-                            <div className="space-y-3">
-                              <Label className="text-xs font-semibold text-gray-700">Filter by Name</Label>
-                              <Input
-                                type="text"
-                                placeholder="Search name..."
-                                value={earningFilters.employeeName}
-                                onChange={(e) => handleFilterChange('employeeName', e.target.value)}
-                                className="h-9 text-sm w-full"
-                                autoFocus
-                              />
-                              {earningFilters.employeeName && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    handleFilterChange('employeeName', '')
-                                    setOpenFilter(null)
-                                  }}
-                                  className="w-full h-8 text-xs"
-                                >
-                                  Clear
-                                </Button>
-                              )}
-                            </div>
-                          </div>,
-                          document.body
-                        )}
-                        </div>
-                      </div>
-                    </div>
-                  </th>
                   <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
                     <div className="flex items-center gap-1.5">
                       <span>Date</span>
@@ -1711,9 +1642,6 @@ function MyStuffContent() {
                     key={statement.id} 
                     className="hover:bg-gray-50 transition-colors"
                   >
-                    <td className="py-4 px-6 text-sm text-gray-900 align-middle">
-                      {statement.employeeName}
-                    </td>
                     <td className="py-4 px-6 text-sm text-gray-900 align-middle">
                       {formatDateToMMDDYYYY(statement.date)}
                     </td>
