@@ -634,9 +634,6 @@ function MyStuffContent() {
               />
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" onClick={() => setActiveSection(null)}>Back to My Stuff</Button>
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -829,9 +826,6 @@ function MyStuffContent() {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-3 mt-6">
-        <Button variant="outline" onClick={() => setActiveSection(null)}>Back to My Stuff</Button>
-      </div>
     </div>
   )
 
@@ -1725,14 +1719,6 @@ function MyStuffContent() {
             </div>
           )}
 
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setActiveSection(null)}
-            >
-              Back to My Stuff
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -2066,14 +2052,6 @@ function MyStuffContent() {
             </div>
           )}
 
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setActiveSection(null)}
-            >
-              Back to My Stuff
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -2277,14 +2255,6 @@ function MyStuffContent() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setActiveSection(null)}
-            >
-              Back to My Stuff
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -2798,14 +2768,6 @@ function MyStuffContent() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setActiveSection(null)}
-            >
-              Back to My Stuff
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -2964,14 +2926,6 @@ function MyStuffContent() {
         </Card>
       </div>
 
-      <div className="flex justify-end gap-3 mt-6">
-        <Button
-          variant="outline"
-          onClick={() => setActiveSection(null)}
-        >
-          Back to My Stuff
-        </Button>
-      </div>
     </div>
   )
 
@@ -3035,14 +2989,6 @@ function MyStuffContent() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setActiveSection(null)}
-            >
-              Back to My Stuff
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -3163,14 +3109,6 @@ function MyStuffContent() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setActiveSection(null)}
-            >
-              Back to My Stuff
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -3489,14 +3427,6 @@ function MyStuffContent() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setActiveSection(null)}
-            >
-              Back to My Stuff
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -3674,14 +3604,6 @@ function MyStuffContent() {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-3 mt-6">
-        <Button
-          variant="outline"
-          onClick={() => setActiveSection(null)}
-        >
-          Back to My Stuff
-        </Button>
-      </div>
     </div>
   )
 
