@@ -395,7 +395,6 @@ function MyStuffContent() {
   // W-2 Register filters
   const [w2Filters, setW2Filters] = useState({
     company: '',
-    employee: '',
     yearMin: '',
     yearMax: ''
   })
@@ -628,7 +627,7 @@ function MyStuffContent() {
                 type="text"
                 value={formatDateToMMDDYYYY(personalInfo.birthDate)}
                 onChange={(e) => setPersonalInfo({...personalInfo, birthDate: e.target.value})}
-                placeholder="MM-dd-yyyy"
+                placeholder="mm-dd-yyyy"
                 disabled
                 className="bg-gray-50 cursor-not-allowed"
               />
@@ -894,7 +893,6 @@ function MyStuffContent() {
   const getW2SortValue = (statement, column) => {
     switch (column) {
       case 'company':
-      case 'employee':
         // Text sorting - case insensitive
         return statement[column].toLowerCase()
       case 'year':
@@ -1071,7 +1069,7 @@ function MyStuffContent() {
   }
   
   // Check if any filter is active for W-2 Register
-  const hasActiveW2Filters = w2Filters.company || w2Filters.employee || 
+  const hasActiveW2Filters = w2Filters.company || 
     w2Filters.yearMin || w2Filters.yearMax
   
   // Check if a specific filter is active for W-2 Register
@@ -1079,8 +1077,6 @@ function MyStuffContent() {
     switch (filterKey) {
       case 'company':
         return !!w2Filters.company
-      case 'employee':
-        return !!w2Filters.employee
       case 'year':
         return !!(w2Filters.yearMin || w2Filters.yearMax)
       default:
@@ -1094,12 +1090,6 @@ function MyStuffContent() {
       // Company filter (text search)
       if (w2Filters.company && 
           !statement.company.toLowerCase().includes(w2Filters.company.toLowerCase())) {
-        return false
-      }
-
-      // Employee filter (text search)
-      if (w2Filters.employee && 
-          !statement.employee.toLowerCase().includes(w2Filters.employee.toLowerCase())) {
         return false
       }
 
@@ -1153,7 +1143,6 @@ function MyStuffContent() {
   const clearW2Filters = () => {
     setW2Filters({
       company: '',
-      employee: '',
       yearMin: '',
       yearMax: ''
     })
@@ -1757,7 +1746,13 @@ function MyStuffContent() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>W-2 Forms</CardTitle>
+              <div className="flex items-center gap-4">
+                <CardTitle>W-2 Forms</CardTitle>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <PersonIcon className="h-4 w-4" />
+                  <span className="text-sm font-medium">John Doe</span>
+                </div>
+              </div>
               <CardDescription>View and download your W-2 and W-2c forms</CardDescription>
             </div>
             {hasActiveW2Filters && (
@@ -1825,69 +1820,6 @@ function MyStuffContent() {
                                   size="sm"
                                   onClick={() => {
                                     handleW2FilterChange('company', '')
-                                    setOpenFilter(null)
-                                  }}
-                                  className="w-full h-8 text-xs"
-                                >
-                                  Clear
-                                </Button>
-                              )}
-                            </div>
-                          </div>,
-                          document.body
-                        )}
-                        </div>
-                      </div>
-                    </div>
-                  </th>
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
-                    <div className="flex items-center gap-1.5">
-                      <span>Employee</span>
-                      <div className="flex items-center gap-0.5">
-                        <button
-                          onClick={() => handleW2Sort('employee')}
-                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${w2SortColumn === 'employee' ? 'text-blue-600' : 'text-gray-400'}`}
-                          title={w2SortColumn === 'employee' ? `Sort ${w2SortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by employee'}
-                        >
-                          {w2SortColumn === 'employee' ? (
-                            w2SortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
-                          ) : (
-                            <ArrowUpDown className="h-3.5 w-3.5" />
-                          )}
-                        </button>
-                        <div className="relative filter-dropdown-container inline-flex">
-                          <button
-                            onClick={(e) => handleW2FilterClick('w2Employee', e)}
-                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isW2FilterActive('employee') ? 'text-blue-600' : 'text-gray-400'}`}
-                            title="Filter by employee"
-                          >
-                            <Filter className="h-3.5 w-3.5" />
-                          </button>
-                        {typeof window !== 'undefined' && openFilter === 'w2Employee' && createPortal(
-                          <div 
-                            className="fixed w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3"
-                            style={{
-                              top: `${dropdownPositions.w2Employee?.top || 0}px`,
-                              left: dropdownPositions.w2Employee?.left !== undefined ? `${dropdownPositions.w2Employee.left}px` : 'auto',
-                              right: dropdownPositions.w2Employee?.right !== undefined ? `${dropdownPositions.w2Employee.right}px` : 'auto'
-                            }}
-                          >
-                            <div className="space-y-3">
-                              <Label className="text-xs font-semibold text-gray-700">Filter by Employee</Label>
-                              <Input
-                                type="text"
-                                placeholder="Search employee..."
-                                value={w2Filters.employee}
-                                onChange={(e) => handleW2FilterChange('employee', e.target.value)}
-                                className="h-9 text-sm w-full"
-                                autoFocus
-                              />
-                              {w2Filters.employee && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    handleW2FilterChange('employee', '')
                                     setOpenFilter(null)
                                   }}
                                   className="w-full h-8 text-xs"
@@ -1998,9 +1930,6 @@ function MyStuffContent() {
                   >
                     <td className="py-4 px-6 text-sm text-gray-900 align-middle">
                       {statement.company}
-                    </td>
-                    <td className="py-4 px-6 text-sm text-gray-900 align-middle">
-                      {statement.employee}
                     </td>
                     <td className="py-4 px-6 text-sm text-gray-900 align-middle text-center tabular-nums">
                       {statement.year}
@@ -3348,7 +3277,7 @@ function MyStuffContent() {
                 id="clientHireDate"
                 type="text"
                 value={formatDateToMMDDYYYY(jobStatus.clientHireDate)}
-                placeholder="MM-dd-yyyy"
+                placeholder="mm-dd-yyyy"
                 disabled
                 className="bg-gray-50 cursor-not-allowed"
               />
@@ -3360,7 +3289,7 @@ function MyStuffContent() {
                 id="companyHireDate"
                 type="text"
                 value={formatDateToMMDDYYYY(jobStatus.companyHireDate)}
-                placeholder="MM-dd-yyyy"
+                placeholder="mm-dd-yyyy"
                 disabled
                 className="bg-gray-50 cursor-not-allowed"
               />
@@ -3372,7 +3301,7 @@ function MyStuffContent() {
                 id="terminationDate"
                 type="text"
                 value={formatDateToMMDDYYYY(jobStatus.terminationDate)}
-                placeholder="MM-dd-yyyy"
+                placeholder="mm-dd-yyyy"
                 disabled
                 className="bg-gray-50 cursor-not-allowed"
               />
@@ -3384,7 +3313,7 @@ function MyStuffContent() {
                 id="anniversaryDate"
                 type="text"
                 value={formatDateToMMDDYYYY(jobStatus.anniversaryDate)}
-                placeholder="MM-dd-yyyy"
+                placeholder="mm-dd-yyyy"
                 disabled
                 className="bg-gray-50 cursor-not-allowed"
               />
@@ -3396,7 +3325,7 @@ function MyStuffContent() {
                 id="reviewDate"
                 type="text"
                 value={formatDateToMMDDYYYY(jobStatus.reviewDate)}
-                placeholder="MM-dd-yyyy"
+                placeholder="mm-dd-yyyy"
                 disabled
                 className="bg-gray-50 cursor-not-allowed"
               />
