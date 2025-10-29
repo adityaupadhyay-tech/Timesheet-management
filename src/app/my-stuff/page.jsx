@@ -8,8 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useUser } from '@/contexts/UserContext'
-import { ArrowLeft, Save, Download, X, Filter, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown, TrendingUp, TrendingDown } from 'lucide-react'
+import { ArrowLeft, Save, Download, X, Filter, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown, TrendingUp, TrendingDown, Calendar, Clock, Target, FolderOpen, Send, CheckCircle, XCircle, Play, Square, Plus, Trash2, Edit, FileText, RotateCcw, ChevronLeft, ChevronRight, AlertCircle, ThumbsUp, ThumbsDown, MessageSquare, Printer } from 'lucide-react'
 import { DatePickerComponent } from '@/components/ui/date-picker'
 import PersonIcon from '@mui/icons-material/Person'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
@@ -27,6 +28,20 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance'
 import CreditCardIcon from '@mui/icons-material/CreditCard'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import ScheduleIcon from '@mui/icons-material/Schedule'
+import TimeEntryGrid from '@/components/timesheet/TimeEntryGrid'
+import TimesheetSummary from '@/components/timesheet/TimesheetSummary'
+import ProjectOverview from '@/components/timesheet/ProjectOverview'
+import { 
+  getCycleStartDate, 
+  getCycleEndDate, 
+  getCycleDates, 
+  getGridDates,
+  formatCyclePeriod, 
+  getCycleTitle,
+  getNextCycle,
+  getPreviousCycle
+} from '@/lib/cycleUtils'
 
 function MyStuffContent() {
   const { user: currentUser } = useUser()
@@ -157,6 +172,44 @@ function MyStuffContent() {
   
   // Year to Date Information state
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString())
+  
+  // Online Timecard state
+  const [gridRows, setGridRows] = useState([])
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [validationTrigger, setValidationTrigger] = useState(0)
+  const [showSubmitModal, setShowSubmitModal] = useState(false)
+  const [employeeEmail, setEmployeeEmail] = useState('')
+  const [entries, setEntries] = useState([])
+  const [projects, setProjects] = useState([])
+  const [companies, setCompanies] = useState([])
+  const [selectedCompany, setSelectedCompany] = useState(null)
+  const [trackingState, setTrackingState] = useState({ isTracking: false, startTime: null })
+  const [currentTimesheet, setCurrentTimesheet] = useState(null)
+  
+  // Initialize sample data for timesheet components
+  useEffect(() => {
+    // Sample projects data
+    setProjects([
+      { id: 1, name: 'Project Alpha', department: 'Engineering', account: 'R&D', code: 'ALPHA' },
+      { id: 2, name: 'Project Beta', department: 'Marketing', account: 'MKT', code: 'BETA' },
+      { id: 3, name: 'Project Gamma', department: 'Sales', account: 'SALES', code: 'GAMMA' }
+    ])
+    
+    // Sample companies data
+    setCompanies([
+      { id: 1, name: 'Acme Corporation', timesheetCycle: 'weekly' },
+      { id: 2, name: 'TechFlow Systems', timesheetCycle: 'bi-weekly' }
+    ])
+    
+    // Set default selected company
+    setSelectedCompany({ id: 1, name: 'Acme Corporation', timesheetCycle: 'weekly' })
+    
+    // Sample entries data
+    setEntries([
+      { id: 1, date: '2024-12-16', duration: 480, department: 'Engineering', account: 'R&D', code: 'ALPHA' },
+      { id: 2, date: '2024-12-17', duration: 420, department: 'Marketing', account: 'MKT', code: 'BETA' }
+    ])
+  }, [])
   const [ytdInfo, setYtdInfo] = useState({
     earnings: {
       regular: 45000.00,
@@ -3123,6 +3176,168 @@ function MyStuffContent() {
     </div>
   )
 
+  // Render Online Timecard
+  const renderOnlineTimecard = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="outline"
+          onClick={() => setActiveSection(null)}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <ScheduleIcon className="text-blue-600" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900">Online Timecard</h2>
+            <p className="text-sm text-gray-600 mt-1">Track and submit your work hours</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="mb-6">
+        <TimesheetSummary 
+          entries={entries} 
+          projects={projects} 
+          selectedDate={selectedDate} 
+          gridRows={gridRows} 
+        />
+      </div>
+
+      {/* Main Content with Tabs */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="p-5">
+          <Tabs defaultValue="timesheet" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="timesheet" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Time Entry
+              </TabsTrigger>
+              <TabsTrigger value="projects" className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4" />
+                Project Overview
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="timesheet" className="space-y-4">
+              <TimeEntryGrid
+                projects={projects}
+                entries={entries}
+                gridRows={gridRows}
+                onSave={() => {}}
+                onUpdate={() => {}}
+                onDelete={() => {}}
+                onStartTimer={() => {}}
+                onStopTimer={() => {}}
+                isTracking={trackingState.isTracking}
+                currentTime={trackingState.isTracking ? '00:00:00' : '00:00:00'}
+                onGridDataChange={setGridRows}
+                selectedCompany={selectedCompany}
+                timesheet={currentTimesheet}
+                onSubmitTimesheet={() => setShowSubmitModal(true)}
+                onApproveTimesheet={() => {}}
+                onRejectTimesheet={() => {}}
+                validationTrigger={validationTrigger}
+                userRole="employee"
+              />
+            </TabsContent>
+            
+            <TabsContent value="projects" className="space-y-4">
+              <ProjectOverview
+                gridRows={gridRows}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+
+      {/* Submit Confirmation Modal */}
+      {showSubmitModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-full">
+                  <Send className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Submit Timecard</h3>
+                  <p className="text-sm text-gray-600">Enter your email to submit</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-6">
+              <div className="space-y-4">
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <p className="text-sm text-gray-700 italic">
+                    "I hereby attest that the amounts reported on this timecard are true and correct to the best of my knowledge."
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="employee-email" className="text-sm font-medium text-gray-700">
+                    Employee Email
+                  </Label>
+                  <Input
+                    id="employee-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={employeeEmail}
+                    onChange={(e) => setEmployeeEmail(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                
+                <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="p-1 bg-amber-100 rounded-full">
+                    <CheckCircle className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-amber-800">Ready to Submit?</p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      Your timecard will be submitted for review. It cannot be edited after submission.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
+              <Button
+                onClick={() => setShowSubmitModal(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  alert('Timecard submitted successfully!')
+                  setShowSubmitModal(false)
+                  setEmployeeEmail('')
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={!employeeEmail.trim()}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Submit Timecard
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
   // Helper function to format date to MM-dd-yyyy
   const formatDateToMMDDYYYY = (dateString) => {
     if (!dateString) return '';
@@ -3560,6 +3775,16 @@ function MyStuffContent() {
       )
     }
 
+    if (activeSection === 'online-timecard') {
+      return (
+        <Layout userRole={currentUser.role} userName={currentUser.name}>
+          <div className="p-6">
+            {renderOnlineTimecard()}
+          </div>
+        </Layout>
+      )
+    }
+
     return (
       <Layout userRole={currentUser.role} userName={currentUser.name}>
         <div className="p-6">
@@ -3659,6 +3884,8 @@ function MyStuffContent() {
                         setActiveSection('direct-deposits')
                       } else if (tab.id === 'ytd-info') {
                         setActiveSection('ytd-info')
+                      } else if (tab.id === 'online-timecard') {
+                        setActiveSection('online-timecard')
                       } else {
                         console.log(`Navigate to ${tab.label}`)
                       }
