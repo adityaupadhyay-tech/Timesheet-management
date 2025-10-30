@@ -47,14 +47,34 @@ function MyStuffContent() {
   const { user: currentUser } = useUser()
   const searchParams = useSearchParams()
   const [activeSection, setActiveSection] = useState(null)
+  const hasInitializedSectionRef = useRef(false)
   
-  // Check for section parameter in URL
+  // Initialize section from URL once
   useEffect(() => {
+    if (hasInitializedSectionRef.current) return
     const section = searchParams.get('section')
     if (section && currentUser.role === 'Employee') {
       setActiveSection(section)
     }
+    hasInitializedSectionRef.current = true
   }, [searchParams, currentUser.role])
+
+  // Listen for sidebar-driven section changes without navigation
+  useEffect(() => {
+    const handler = (e) => {
+      const sectionId = e?.detail
+      if (!sectionId) return
+      setActiveSection(sectionId)
+      try {
+        const params = new URLSearchParams(window.location.search)
+        params.set('section', sectionId)
+        const url = `/my-stuff?${params.toString()}`
+        window.history.replaceState(window.history.state, '', url)
+      } catch {}
+    }
+    window.addEventListener('app:set-my-stuff-section', handler)
+    return () => window.removeEventListener('app:set-my-stuff-section', handler)
+  }, [])
   
   // Basic Information form state
   const [basicInfo, setBasicInfo] = useState({

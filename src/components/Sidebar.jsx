@@ -133,11 +133,16 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     } catch {}
     params.set('section', sectionId);
     const url = `/my-stuff?${params.toString()}`;
+    if (typeof window !== 'undefined' && window.location.pathname === '/my-stuff') {
+      try {
+        window.history.replaceState(window.history.state, '', url)
+        window.dispatchEvent(new CustomEvent('app:set-my-stuff-section', { detail: sectionId }))
+        setTimeout(() => { try { window.dispatchEvent(new CustomEvent('app:restore-scroll')) } catch {} }, 0)
+        return
+      } catch {}
+    }
     router.push(url, { scroll: false });
-    // After navigation, request scroll restore
-    setTimeout(() => {
-      try { window.dispatchEvent(new CustomEvent('app:restore-scroll')) } catch {}
-    }, 0)
+    setTimeout(() => { try { window.dispatchEvent(new CustomEvent('app:restore-scroll')) } catch {} }, 0)
   }, [router]);
 
   const saveMainScroll = useCallback(() => {
