@@ -2401,13 +2401,7 @@ function MyStuffContent() {
               <CardTitle>Direct Deposit Information</CardTitle>
               <CardDescription>View your direct deposit accounts and settings</CardDescription>
             </div>
-            <Button
-              onClick={addDirectDeposit}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Direct Deposit
-            </Button>
+            {/* Add Direct Deposit button temporarily removed */}
           </div>
         </CardHeader>
         <CardContent>
@@ -2418,15 +2412,7 @@ function MyStuffContent() {
                   <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 flex-1">
                     {index + 1}{index === 0 ? 'st' : index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'} Direct Deposit
                   </h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRemoveDeposit(deposit.id)}
-                    className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Remove
-                  </Button>
+                  {/* Remove button temporarily removed */}
                 </div>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   <div className="space-y-2">
