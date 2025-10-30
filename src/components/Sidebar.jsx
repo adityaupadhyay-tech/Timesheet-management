@@ -136,6 +136,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     if (typeof window !== 'undefined' && window.location.pathname === '/my-stuff') {
       try {
         window.history.replaceState(window.history.state, '', url)
+        setCurrentSection(sectionId)
         window.dispatchEvent(new CustomEvent('app:set-my-stuff-section', { detail: sectionId }))
         setTimeout(() => { try { window.dispatchEvent(new CustomEvent('app:restore-scroll')) } catch {} }, 0)
         return
