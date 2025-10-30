@@ -17,6 +17,12 @@ const Layout = memo(function Layout({ children, userRole, userName }) {
   const pathname = usePathname()
   const contentRef = useRef(null)
 
+  // Force manual scroll restoration to avoid browser overriding our logic
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try { window.history.scrollRestoration = 'manual' } catch {}
+  }, [])
+
   // Preserve scroll position in main content across client-side route/search changes
   useEffect(() => {
     const el = contentRef.current
@@ -58,6 +64,27 @@ const Layout = memo(function Layout({ children, userRole, userName }) {
     }
     window.addEventListener('app:restore-scroll', handler)
     return () => window.removeEventListener('app:restore-scroll', handler)
+  }, [pathname])
+
+  // On initial load and pageshow (including bfcache), restore scroll as well
+  useEffect(() => {
+    const restore = () => {
+      const el = contentRef.current
+      if (!el) return
+      const key = `app-scroll:${pathname}${typeof window !== 'undefined' ? window.location.search : ''}`
+      let saved = null
+      try { saved = sessionStorage.getItem(key) } catch {}
+      if (saved !== null) {
+        // delay a bit to let layout settle
+        setTimeout(() => { el.scrollTop = Number(saved) || 0 }, 0)
+      }
+    }
+    window.addEventListener('load', restore)
+    window.addEventListener('pageshow', restore)
+    return () => {
+      window.removeEventListener('load', restore)
+      window.removeEventListener('pageshow', restore)
+    }
   }, [pathname])
 
   // Sidebar state is controlled by user toggle
