@@ -110,6 +110,13 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     return allItems.filter(item => item.roles.includes(userRole));
   }, [userRole]);
 
+  const goToMyStuffSection = useCallback((sectionId) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('section', sectionId);
+    const url = `/my-stuff?${params.toString()}`;
+    router.push(url, { scroll: false });
+  }, [router, searchParams]);
+
   // My Stuff submenu items for Employee role
   const myStuffSubmenu = useMemo(() => {
     if (userRole === 'Employee') {
@@ -250,9 +257,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                         {myStuffSubmenu.profile.map((subItem) => (
                           <button
                             key={subItem.id}
-                            onClick={() => {
-                              router.push(`/my-stuff?section=${subItem.id}`)
-                            }}
+                            onClick={() => goToMyStuffSection(subItem.id)}
                             className={`w-full flex items-center px-3 py-2 rounded-md text-sm transition-colors ${
                               currentSection === subItem.id
                                 ? 'bg-blue-50 text-blue-700 font-medium'
@@ -271,9 +276,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                         {myStuffSubmenu.payroll.map((subItem) => (
                           <button
                             key={subItem.id}
-                            onClick={() => {
-                              router.push(`/my-stuff?section=${subItem.id}`)
-                            }}
+                            onClick={() => goToMyStuffSection(subItem.id)}
                             className={`w-full flex items-center px-3 py-2 rounded-md text-sm transition-colors ${
                               currentSection === subItem.id
                                 ? 'bg-blue-50 text-blue-700 font-medium'
