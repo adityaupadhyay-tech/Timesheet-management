@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -392,6 +392,7 @@ export default function AdminTimesheetsPage() {
   };
 
   return (
+    <Suspense fallback={<div className="p-6">Loading…</div>}>
     <Layout userRole={currentUser.role} userName={currentUser.name}>
       <div className="p-6">
         <div className="mb-6">
@@ -1122,6 +1123,7 @@ export default function AdminTimesheetsPage() {
         </Dialog>
       </div>
     </Layout>
+    </Suspense>
   );
 }
 
