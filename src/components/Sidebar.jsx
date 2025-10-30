@@ -125,9 +125,19 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
 
   const goToMyStuffSection = useCallback((sectionId) => {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    // Save current scroll before navigating (path-only key)
+    try {
+      const key = `app-scroll:${typeof window !== 'undefined' ? window.location.pathname : ''}${typeof window !== 'undefined' ? window.location.search : ''}`
+      const el = document.querySelector('main.flex-1.overflow-auto')
+      if (el) sessionStorage.setItem(key, String(el.scrollTop))
+    } catch {}
     params.set('section', sectionId);
     const url = `/my-stuff?${params.toString()}`;
     router.push(url, { scroll: false });
+    // After navigation, request scroll restore
+    setTimeout(() => {
+      try { window.dispatchEvent(new CustomEvent('app:restore-scroll')) } catch {}
+    }, 0)
   }, [router]);
 
   // My Stuff submenu items for Employee role

@@ -21,7 +21,7 @@ const Layout = memo(function Layout({ children, userRole, userName }) {
   useEffect(() => {
     const el = contentRef.current
     if (!el) return
-    const key = `app-scroll:${pathname}`
+    const key = `app-scroll:${pathname}${typeof window !== 'undefined' ? window.location.search : ''}`
     const onScroll = () => {
       try { sessionStorage.setItem(key, String(el.scrollTop)) } catch {}
     }
@@ -32,7 +32,7 @@ const Layout = memo(function Layout({ children, userRole, userName }) {
   useEffect(() => {
     const el = contentRef.current
     if (!el) return
-    const key = `app-scroll:${pathname}`
+    const key = `app-scroll:${pathname}${typeof window !== 'undefined' ? window.location.search : ''}`
     let saved = null
     try { saved = sessionStorage.getItem(key) } catch {}
     // Restore after DOM paints to avoid race with layout shifts
@@ -42,6 +42,22 @@ const Layout = memo(function Layout({ children, userRole, userName }) {
       }
     })
     return () => cancelAnimationFrame(id)
+  }, [pathname])
+
+  // Respond to explicit restore events (for query-only navigation where pathname is unchanged)
+  useEffect(() => {
+    const handler = () => {
+      const el = contentRef.current
+      if (!el) return
+      const key = `app-scroll:${pathname}${typeof window !== 'undefined' ? window.location.search : ''}`
+      let saved = null
+      try { saved = sessionStorage.getItem(key) } catch {}
+      if (saved !== null) {
+        el.scrollTop = Number(saved) || 0
+      }
+    }
+    window.addEventListener('app:restore-scroll', handler)
+    return () => window.removeEventListener('app:restore-scroll', handler)
   }, [pathname])
 
   // Sidebar state is controlled by user toggle
