@@ -140,6 +140,14 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     }, 0)
   }, [router]);
 
+  const saveMainScroll = useCallback(() => {
+    try {
+      const key = `app-scroll:${typeof window !== 'undefined' ? window.location.pathname : ''}${typeof window !== 'undefined' ? window.location.search : ''}`
+      const el = document.querySelector('main.flex-1.overflow-auto')
+      if (el) sessionStorage.setItem(key, String(el.scrollTop))
+    } catch {}
+  }, [])
+
   // My Stuff submenu items for Employee role
   const myStuffSubmenu = useMemo(() => {
     if (userRole === 'Employee') {
@@ -319,9 +327,15 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
             
             // Regular menu items
             return (
-              <Link
+              <a
                 key={item.href}
                 href={item.href}
+                onClick={(e) => {
+                  e.preventDefault();
+                  saveMainScroll();
+                  router.push(item.href, { scroll: false });
+                  setTimeout(() => { try { window.dispatchEvent(new CustomEvent('app:restore-scroll')) } catch {} }, 0)
+                }}
                 className={`
                   flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors
                   ${
@@ -333,7 +347,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
               >
                 <span className="text-lg mr-3">{item.icon}</span>
                 {isMounted && isOpen && <span>{item.label}</span>}
-              </Link>
+              </a>
             );
           })}
         </nav>
