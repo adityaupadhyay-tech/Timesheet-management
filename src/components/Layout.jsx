@@ -4,7 +4,7 @@ import { memo, Suspense, useEffect, useRef } from 'react'
 import Sidebar from './Sidebar'
 import MenuIcon from '@mui/icons-material/Menu'
 import { useSidebar } from '@/contexts/SidebarContext'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 
 /**
  * @typedef {Object} LayoutProps
@@ -15,7 +15,6 @@ import { usePathname, useSearchParams } from 'next/navigation'
 const Layout = memo(function Layout({ children, userRole, userName }) {
   const { sidebarOpen, toggleSidebar } = useSidebar()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const contentRef = useRef(null)
 
   // Preserve scroll position in main content across client-side route/search changes
@@ -43,7 +42,7 @@ const Layout = memo(function Layout({ children, userRole, userName }) {
       }
     })
     return () => cancelAnimationFrame(id)
-  }, [pathname, searchParams])
+  }, [pathname])
 
   // Sidebar state is controlled by user toggle
   // No auto-close behavior on resize

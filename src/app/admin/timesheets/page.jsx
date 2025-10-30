@@ -392,7 +392,6 @@ export default function AdminTimesheetsPage() {
   };
 
   return (
-    <Suspense fallback={<div className="p-6">Loading…</div>}>
     <Layout userRole={currentUser.role} userName={currentUser.name}>
       <div className="p-6">
         <div className="mb-6">
@@ -1123,7 +1122,6 @@ export default function AdminTimesheetsPage() {
         </Dialog>
       </div>
     </Layout>
-    </Suspense>
   );
 }
 

@@ -2,7 +2,7 @@
 
 import { memo, useMemo, useCallback, useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PersonIcon from "@mui/icons-material/Person";
@@ -40,14 +40,27 @@ import { useUser } from "@/contexts/UserContext";
 const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { user, setUser } = useUser();
   const [selectedPersona, setSelectedPersona] = useState(userRole);
   const [isMyStuffOpen, setIsMyStuffOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [currentSection, setCurrentSection] = useState(null);
   
-  // Get current section from URL if on my-stuff page
-  const currentSection = searchParams.get('section');
+  // Get current section from URL if on my-stuff page (without useSearchParams)
+  useEffect(() => {
+    const readSection = () => {
+      try {
+        const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+        setCurrentSection(params.get('section'));
+      } catch {
+        setCurrentSection(null);
+      }
+    };
+    readSection();
+    const onPop = () => readSection();
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [pathname]);
   
   // Track client-side mounting to prevent hydration mismatches
   useEffect(() => {
@@ -111,11 +124,11 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
   }, [userRole]);
 
   const goToMyStuffSection = useCallback((sectionId) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     params.set('section', sectionId);
     const url = `/my-stuff?${params.toString()}`;
     router.push(url, { scroll: false });
-  }, [router, searchParams]);
+  }, [router]);
 
   // My Stuff submenu items for Employee role
   const myStuffSubmenu = useMemo(() => {
