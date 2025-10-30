@@ -143,7 +143,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
       <div className="fixed top-0 left-0 h-full bg-white shadow-lg z-50 w-64 lg:relative lg:translate-x-0 flex flex-col">
         <div className="flex items-center justify-between h-16 px-4 border-b">
           <div className="flex items-center space-x-3">
-            <h1 className="text-lg font-semibold text-gray-900">Timesheet</h1>
+            <h1 className="text-lg font-semibold text-gray-900">Payplus 360</h1>
           </div>
         </div>
         <div className="flex-1 px-2 py-4">
@@ -185,14 +185,14 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
           {/* Only render conditional content after mount to prevent hydration mismatch */}
           {isMounted && isOpen ? (
             <Link href="/dashboard" className="flex items-center space-x-3">
-              <h1 className="text-lg font-semibold text-gray-900">Timesheet</h1>
+              <h1 className="text-lg font-semibold text-gray-900">Payplus 360</h1>
             </Link>
           ) : (
             <Link
               href="/dashboard"
               className="flex items-center justify-center w-full"
             >
-              <span className="text-xl font-semibold text-gray-900">T</span>
+              <span className="text-xl font-semibold text-gray-900">P</span>
             </Link>
           )}
 

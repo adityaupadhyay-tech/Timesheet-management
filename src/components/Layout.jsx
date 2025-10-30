@@ -42,7 +42,7 @@ const Layout = memo(function Layout({ children, userRole, userName }) {
               >
                 <MenuIcon className="h-6 w-6" />
               </button>
-              <h1 className="text-lg font-semibold text-gray-900">Timesheet Management</h1>
+              <h1 className="text-lg font-semibold text-gray-900">Payplus 360</h1>
             </div>
             <div className="text-sm text-gray-700">
               <span className="font-medium">{userName}</span>

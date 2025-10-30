@@ -11,8 +11,8 @@ const poppins = Poppins({
 })
 
 export const metadata = {
-  title: 'Timesheet Management System',
-  description: 'A modern timesheet management application for tracking work hours and projects',
+  title: 'Payplus 360',
+  description: 'Payplus 360 — modern payroll and timesheet management',
 }
 
 /**
