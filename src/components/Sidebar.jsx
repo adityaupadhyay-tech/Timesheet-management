@@ -145,6 +145,8 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
       const key = `app-scroll:${typeof window !== 'undefined' ? window.location.pathname : ''}${typeof window !== 'undefined' ? window.location.search : ''}`
       const el = document.querySelector('main.flex-1.overflow-auto')
       if (el) sessionStorage.setItem(key, String(el.scrollTop))
+      const winKey = `${key}:win`
+      sessionStorage.setItem(winKey, String(window.scrollY || window.pageYOffset || 0))
     } catch {}
   }, [])
 

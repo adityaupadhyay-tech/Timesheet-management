@@ -28,10 +28,15 @@ const Layout = memo(function Layout({ children, userRole, userName }) {
     const el = contentRef.current
     if (!el) return
     const key = `app-scroll:${pathname}${typeof window !== 'undefined' ? window.location.search : ''}`
+    const winKey = `${key}:win`
     const onScroll = () => {
       try { sessionStorage.setItem(key, String(el.scrollTop)) } catch {}
     }
+    const onWinScroll = () => {
+      try { sessionStorage.setItem(winKey, String(window.scrollY || window.pageYOffset || 0)) } catch {}
+    }
     el.addEventListener('scroll', onScroll)
+    window.addEventListener('scroll', onWinScroll)
     return () => el.removeEventListener('scroll', onScroll)
   }, [pathname])
 
@@ -39,12 +44,18 @@ const Layout = memo(function Layout({ children, userRole, userName }) {
     const el = contentRef.current
     if (!el) return
     const key = `app-scroll:${pathname}${typeof window !== 'undefined' ? window.location.search : ''}`
+    const winKey = `${key}:win`
     let saved = null
+    let savedWin = null
     try { saved = sessionStorage.getItem(key) } catch {}
+    try { savedWin = sessionStorage.getItem(winKey) } catch {}
     // Restore after DOM paints to avoid race with layout shifts
     const id = requestAnimationFrame(() => {
       if (saved !== null) {
         el.scrollTop = Number(saved) || 0
+      }
+      if (savedWin !== null) {
+        window.scrollTo(0, Number(savedWin) || 0)
       }
     })
     return () => cancelAnimationFrame(id)
@@ -56,10 +67,16 @@ const Layout = memo(function Layout({ children, userRole, userName }) {
       const el = contentRef.current
       if (!el) return
       const key = `app-scroll:${pathname}${typeof window !== 'undefined' ? window.location.search : ''}`
+      const winKey = `${key}:win`
       let saved = null
+      let savedWin = null
       try { saved = sessionStorage.getItem(key) } catch {}
+      try { savedWin = sessionStorage.getItem(winKey) } catch {}
       if (saved !== null) {
         el.scrollTop = Number(saved) || 0
+      }
+      if (savedWin !== null) {
+        window.scrollTo(0, Number(savedWin) || 0)
       }
     }
     window.addEventListener('app:restore-scroll', handler)
