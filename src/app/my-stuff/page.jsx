@@ -1049,6 +1049,34 @@ function MyStuffContent() {
     return results
   }, [earningStatements, earningFilters, sortColumn, sortDirection])
 
+  // Column visibility for Earning Statements
+  const [earningVisibleCols, setEarningVisibleCols] = useState({
+    date: true,
+    gross: true,
+    deductions: true,
+    taxes: true,
+    net: true,
+  })
+  const [showColumnMenu, setShowColumnMenu] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const saved = localStorage.getItem('earningVisibleCols')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        setEarningVisibleCols(prev => ({ ...prev, ...parsed }))
+      }
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.setItem('earningVisibleCols', JSON.stringify(earningVisibleCols))
+    } catch {}
+  }, [earningVisibleCols])
+
   // Handle filter change for Earning Statements
   const handleFilterChange = (field, value) => {
     setEarningFilters(prev => ({
@@ -1175,6 +1203,30 @@ function MyStuffContent() {
     
     return results
   }, [w2Statements, w2Filters, w2SortColumn, w2SortDirection])
+
+  // W-2 column visibility state
+  const [w2VisibleCols, setW2VisibleCols] = useState({
+    company: true,
+    year: true,
+    w2: true,
+    w2c: true,
+  })
+  const [showW2ColumnMenu, setShowW2ColumnMenu] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const saved = localStorage.getItem('w2VisibleCols')
+      if (saved) setW2VisibleCols(prev => ({ ...prev, ...JSON.parse(saved) }))
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.setItem('w2VisibleCols', JSON.stringify(w2VisibleCols))
+    } catch {}
+  }, [w2VisibleCols])
   
   // Clear W-2 filters
   const clearW2Filters = () => {
@@ -1191,12 +1243,27 @@ function MyStuffContent() {
       if (openFilter && !event.target.closest('.filter-dropdown-container')) {
         setOpenFilter(null)
       }
+      if (showColumnMenu && !event.target.closest('.columns-menu-container')) {
+        setShowColumnMenu(false)
+      }
+      if (showW2ColumnMenu && !event.target.closest('.w2-columns-menu-container')) {
+        setShowW2ColumnMenu(false)
+      }
     }
     if (openFilter) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [openFilter])
+    // Always listen when column menu is open
+    if (showColumnMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+    if (showW2ColumnMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [openFilter, showColumnMenu, showW2ColumnMenu])
 
   // Render Earning Statement table
   const renderEarningStatement = () => (
@@ -1215,7 +1282,7 @@ function MyStuffContent() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between relative">
             <div>
               <div className="flex items-center gap-4">
                 <CardTitle>Earning Statements</CardTitle>
@@ -1226,16 +1293,75 @@ function MyStuffContent() {
               </div>
               <CardDescription>View and download your earning statements</CardDescription>
             </div>
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearFilters}
-                className="text-sm"
-              >
-                Clear Filters
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="text-sm"
+                >
+                  Clear Filters
+                </Button>
+              )}
+              <div className="relative columns-menu-container">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowColumnMenu(prev => !prev)}
+                  className="text-sm"
+                >
+                  Columns
+                </Button>
+                {showColumnMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-50">
+                    <div className="text-xs font-semibold text-gray-700 mb-2">Show Columns</div>
+                    <div className="space-y-2 text-sm">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={earningVisibleCols.date}
+                          onChange={(e) => setEarningVisibleCols(v => ({ ...v, date: e.target.checked }))}
+                        />
+                        <span>Date</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={earningVisibleCols.gross}
+                          onChange={(e) => setEarningVisibleCols(v => ({ ...v, gross: e.target.checked }))}
+                        />
+                        <span>Gross</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={earningVisibleCols.deductions}
+                          onChange={(e) => setEarningVisibleCols(v => ({ ...v, deductions: e.target.checked }))}
+                        />
+                        <span>Deductions</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={earningVisibleCols.taxes}
+                          onChange={(e) => setEarningVisibleCols(v => ({ ...v, taxes: e.target.checked }))}
+                        />
+                        <span>Taxes</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={earningVisibleCols.net}
+                          onChange={(e) => setEarningVisibleCols(v => ({ ...v, net: e.target.checked }))}
+                        />
+                        <span>Net</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -1243,6 +1369,7 @@ function MyStuffContent() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b-2 border-gray-200 bg-gray-50">
+                  {earningVisibleCols.date && (
                   <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
                     <div className="flex items-center gap-1.5">
                       <span>Date</span>
@@ -1315,6 +1442,8 @@ function MyStuffContent() {
                       </div>
                     </div>
                   </th>
+                  )}
+                  {earningVisibleCols.gross && (
                   <th className="text-right py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
                     <div className="flex items-center gap-1.5 justify-end">
                       <span>Gross</span>
@@ -1394,6 +1523,8 @@ function MyStuffContent() {
                       </div>
                     </div>
                   </th>
+                  )}
+                  {earningVisibleCols.deductions && (
                   <th className="text-right py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
                     <div className="flex items-center gap-1.5 justify-end">
                       <span>Deductions</span>
@@ -1473,6 +1604,8 @@ function MyStuffContent() {
                       </div>
                     </div>
                   </th>
+                  )}
+                  {earningVisibleCols.taxes && (
                   <th className="text-right py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
                     <div className="flex items-center gap-1.5 justify-end">
                       <span>Taxes</span>
@@ -1552,6 +1685,8 @@ function MyStuffContent() {
                       </div>
                     </div>
                   </th>
+                  )}
+                  {earningVisibleCols.net && (
                   <th className="text-right py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
                     <div className="flex items-center gap-1.5 justify-end">
                       <span>Net</span>
@@ -1631,6 +1766,7 @@ function MyStuffContent() {
                       </div>
                     </div>
                   </th>
+                  )}
                   <th className="text-center py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
                     Actions
                   </th>
@@ -1642,21 +1778,31 @@ function MyStuffContent() {
                     key={statement.id} 
                     className="hover:bg-gray-50 transition-colors"
                   >
+                    {earningVisibleCols.date && (
                     <td className="py-4 px-6 text-sm text-gray-900 align-middle">
                       {formatDateToMMDDYYYY(statement.date)}
                     </td>
+                    )}
+                    {earningVisibleCols.gross && (
                     <td className="py-4 px-6 text-sm text-right text-gray-900 font-medium align-middle tabular-nums">
                       {formatCurrency(statement.gross)}
                     </td>
+                    )}
+                    {earningVisibleCols.deductions && (
                     <td className="py-4 px-6 text-sm text-right text-gray-900 align-middle tabular-nums">
                       {formatCurrency(statement.deductions)}
                     </td>
+                    )}
+                    {earningVisibleCols.taxes && (
                     <td className="py-4 px-6 text-sm text-right text-gray-900 align-middle tabular-nums">
                       {formatCurrency(statement.taxes)}
                     </td>
+                    )}
+                    {earningVisibleCols.net && (
                     <td className="py-4 px-6 text-sm text-right text-gray-900 font-semibold align-middle tabular-nums">
                       {formatCurrency(statement.net)}
                     </td>
+                    )}
                     <td className="py-4 px-6 text-center align-middle">
                       <Button
                         variant="outline"
@@ -1721,7 +1867,7 @@ function MyStuffContent() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between relative">
             <div>
               <div className="flex items-center gap-4">
                 <CardTitle>W-2 Forms</CardTitle>
@@ -1732,16 +1878,67 @@ function MyStuffContent() {
               </div>
               <CardDescription>View and download your W-2 and W-2c forms</CardDescription>
             </div>
-            {hasActiveW2Filters && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearW2Filters}
-                className="text-sm"
-              >
-                Clear Filters
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {hasActiveW2Filters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearW2Filters}
+                  className="text-sm"
+                >
+                  Clear Filters
+                </Button>
+              )}
+              <div className="relative w2-columns-menu-container">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowW2ColumnMenu(prev => !prev)}
+                  className="text-sm"
+                >
+                  Columns
+                </Button>
+                {showW2ColumnMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-50">
+                    <div className="text-xs font-semibold text-gray-700 mb-2">Show Columns</div>
+                    <div className="space-y-2 text-sm">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={w2VisibleCols.company}
+                          onChange={(e) => setW2VisibleCols(v => ({ ...v, company: e.target.checked }))}
+                        />
+                        <span>Company</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={w2VisibleCols.year}
+                          onChange={(e) => setW2VisibleCols(v => ({ ...v, year: e.target.checked }))}
+                        />
+                        <span>Year</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={w2VisibleCols.w2}
+                          onChange={(e) => setW2VisibleCols(v => ({ ...v, w2: e.target.checked }))}
+                        />
+                        <span>W-2</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={w2VisibleCols.w2c}
+                          onChange={(e) => setW2VisibleCols(v => ({ ...v, w2c: e.target.checked }))}
+                        />
+                        <span>W-2c</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -1749,6 +1946,7 @@ function MyStuffContent() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b-2 border-gray-200 bg-gray-50">
+                  {w2VisibleCols.company && (
                   <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
                     <div className="flex items-center gap-1.5">
                       <span>Company</span>
@@ -1812,6 +2010,8 @@ function MyStuffContent() {
                       </div>
                     </div>
                   </th>
+                  )}
+                  {w2VisibleCols.year && (
                   <th className="text-center py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
                     <div className="flex items-center gap-1.5 justify-center">
                       <span>Year</span>
@@ -1891,12 +2091,17 @@ function MyStuffContent() {
                       </div>
                     </div>
                   </th>
+                  )}
+                  {w2VisibleCols.w2 && (
                   <th className="text-center py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
                     W-2
                   </th>
+                  )}
+                  {w2VisibleCols.w2c && (
                   <th className="text-center py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
                     W-2c
                   </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -1905,12 +2110,17 @@ function MyStuffContent() {
                     key={statement.id} 
                     className="hover:bg-gray-50 transition-colors"
                   >
+                    {w2VisibleCols.company && (
                     <td className="py-4 px-6 text-sm text-gray-900 align-middle">
                       {statement.company}
                     </td>
+                    )}
+                    {w2VisibleCols.year && (
                     <td className="py-4 px-6 text-sm text-gray-900 align-middle text-center tabular-nums">
                       {statement.year}
                     </td>
+                    )}
+                    {w2VisibleCols.w2 && (
                     <td className="py-4 px-6 text-center align-middle">
                       {statement.hasW2 ? (
                         <Button
@@ -1926,6 +2136,8 @@ function MyStuffContent() {
                         <span className="text-gray-400 text-sm">-</span>
                       )}
                     </td>
+                    )}
+                    {w2VisibleCols.w2c && (
                     <td className="py-4 px-6 text-center align-middle">
                       {statement.hasW2c ? (
                         <Button
@@ -1941,6 +2153,7 @@ function MyStuffContent() {
                         <span className="text-gray-400 text-sm">-</span>
                       )}
                     </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
