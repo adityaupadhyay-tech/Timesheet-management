@@ -670,11 +670,11 @@ function MyStuffContent() {
       </div>
       
       <Card>
-        <CardHeader>
-          <CardTitle>Personal Details</CardTitle>
-          <CardDescription>View your personal information and demographics</CardDescription>
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+          <CardTitle className="text-xl font-semibold">Personal Details</CardTitle>
+          <CardDescription className="text-base mt-1">View your personal information and demographics</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="ssn">SSN</Label>
@@ -1315,17 +1315,17 @@ function MyStuffContent() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
           <div className="flex items-center justify-between relative">
             <div>
               <div className="flex items-center gap-4">
-                <CardTitle>Earning Statements</CardTitle>
+                <CardTitle className="text-xl font-semibold">Earning Statements</CardTitle>
                 <div className="flex items-center gap-2 text-gray-600">
                   <PersonIcon className="h-4 w-4" />
                   <span className="text-sm font-medium">John Doe</span>
                 </div>
               </div>
-              <CardDescription>View and download your earning statements</CardDescription>
+              <CardDescription className="text-base mt-1">View and download your earning statements</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               {hasActiveFilters && (
@@ -1398,7 +1398,7 @@ function MyStuffContent() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
@@ -1900,17 +1900,17 @@ function MyStuffContent() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
           <div className="flex items-center justify-between relative">
             <div>
               <div className="flex items-center gap-4">
-                <CardTitle>W-2 Forms</CardTitle>
+                <CardTitle className="text-xl font-semibold">W-2 Forms</CardTitle>
                 <div className="flex items-center gap-2 text-gray-600">
                   <PersonIcon className="h-4 w-4" />
                   <span className="text-sm font-medium">John Doe</span>
                 </div>
               </div>
-              <CardDescription>View and download your W-2 and W-2c forms</CardDescription>
+              <CardDescription className="text-base mt-1">View and download your W-2 and W-2c forms</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               {hasActiveW2Filters && (
@@ -1975,7 +1975,7 @@ function MyStuffContent() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
@@ -2226,11 +2226,11 @@ function MyStuffContent() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Tax Withholding Information</CardTitle>
-          <CardDescription>View your tax withholding settings and preferences</CardDescription>
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+          <CardTitle className="text-xl font-semibold">Tax Withholding Information</CardTitle>
+          <CardDescription className="text-base mt-1">View your tax withholding settings and preferences</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="space-y-8">
             {/* Federal Section */}
             <div className="space-y-4">
@@ -2429,16 +2429,16 @@ function MyStuffContent() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Direct Deposit Information</CardTitle>
-              <CardDescription>View your direct deposit accounts and settings</CardDescription>
+              <CardTitle className="text-xl font-semibold">Direct Deposit Information</CardTitle>
+              <CardDescription className="text-base mt-1">View your direct deposit accounts and settings</CardDescription>
             </div>
             {/* Add Direct Deposit button temporarily removed */}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="space-y-8">
             {directDeposits.map((deposit, index) => (
               <div key={deposit.id} className="space-y-4">
@@ -2772,11 +2772,11 @@ function MyStuffContent() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Emergency Contact Information</CardTitle>
-          <CardDescription>View your emergency contact details</CardDescription>
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+          <CardTitle className="text-xl font-semibold">Emergency Contact Information</CardTitle>
+          <CardDescription className="text-base mt-1">View your emergency contact details</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="contact">Contact</Label>
@@ -2837,11 +2837,11 @@ function MyStuffContent() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Department Assignment</CardTitle>
-          <CardDescription>View your department assignments and percentages</CardDescription>
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+          <CardTitle className="text-xl font-semibold">Department Assignment</CardTitle>
+          <CardDescription className="text-base mt-1">View your department assignments and percentages</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="department1">Department 1</Label>
@@ -3130,11 +3130,11 @@ function MyStuffContent() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Employment Details</CardTitle>
-          <CardDescription>View your job status and employment information</CardDescription>
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+          <CardTitle className="text-xl font-semibold">Employment Details</CardTitle>
+          <CardDescription className="text-base mt-1">View your job status and employment information</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="alternateId">Alternate ID</Label>
@@ -3287,11 +3287,11 @@ function MyStuffContent() {
 
       {/* Personal Details */}
       <Card>
-        <CardHeader>
-          <CardTitle>Personal Details</CardTitle>
-          <CardDescription>Your personal information and contact details</CardDescription>
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+          <CardTitle className="text-xl font-semibold">Personal Details</CardTitle>
+          <CardDescription className="text-base mt-1">Your personal information and contact details</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="space-y-6">
             {/* Name Section */}
             <div className="grid gap-6 md:grid-cols-2">
@@ -3364,11 +3364,11 @@ function MyStuffContent() {
 
       {/* Address Information */}
       <Card>
-        <CardHeader>
-          <CardTitle>Address Information</CardTitle>
-          <CardDescription>Your residential address details</CardDescription>
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+          <CardTitle className="text-xl font-semibold">Address Information</CardTitle>
+          <CardDescription className="text-base mt-1">Your residential address details</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="space-y-6">
             {/* Address Lines */}
             <div className="space-y-4">
@@ -3585,12 +3585,9 @@ function MyStuffContent() {
                               navigateToSection(tab.id)
                             }}
                   >
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <span className="mr-2 text-gray-600 w-5 flex-shrink-0">{tab.icon}</span>
-                        <span className="text-left">{tab.label}</span>
-                      </CardTitle>
-                      <CardDescription>
+                    <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+                      <CardTitle className="text-xl font-semibold">{tab.label}</CardTitle>
+                      <CardDescription className="text-base mt-1">
                         {tab.id === 'basic-info' && 'View and update your basic personal information'}
                         {tab.id === 'job-status' && 'Current employment status and job details'}
                         {tab.id === 'department' && 'Department assignment and team information'}
@@ -3600,7 +3597,7 @@ function MyStuffContent() {
                         {tab.id === 'performance-coaching' && 'Performance reviews and coaching sessions'}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-6">
                       <p className="text-sm text-gray-600">
                         {tab.id === 'basic-info' && 'Update your name, employee ID, and basic information'}
                         {tab.id === 'job-status' && 'View current position, status, and employment details'}
@@ -3635,12 +3632,9 @@ function MyStuffContent() {
                       navigateToSection(tab.id)
                     }}
                   >
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <span className="mr-2 text-gray-600 w-5 flex-shrink-0">{tab.icon}</span>
-                        <span className="text-left">{tab.label}</span>
-                      </CardTitle>
-                      <CardDescription>
+                    <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+                      <CardTitle className="text-xl font-semibold">{tab.label}</CardTitle>
+                      <CardDescription className="text-base mt-1">
                         {tab.id === 'earning-statement' && 'View your payslips and earning statements'}
                         {tab.id === 'w2-register' && 'Access your W-2 tax forms and documents'}
                         {tab.id === 'tax-settings' && 'Manage tax preferences and withholdings'}
@@ -3650,7 +3644,7 @@ function MyStuffContent() {
                         {tab.id === 'sundial-clock' && 'Clock in and out using Sundial time clock'}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-6">
                       <p className="text-sm text-gray-600">
                         {tab.id === 'earning-statement' && 'Download and view detailed earning statements'}
                         {tab.id === 'w2-register' && 'Access all W-2 forms and tax documents'}
@@ -3683,14 +3677,11 @@ function MyStuffContent() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {sections.map((section, index) => (
             <Card key={index} className={`cursor-pointer transition-all border-2 ${section.color}`}>
-          <CardHeader>
-                <div className="flex items-center space-x-3 mb-2">
-                  {section.icon}
-                  <CardTitle>{section.title}</CardTitle>
-                </div>
-                <CardDescription>{section.description}</CardDescription>
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+                <CardTitle className="text-xl font-semibold">{section.title}</CardTitle>
+                <CardDescription className="text-base mt-1">{section.description}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <p className="text-sm text-gray-600">
                   {section.content}
             </p>
