@@ -758,43 +758,46 @@ function MyStuffContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">As of Date</Label>
-                <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.asOfDate)}</div>
+            <div className="grid grid-cols-2 gap-6">
+              {/* Left Side - Dates */}
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">As of Date</Label>
+                  <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.asOfDate)}</div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Date</Label>
+                  <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.resetDate)}</div>
+                </div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Date</Label>
-                <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.resetDate)}</div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Balance Forward</Label>
-                <div className="text-lg font-semibold text-gray-900">{paidLeave.ptoVacation.balanceForward} hrs</div>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Accrued</Label>
-                <div className="text-lg font-semibold text-green-600">+{paidLeave.ptoVacation.accrued} hrs</div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Used</Label>
-                <div className="text-lg font-semibold text-red-600">-{paidLeave.ptoVacation.used} hrs</div>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Adjustments</Label>
-                <div className="text-lg font-semibold text-gray-600">{paidLeave.ptoVacation.adjustments} hrs</div>
+              
+              {/* Right Side - Calculation Values */}
+              <div className="space-y-4 text-right">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Balance Forward</Label>
+                  <div className="text-lg font-semibold text-gray-900">{paidLeave.ptoVacation.balanceForward} hrs</div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Accrued</Label>
+                  <div className="text-lg font-semibold text-green-600">+{paidLeave.ptoVacation.accrued} hrs</div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Used</Label>
+                  <div className="text-lg font-semibold text-red-600">-{paidLeave.ptoVacation.used} hrs</div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Adjustments</Label>
+                  <div className="text-lg font-semibold text-gray-600">{paidLeave.ptoVacation.adjustments} hrs</div>
+                </div>
               </div>
             </div>
 
             <div className="border-t pt-4">
-              <div className="flex justify-between items-center">
-                <Label className="text-sm font-medium text-gray-700">Available Balance</Label>
-                <div className="text-2xl font-bold text-blue-600">{paidLeave.ptoVacation.available} hrs</div>
+              <div className="flex justify-end items-end">
+                <div className="text-right">
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">Available Balance</Label>
+                  <div className="text-2xl font-bold text-blue-600 leading-tight">{paidLeave.ptoVacation.available} hrs</div>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -814,43 +817,46 @@ function MyStuffContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">As of Date</Label>
-                <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.asOfDate)}</div>
+            <div className="grid grid-cols-2 gap-6">
+              {/* Left Side - Dates */}
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">As of Date</Label>
+                  <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.asOfDate)}</div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Date</Label>
+                  <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.resetDate)}</div>
+                </div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Date</Label>
-                <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.resetDate)}</div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Balance Forward</Label>
-                <div className="text-lg font-semibold text-gray-900">{paidLeave.pacWestSickLeave.balanceForward} hrs</div>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Accrued</Label>
-                <div className="text-lg font-semibold text-green-600">+{paidLeave.pacWestSickLeave.accrued} hrs</div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Used</Label>
-                <div className="text-lg font-semibold text-red-600">-{paidLeave.pacWestSickLeave.used} hrs</div>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Adjustments</Label>
-                <div className="text-lg font-semibold text-gray-600">{paidLeave.pacWestSickLeave.adjustments} hrs</div>
+              
+              {/* Right Side - Calculation Values */}
+              <div className="space-y-4 text-right">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Balance Forward</Label>
+                  <div className="text-lg font-semibold text-gray-900">{paidLeave.pacWestSickLeave.balanceForward} hrs</div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Accrued</Label>
+                  <div className="text-lg font-semibold text-green-600">+{paidLeave.pacWestSickLeave.accrued} hrs</div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Used</Label>
+                  <div className="text-lg font-semibold text-red-600">-{paidLeave.pacWestSickLeave.used} hrs</div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Adjustments</Label>
+                  <div className="text-lg font-semibold text-gray-600">{paidLeave.pacWestSickLeave.adjustments} hrs</div>
+                </div>
               </div>
             </div>
 
             <div className="border-t pt-4">
-              <div className="flex justify-between items-center">
-                <Label className="text-sm font-medium text-gray-700">Available Balance</Label>
-                <div className="text-2xl font-bold text-green-600">{paidLeave.pacWestSickLeave.available} hrs</div>
+              <div className="flex justify-end items-end">
+                <div className="text-right">
+                  <Label className="text-sm font-medium text-gray-700 mb-1 block">Available Balance</Label>
+                  <div className="text-2xl font-bold text-green-600 leading-tight">{paidLeave.pacWestSickLeave.available} hrs</div>
+                </div>
               </div>
             </div>
           </CardContent>
