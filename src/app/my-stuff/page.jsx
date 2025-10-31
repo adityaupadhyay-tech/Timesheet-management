@@ -763,11 +763,11 @@ function MyStuffContent() {
               <div className="space-y-4">
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">As of Date</Label>
-                  <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.asOfDate)}</div>
+                  <div className="text-sm text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.asOfDate)}</div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Date</Label>
-                  <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.resetDate)}</div>
+                  <div className="text-sm text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.resetDate)}</div>
                 </div>
               </div>
               
@@ -804,11 +804,11 @@ function MyStuffContent() {
         </Card>
 
         {/* Pac West Sick Leave Card */}
-        <Card className="border-l-4 border-l-green-500">
+        <Card className="border-l-4" style={{ borderLeftColor: '#b15e6c' }}>
           <CardHeader className="pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <ContactPhoneIcon className="h-5 w-5 text-green-600" />
+              <div className="p-2 rounded-lg" style={{ backgroundColor: '#b15e6c20' }}>
+                <ContactPhoneIcon className="h-5 w-5" style={{ color: '#b15e6c' }} />
               </div>
               <div>
                 <CardTitle className="text-lg">Pac West Sick Leave</CardTitle>
@@ -822,11 +822,11 @@ function MyStuffContent() {
               <div className="space-y-4">
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">As of Date</Label>
-                  <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.asOfDate)}</div>
+                  <div className="text-sm text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.asOfDate)}</div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Date</Label>
-                  <div className="text-sm font-mono text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.resetDate)}</div>
+                  <div className="text-sm text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.resetDate)}</div>
                 </div>
               </div>
               
@@ -855,33 +855,13 @@ function MyStuffContent() {
               <div className="flex justify-end items-end">
                 <div className="text-right">
                   <Label className="text-sm font-medium text-gray-700 mb-1 block">Available Balance</Label>
-                  <div className="text-2xl font-bold text-green-600 leading-tight">{paidLeave.pacWestSickLeave.available} hrs</div>
+                  <div className="text-2xl font-bold leading-tight" style={{ color: '#b15e6c' }}>{paidLeave.pacWestSickLeave.available} hrs</div>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Summary Card */}
-      <Card className="bg-gradient-to-r from-gray-50 to-gray-100">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-gray-900">Total Available Leave</h3>
-              <p className="text-sm text-gray-600">Combined balance across all leave types</p>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-gray-900">
-                {(parseFloat(paidLeave.ptoVacation.available) + parseFloat(paidLeave.pacWestSickLeave.available)).toFixed(1)} hrs
-              </div>
-              <div className="text-sm text-gray-500">
-                {paidLeave.ptoVacation.available} PTO + {paidLeave.pacWestSickLeave.available} Sick
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Historical Usage */}
       <Card>
@@ -902,13 +882,13 @@ function MyStuffContent() {
               <tbody>
                 {historicalUsage.map((entry, index) => (
                   <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm text-gray-900 font-mono">{formatDateToMMDDYYYY(entry.checkDate)}</td>
+                    <td className="py-3 px-4 text-sm text-gray-900">{formatDateToMMDDYYYY(entry.checkDate)}</td>
                     <td className="py-3 px-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         entry.type === 'PTO/Vacation' 
                           ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-green-100 text-green-800'
-                      }`}>
+                          : 'rounded-full'
+                      }`} style={entry.type !== 'PTO/Vacation' ? { backgroundColor: '#b15e6c20', color: '#8a4752' } : {}}>
                         {entry.type}
                       </span>
                     </td>
