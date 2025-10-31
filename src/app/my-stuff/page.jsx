@@ -99,6 +99,8 @@ function MyStuffContent() {
       params.set('section', sectionId)
       const url = `/my-stuff?${params.toString()}`
       window.history.pushState(window.history.state, '', url)
+      // Notify sidebar to open dropdown when navigating to a section
+      window.dispatchEvent(new CustomEvent('app:set-my-stuff-section', { detail: sectionId }))
     } catch {}
   }
   

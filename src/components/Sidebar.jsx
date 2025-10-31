@@ -59,7 +59,20 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     readSection();
     const onPop = () => readSection();
     window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
+    // Listen for section changes from card clicks or other navigation
+    const onSectionChange = (e) => {
+      const sectionId = e?.detail;
+      if (sectionId) {
+        setCurrentSection(sectionId);
+      } else {
+        setCurrentSection(null);
+      }
+    };
+    window.addEventListener('app:set-my-stuff-section', onSectionChange);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      window.removeEventListener('app:set-my-stuff-section', onSectionChange);
+    };
   }, [pathname]);
   
   // Track client-side mounting to prevent hydration mismatches
@@ -67,12 +80,12 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     setIsMounted(true);
   }, []);
 
-  // Keep My Stuff dropdown open when on my-stuff page with any section
+  // Keep My Stuff dropdown open when on my-stuff page with an active section
   useEffect(() => {
-    if (pathname === '/my-stuff') {
+    if (pathname === '/my-stuff' && currentSection) {
       setIsMyStuffOpen(true);
     }
-  }, [pathname]);
+  }, [pathname, currentSection]);
 
   // Update selectedPersona when userRole changes
   useEffect(() => {
@@ -133,6 +146,8 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     } catch {}
     params.set('section', sectionId);
     const url = `/my-stuff?${params.toString()}`;
+    // Open dropdown when navigating to a section
+    setIsMyStuffOpen(true);
     if (typeof window !== 'undefined' && window.location.pathname === '/my-stuff') {
       try {
         window.history.replaceState(window.history.state, '', url)
@@ -262,27 +277,9 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
             if (item.hasSubmenu && userRole === 'Employee' && myStuffSubmenu) {
               return (
                 <div key={item.href}>
-                  <button
-                    onClick={() => {
-                      if (pathname === '/my-stuff') {
-                        // If already on my-stuff page, clear section to show main menu
-                        const params = new URLSearchParams(window.location.search);
-                        params.delete('section');
-                        const url = `/my-stuff${params.toString() ? '?' + params.toString() : ''}`;
-                        saveMainScroll();
-                        router.push(url, { scroll: false });
-                        setCurrentSection(null);
-                        window.dispatchEvent(new CustomEvent('app:set-my-stuff-section', { detail: null }));
-                        setTimeout(() => { try { window.dispatchEvent(new CustomEvent('app:restore-scroll')) } catch {} }, 0);
-                      } else {
-                        // Navigate to my-stuff page (main menu)
-                        saveMainScroll();
-                        router.push('/my-stuff', { scroll: false });
-                        setTimeout(() => { try { window.dispatchEvent(new CustomEvent('app:restore-scroll')) } catch {} }, 0);
-                      }
-                    }}
+                  <div 
                     className={`
-                      w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors
+                      flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors
                       ${
                         isActive
                           ? "bg-primary text-primary-foreground"
@@ -290,14 +287,50 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                       }
                     `}
                   >
-                    <div className="flex items-center">
+                    <button
+                      onClick={() => {
+                        if (pathname === '/my-stuff') {
+                          // If already on my-stuff page, clear section to show main menu
+                          const params = new URLSearchParams(window.location.search);
+                          params.delete('section');
+                          const url = `/my-stuff${params.toString() ? '?' + params.toString() : ''}`;
+                          saveMainScroll();
+                          router.push(url, { scroll: false });
+                          setCurrentSection(null);
+                          window.dispatchEvent(new CustomEvent('app:set-my-stuff-section', { detail: null }));
+                          setTimeout(() => { try { window.dispatchEvent(new CustomEvent('app:restore-scroll')) } catch {} }, 0);
+                        } else {
+                          // Navigate to my-stuff page (main menu)
+                          saveMainScroll();
+                          router.push('/my-stuff', { scroll: false });
+                          setTimeout(() => { try { window.dispatchEvent(new CustomEvent('app:restore-scroll')) } catch {} }, 0);
+                        }
+                        // Don't open dropdown when clicking main button
+                      }}
+                      className="flex-1 flex items-center"
+                    >
                       <span className="text-lg mr-3">{item.icon}</span>
                       {isMounted && isOpen && <span>{item.label}</span>}
-                    </div>
+                    </button>
                     {isMounted && isOpen && (
-                      isMyStuffOpen ? <ExpandMoreIcon className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsMyStuffOpen(!isMyStuffOpen);
+                        }}
+                        className={`
+                          ml-2 p-1 rounded transition-colors flex-shrink-0
+                          ${
+                            isActive
+                              ? "hover:bg-primary/80"
+                              : "hover:bg-gray-200"
+                          }
+                        `}
+                      >
+                        {isMyStuffOpen ? <ExpandMoreIcon className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />}
+                      </button>
                     )}
-                  </button>
+                  </div>
                   
                   {/* Dropdown submenu */}
                   {isMounted && isMyStuffOpen && isOpen && (
