@@ -264,9 +264,21 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                 <div key={item.href}>
                   <button
                     onClick={() => {
-                      // Only allow manual toggle if not on my-stuff page
-                      if (pathname !== '/my-stuff') {
-                        setIsMyStuffOpen(!isMyStuffOpen);
+                      if (pathname === '/my-stuff') {
+                        // If already on my-stuff page, clear section to show main menu
+                        const params = new URLSearchParams(window.location.search);
+                        params.delete('section');
+                        const url = `/my-stuff${params.toString() ? '?' + params.toString() : ''}`;
+                        saveMainScroll();
+                        router.push(url, { scroll: false });
+                        setCurrentSection(null);
+                        window.dispatchEvent(new CustomEvent('app:set-my-stuff-section', { detail: null }));
+                        setTimeout(() => { try { window.dispatchEvent(new CustomEvent('app:restore-scroll')) } catch {} }, 0);
+                      } else {
+                        // Navigate to my-stuff page (main menu)
+                        saveMainScroll();
+                        router.push('/my-stuff', { scroll: false });
+                        setTimeout(() => { try { window.dispatchEvent(new CustomEvent('app:restore-scroll')) } catch {} }, 0);
                       }
                     }}
                     className={`

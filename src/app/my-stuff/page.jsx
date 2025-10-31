@@ -63,7 +63,11 @@ function MyStuffContent() {
   useEffect(() => {
     const handler = (e) => {
       const sectionId = e?.detail
-      if (!sectionId) return
+      // Allow null to clear the section and show main menu
+      if (sectionId === null || sectionId === undefined) {
+        setActiveSection(null)
+        return
+      }
       setActiveSection(sectionId)
       try {
         const params = new URLSearchParams(window.location.search)
@@ -75,6 +79,28 @@ function MyStuffContent() {
     window.addEventListener('app:set-my-stuff-section', handler)
     return () => window.removeEventListener('app:set-my-stuff-section', handler)
   }, [])
+
+  // Update activeSection when URL search params change (including when section is removed)
+  useEffect(() => {
+    const section = searchParams.get('section')
+    if (section && currentUser.role === 'Employee') {
+      setActiveSection(section)
+    } else if (!section) {
+      // Clear section when no section parameter in URL
+      setActiveSection(null)
+    }
+  }, [searchParams, currentUser.role])
+
+  // Helper function to navigate to a section (updates both state and URL)
+  const navigateToSection = (sectionId) => {
+    setActiveSection(sectionId)
+    try {
+      const params = new URLSearchParams(window.location.search)
+      params.set('section', sectionId)
+      const url = `/my-stuff?${params.toString()}`
+      window.history.pushState(window.history.state, '', url)
+    } catch {}
+  }
   
   // Basic Information form state
   const [basicInfo, setBasicInfo] = useState({
@@ -3568,21 +3594,7 @@ function MyStuffContent() {
                         : ''
                     }`}
                             onClick={() => {
-                              if (tab.id === 'basic-info') {
-                                setActiveSection('basic-info')
-                              } else if (tab.id === 'job-status') {
-                                setActiveSection('job-status')
-                              } else if (tab.id === 'department') {
-                                setActiveSection('department')
-                              } else if (tab.id === 'personal-info') {
-                                setActiveSection('personal-info')
-                              } else if (tab.id === 'paid-leave') {
-                                setActiveSection('paid-leave')
-                              } else if (tab.id === 'emergency-contact') {
-                                setActiveSection('emergency-contact')
-                              } else {
-                                console.log(`Navigate to ${tab.label}`)
-                              }
+                              navigateToSection(tab.id)
                             }}
                   >
                     <CardHeader>
@@ -3632,21 +3644,7 @@ function MyStuffContent() {
                         : ''
                     }`}
                     onClick={() => {
-                      if (tab.id === 'earning-statement') {
-                        setActiveSection('earning-statement')
-                      } else if (tab.id === 'w2-register') {
-                        setActiveSection('w2-register')
-                      } else if (tab.id === 'tax-settings') {
-                        setActiveSection('tax-settings')
-                      } else if (tab.id === 'direct-deposits') {
-                        setActiveSection('direct-deposits')
-                      } else if (tab.id === 'ytd-info') {
-                        setActiveSection('ytd-info')
-                      } else if (tab.id === 'online-timecard') {
-                        setActiveSection('online-timecard')
-                      } else {
-                        console.log(`Navigate to ${tab.label}`)
-                      }
+                      navigateToSection(tab.id)
                     }}
                   >
                     <CardHeader>
