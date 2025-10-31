@@ -410,9 +410,11 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
           {/* User Info */}
           <div className="px-3 py-2">
             {isMounted && isOpen ? (
-              <div className="text-sm text-gray-700">
-                <div className="font-medium truncate">{userName}</div>
-                <div className="text-xs bg-gray-100 px-2 py-1 rounded-full font-medium mt-1 inline-block">
+              <div className="text-sm">
+                <div className="bg-blue-100 text-blue-900 font-medium truncate px-3 py-2 rounded-md mb-2 shadow-sm">
+                  {userName}
+                </div>
+                <div className="text-xs bg-gray-100 px-2 py-1 rounded-full font-medium inline-block">
                   {userRole}
                 </div>
               </div>

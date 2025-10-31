@@ -666,7 +666,7 @@ function MyStuffContent() {
         <Button variant="outline" onClick={() => setActiveSection(null)} className="flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
-        <h2 className="text-2xl font-semibold text-gray-900">Personal Information</h2>
+        {/* <h2 className="text-2xl font-semibold text-gray-900">Personal Information</h2> */}
       </div>
       
       <Card>
@@ -740,7 +740,7 @@ function MyStuffContent() {
         <Button variant="outline" onClick={() => setActiveSection(null)} className="flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
-        <h2 className="text-2xl font-semibold text-gray-900">Paid Leave</h2>
+        {/* <h2 className="text-2xl font-semibold text-gray-900">Paid Leave</h2> */}
       </div>
       
       <div className="grid gap-6 lg:grid-cols-2">
@@ -1325,7 +1325,7 @@ function MyStuffContent() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        <h2 className="text-2xl font-semibold text-gray-900">Earning Statement</h2>
+        {/* <h2 className="text-2xl font-semibold text-gray-900">Earning Statement</h2> */}
       </div>
 
       <Card>
@@ -1910,7 +1910,7 @@ function MyStuffContent() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        <h2 className="text-2xl font-semibold text-gray-900">W-2 Register</h2>
+        {/* <h2 className="text-2xl font-semibold text-gray-900">W-2 Register</h2> */}
       </div>
 
       <Card>
@@ -2236,7 +2236,7 @@ function MyStuffContent() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        <h2 className="text-2xl font-semibold text-gray-900">Tax Settings</h2>
+        {/* <h2 className="text-2xl font-semibold text-gray-900">Tax Settings</h2> */}
       </div>
 
       <Card>
@@ -2439,7 +2439,7 @@ function MyStuffContent() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        <h2 className="text-2xl font-semibold text-gray-900">Direct Deposit</h2>
+        {/* <h2 className="text-2xl font-semibold text-gray-900">Direct Deposit</h2> */}
       </div>
 
       <Card>
@@ -2782,7 +2782,7 @@ function MyStuffContent() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        <h2 className="text-2xl font-semibold text-gray-900">Emergency Contact</h2>
+        {/* <h2 className="text-2xl font-semibold text-gray-900">Emergency Contact</h2> */}
       </div>
 
       <Card>
@@ -2847,7 +2847,7 @@ function MyStuffContent() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        <h2 className="text-2xl font-semibold text-gray-900">Department</h2>
+        {/* <h2 className="text-2xl font-semibold text-gray-900">Department</h2> */}
       </div>
 
       <Card>
@@ -3140,7 +3140,7 @@ function MyStuffContent() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        <h2 className="text-2xl font-semibold text-gray-900">Job Status</h2>
+        {/* <h2 className="text-2xl font-semibold text-gray-900">Job Status</h2> */}
       </div>
 
       <Card>
@@ -3286,7 +3286,7 @@ function MyStuffContent() {
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
-          <h2 className="text-2xl font-semibold text-gray-900">Basic Information</h2>
+          {/* <h2 className="text-2xl font-semibold text-gray-900">Basic Information</h2> */}
         </div>
         <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
           <div className="p-1.5 bg-blue-100 rounded-md">
