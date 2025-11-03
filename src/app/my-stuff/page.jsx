@@ -2923,22 +2923,16 @@ function MyStuffContent() {
   // Render Year to Date Information
   const renderYearToDateInfo = () => (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="flex items-center gap-4">
+      <div className="space-y-6 mb-6">
+        <div className="flex items-center justify-between">
           <Button
             variant="outline"
             onClick={() => setActiveSection(null)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900">Year to Date Information</h2>
-            <p className="text-sm text-gray-600 mt-1">Financial summary for {selectedYear}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
           <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
             <div className="p-1.5 bg-blue-100 rounded-md">
               <WorkIcon className="h-4 w-4 text-blue-600" />
@@ -2948,6 +2942,10 @@ function MyStuffContent() {
               <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
             </div>
           </div>
+        </div>
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900">Year to Date Information</h2>
+          <p className="text-sm text-gray-600 mt-1">Financial summary for {selectedYear}</p>
         </div>
       </div>
       <div className="flex items-center gap-3 mb-4">
@@ -2970,8 +2968,8 @@ function MyStuffContent() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Earnings Section */}
-        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-4">
+        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#10B981' }}>
             <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <div className="p-2 bg-green-100 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-green-600" />
@@ -2979,7 +2977,7 @@ function MyStuffContent() {
               Earnings
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 bg-white">
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm text-gray-600">Regular</span>
@@ -3004,16 +3002,16 @@ function MyStuffContent() {
         </Card>
 
         {/* Deductions Section */}
-        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-4">
+        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#EF4444' }}>
             <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <TrendingDown className="h-5 w-5 text-orange-600" />
+              <div className="p-2 bg-red-100 rounded-lg">
+                <TrendingDown className="h-5 w-5 text-red-600" />
               </div>
               Deductions
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 bg-white">
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm text-gray-600">Direct Deposit</span>
@@ -3029,7 +3027,7 @@ function MyStuffContent() {
               </div>
               <div className="flex justify-between items-center pt-3 border-t-2 border-gray-200">
                 <span className="text-base font-semibold text-gray-900">Total</span>
-                <span className="text-lg font-bold text-orange-600 tabular-nums">
+                <span className="text-lg font-bold text-red-600 tabular-nums">
                   {formatCurrency(ytdInfo.deductions.total)}
                 </span>
               </div>
@@ -3038,8 +3036,8 @@ function MyStuffContent() {
         </Card>
 
         {/* Taxes Section */}
-        <Card className="border-0 shadow-sm hover:shadow-md transition-shadow md:col-span-2 lg:col-span-1">
-          <CardHeader className="pb-4">
+        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden md:col-span-2 lg:col-span-1">
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#4F46E5' }}>
             <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <ReceiptIcon className="h-5 w-5 text-blue-600" />
@@ -3047,7 +3045,7 @@ function MyStuffContent() {
               Taxes
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 bg-white">
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm text-gray-600">Alabama</span>
