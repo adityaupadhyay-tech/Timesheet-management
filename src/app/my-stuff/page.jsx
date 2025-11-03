@@ -3632,7 +3632,7 @@ function MyStuffContent() {
           <Button
             variant="outline"
             onClick={() => setActiveSection(null)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -3651,33 +3651,33 @@ function MyStuffContent() {
       </div>
 
       {/* Personal Details */}
-      <Card>
-        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
-          <CardTitle className="text-xl font-semibold">Personal Details</CardTitle>
-          <CardDescription className="text-base mt-1">Your personal information and contact details</CardDescription>
+      <Card className="border border-gray-200 shadow-md overflow-hidden">
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
+          <CardTitle className="text-xl font-semibold text-gray-900">Personal Details</CardTitle>
+          <CardDescription className="text-base mt-1 text-gray-600">Your personal information and contact details</CardDescription>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 bg-white">
           <div className="space-y-6">
             {/* Name Section */}
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">First Name</Label>
                 <Input
                   id="firstName"
                   value={basicInfo.firstName}
                   disabled
                   placeholder="Enter first name"
-                  className="bg-gray-50 cursor-not-allowed"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">Last Name</Label>
                 <Input
                   id="lastName"
                   value={basicInfo.lastName}
                   disabled
                   placeholder="Enter last name"
-                  className="bg-gray-50 cursor-not-allowed"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                 />
               </div>
             </div>
@@ -3685,25 +3685,25 @@ function MyStuffContent() {
             {/* Contact Information */}
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="homePhone">Home Phone</Label>
+                <Label htmlFor="homePhone" className="text-sm font-medium text-gray-700">Home Phone</Label>
                 <Input
                   id="homePhone"
                   type="tel"
                   value={basicInfo.homePhone}
                   disabled
                   placeholder="Enter home phone"
-                  className="bg-gray-50 cursor-not-allowed"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="workPhone">Work Phone</Label>
+                <Label htmlFor="workPhone" className="text-sm font-medium text-gray-700">Work Phone</Label>
                 <Input
                   id="workPhone"
                   type="tel"
                   value={basicInfo.workPhone}
                   disabled
                   placeholder="Enter work phone"
-                  className="bg-gray-50 cursor-not-allowed"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                 />
               </div>
             </div>
@@ -3711,14 +3711,14 @@ function MyStuffContent() {
             {/* Work Email */}
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="workEmail">Work Email</Label>
+                <Label htmlFor="workEmail" className="text-sm font-medium text-gray-700">Work Email</Label>
                 <Input
                   id="workEmail"
                   type="email"
                   value={basicInfo.workEmail}
                   disabled
                   placeholder="Enter work email"
-                  className="bg-gray-50 cursor-not-allowed"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                 />
               </div>
               <div></div> {/* Empty div for alignment */}
@@ -3728,33 +3728,33 @@ function MyStuffContent() {
       </Card>
 
       {/* Address Information */}
-      <Card>
-        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
-          <CardTitle className="text-xl font-semibold">Address Information</CardTitle>
-          <CardDescription className="text-base mt-1">Your residential address details</CardDescription>
+      <Card className="border border-gray-200 shadow-md overflow-hidden">
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50" style={{ borderLeftColor: '#9333EA' }}>
+          <CardTitle className="text-xl font-semibold text-gray-900">Address Information</CardTitle>
+          <CardDescription className="text-base mt-1 text-gray-600">Your residential address details</CardDescription>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 bg-white">
           <div className="space-y-6">
             {/* Address Lines */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="address1">Address Line 1</Label>
+                <Label htmlFor="address1" className="text-sm font-medium text-gray-700">Address Line 1</Label>
                 <Input
                   id="address1"
                   value={basicInfo.address1}
                   disabled
                   placeholder="Enter street address"
-                  className="bg-gray-50 cursor-not-allowed"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-purple-300"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address2">Address Line 2</Label>
+                <Label htmlFor="address2" className="text-sm font-medium text-gray-700">Address Line 2</Label>
                 <Input
                   id="address2"
                   value={basicInfo.address2}
                   disabled
                   placeholder="Apartment, suite, etc. (optional)"
-                  className="bg-gray-50 cursor-not-allowed"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-purple-300"
                 />
               </div>
             </div>
@@ -3762,33 +3762,33 @@ function MyStuffContent() {
             {/* City, State, Zip */}
             <div className="grid gap-6 md:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
+                <Label htmlFor="city" className="text-sm font-medium text-gray-700">City</Label>
                 <Input
                   id="city"
                   value={basicInfo.city}
                   disabled
                   placeholder="Enter city"
-                  className="bg-gray-50 cursor-not-allowed"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-purple-300"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
+                <Label htmlFor="state" className="text-sm font-medium text-gray-700">State</Label>
                 <Input
                   id="state"
                   value={basicInfo.state}
                   disabled
                   placeholder="Enter state"
-                  className="bg-gray-50 cursor-not-allowed"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-purple-300"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="zipcode">Zip Code</Label>
+                <Label htmlFor="zipcode" className="text-sm font-medium text-gray-700">Zip Code</Label>
                 <Input
                   id="zipcode"
                   value={basicInfo.zipcode}
                   disabled
                   placeholder="Enter zip code"
-                  className="bg-gray-50 cursor-not-allowed"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-purple-300"
                 />
               </div>
             </div>
