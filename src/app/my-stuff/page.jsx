@@ -1,17 +1,42 @@
 'use client'
 
+// ============================================================================
+// IMPORTS
+// ============================================================================
+
+// React & Next.js
 import { useMemo, useState, useEffect, useRef, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useSearchParams } from 'next/navigation'
+
+// Context
+import { useUser } from '@/contexts/UserContext'
+
+// Layout & UI Components
 import Layout from '@/components/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useUser } from '@/contexts/UserContext'
-import { ArrowLeft, Save, Download, X, Filter, ChevronDown, ArrowUp, ArrowDown, ArrowUpDown, TrendingUp, TrendingDown, Calendar, Clock, Target, FolderOpen, Send, CheckCircle, XCircle, Play, Square, Plus, Trash2, Edit, FileText, RotateCcw, ChevronLeft, ChevronRight, AlertCircle, AlertTriangle, ThumbsUp, ThumbsDown, MessageSquare, Printer } from 'lucide-react'
 import { DatePickerComponent } from '@/components/ui/date-picker'
+
+// Timesheet Components
+import TimeEntryGrid from '@/components/timesheet/TimeEntryGrid'
+import TimesheetSummary from '@/components/timesheet/TimesheetSummary'
+import ProjectOverview from '@/components/timesheet/ProjectOverview'
+
+// Icons - Lucide React
+import { 
+  ArrowLeft, Save, Download, X, Filter, ChevronDown, 
+  ArrowUp, ArrowDown, ArrowUpDown, TrendingUp, TrendingDown, 
+  Calendar, Clock, Target, FolderOpen, Send, CheckCircle, XCircle, 
+  Play, Square, Plus, Trash2, Edit, FileText, RotateCcw, 
+  ChevronLeft, ChevronRight, AlertCircle, AlertTriangle, 
+  ThumbsUp, ThumbsDown, MessageSquare, Printer 
+} from 'lucide-react'
+
+// Icons - Material UI
 import PersonIcon from '@mui/icons-material/Person'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import SettingsIcon from '@mui/icons-material/Settings'
@@ -29,9 +54,8 @@ import CreditCardIcon from '@mui/icons-material/CreditCard'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import ScheduleIcon from '@mui/icons-material/Schedule'
-import TimeEntryGrid from '@/components/timesheet/TimeEntryGrid'
-import TimesheetSummary from '@/components/timesheet/TimesheetSummary'
-import ProjectOverview from '@/components/timesheet/ProjectOverview'
+
+// Utilities
 import { 
   getCycleStartDate, 
   getCycleEndDate, 
@@ -42,12 +66,21 @@ import {
   getNextCycle,
   getPreviousCycle
 } from '@/lib/cycleUtils'
+import { formatCurrency, formatDateToMMDDYYYY } from './utils/formatters'
+
+// ============================================================================
+// MY STUFF CONTENT COMPONENT
+// ============================================================================
 
 function MyStuffContent() {
   const { user: currentUser } = useUser()
   const searchParams = useSearchParams()
   const [activeSection, setActiveSection] = useState(null)
   const hasInitializedSectionRef = useRef(false)
+  
+  // ============================================================================
+  // SECTION: URL & Navigation Management
+  // ============================================================================
   
   // Initialize section from URL once
   useEffect(() => {
@@ -103,6 +136,10 @@ function MyStuffContent() {
       window.dispatchEvent(new CustomEvent('app:set-my-stuff-section', { detail: sectionId }))
     } catch {}
   }
+  
+  // ============================================================================
+  // SECTION: Form State Management
+  // ============================================================================
   
   // Basic Information form state
   const [basicInfo, setBasicInfo] = useState({
@@ -288,6 +325,10 @@ function MyStuffContent() {
     return years
   }, [])
   
+  // ============================================================================
+  // SECTION: Direct Deposit State Management
+  // ============================================================================
+  
   // Direct Deposit state
   const [directDeposits, setDirectDeposits] = useState([
     {
@@ -381,6 +422,10 @@ function MyStuffContent() {
     setEmployeeEmail('')
   }
 
+  // ============================================================================
+  // SECTION: Earning Statements State Management
+  // ============================================================================
+  
   // Earning Statement data
   const [earningStatements] = useState([
     {
@@ -453,6 +498,10 @@ function MyStuffContent() {
   // Sort state for Earning Statements
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc') // 'asc' or 'desc'
+  
+  // ============================================================================
+  // SECTION: W-2 Register State Management
+  // ============================================================================
   
   // W-2 Register data
   const [w2Statements, setW2Statements] = useState([
@@ -920,6 +969,10 @@ function MyStuffContent() {
     </div>
   )
 
+  // ============================================================================
+  // SECTION: Helper Functions & Event Handlers
+  // ============================================================================
+  
   // Handle PDF download
   const handleDownloadPDF = (statement) => {
     // TODO: Implement PDF download functionality
@@ -928,14 +981,6 @@ function MyStuffContent() {
     alert(`Downloading PDF for statement dated ${formatDateToMMDDYYYY(statement.date)}`)
   }
 
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount)
-  }
 
   // Handle sorting for Earning Statements
   const handleSort = (column) => {
@@ -1340,6 +1385,10 @@ function MyStuffContent() {
     }
   }, [openFilter, showColumnMenu, showW2ColumnMenu])
 
+  // ============================================================================
+  // SECTION: Render Functions - Forms & Tables
+  // ============================================================================
+  
   // Render Earning Statement table
   const renderEarningStatement = () => (
     <div className="space-y-6">
@@ -3308,16 +3357,6 @@ function MyStuffContent() {
     </div>
   )
 
-  // Helper function to format date to MM-dd-yyyy
-  const formatDateToMMDDYYYY = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${month}-${day}-${year}`;
-  };
 
   // Render Job Status form
   const renderJobStatusForm = () => (
