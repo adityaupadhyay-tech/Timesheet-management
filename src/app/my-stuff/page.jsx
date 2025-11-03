@@ -640,24 +640,24 @@ function MyStuffContent() {
 
   // Sub-tabs for My Profile
   const profileTabs = useMemo(() => [
-    { id: 'basic-info', label: 'Basic Information', icon: <InfoIcon /> },
-    { id: 'job-status', label: 'Job Status', icon: <WorkIcon /> },
-    { id: 'department', label: 'Department', icon: <GroupIcon /> },
-    { id: 'personal-info', label: 'Personal Information', icon: <PersonIcon /> },
-    { id: 'paid-leave', label: 'Paid Leave', icon: <EventIcon /> },
-    { id: 'emergency-contact', label: 'Emergency Contact', icon: <ContactPhoneIcon /> },
-    { id: 'performance-coaching', label: 'Performance Coaching', icon: <TrendingUpIcon /> }
+    { id: 'basic-info', label: 'Basic Information', icon: <InfoIcon sx={{ fontSize: 20 }} /> },
+    { id: 'job-status', label: 'Job Status', icon: <WorkIcon sx={{ fontSize: 20 }} /> },
+    { id: 'department', label: 'Department', icon: <GroupIcon sx={{ fontSize: 20 }} /> },
+    { id: 'personal-info', label: 'Personal Information', icon: <PersonIcon sx={{ fontSize: 20 }} /> },
+    { id: 'paid-leave', label: 'Paid Leave', icon: <EventIcon sx={{ fontSize: 20 }} /> },
+    { id: 'emergency-contact', label: 'Emergency Contact', icon: <ContactPhoneIcon sx={{ fontSize: 20 }} /> },
+    { id: 'performance-coaching', label: 'Performance Coaching', icon: <TrendingUpIcon sx={{ fontSize: 20 }} /> }
   ], [])
 
   // Sub-tabs for My Payroll
   const payrollTabs = useMemo(() => [
-    { id: 'earning-statement', label: 'Earning Statement', icon: <ReceiptIcon /> },
-    { id: 'w2-register', label: 'W-2 Register', icon: <Description /> },
-    { id: 'tax-settings', label: 'Tax Settings', icon: <AccountBalanceIcon /> },
-    { id: 'direct-deposits', label: 'Direct Deposits', icon: <CreditCardIcon /> },
-    { id: 'ytd-info', label: 'Year to Date Information', icon: <CalendarTodayIcon /> },
-    { id: 'online-timecard', label: 'On-line Timecard', icon: <AccessTimeIcon /> },
-    { id: 'sundial-clock', label: 'Sundial Time Clock', icon: <AccessTimeIcon /> }
+    { id: 'earning-statement', label: 'Earning Statement', icon: <ReceiptIcon sx={{ fontSize: 20 }} /> },
+    { id: 'w2-register', label: 'W-2 Register', icon: <Description sx={{ fontSize: 20 }} /> },
+    { id: 'tax-settings', label: 'Tax Settings', icon: <AccountBalanceIcon sx={{ fontSize: 20 }} /> },
+    { id: 'direct-deposits', label: 'Direct Deposits', icon: <CreditCardIcon sx={{ fontSize: 20 }} /> },
+    { id: 'ytd-info', label: 'Year to Date Information', icon: <CalendarTodayIcon sx={{ fontSize: 20 }} /> },
+    { id: 'online-timecard', label: 'On-line Timecard', icon: <AccessTimeIcon sx={{ fontSize: 20 }} /> },
+    { id: 'sundial-clock', label: 'Sundial Time Clock', icon: <AccessTimeIcon sx={{ fontSize: 20 }} /> }
   ], [])
 
   const sections = useMemo(() => {
@@ -723,7 +723,7 @@ function MyStuffContent() {
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => setActiveSection(null)} className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setActiveSection(null)} className="flex items-center gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
           {/* <h2 className="text-2xl font-semibold text-gray-900">Personal Information</h2> */}
@@ -739,55 +739,55 @@ function MyStuffContent() {
         </div>
       </div>
       
-      <Card>
-        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
-          <CardTitle className="text-xl font-semibold">Personal Details</CardTitle>
-          <CardDescription className="text-base mt-1">View your personal information and demographics</CardDescription>
+      <Card className="border border-gray-200 shadow-md overflow-hidden">
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
+          <CardTitle className="text-xl font-semibold text-gray-900">Personal Details</CardTitle>
+          <CardDescription className="text-base mt-1 text-gray-600">View your personal information and demographics</CardDescription>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 bg-white">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="ssn">SSN</Label>
+              <Label htmlFor="ssn" className="text-sm font-medium text-gray-700">SSN</Label>
               <Input
                 id="ssn"
                 value={personalInfo.ssn}
                 onChange={(e) => setPersonalInfo({...personalInfo, ssn: e.target.value})}
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="race">Race</Label>
+              <Label htmlFor="race" className="text-sm font-medium text-gray-700">Race</Label>
               <Input
                 id="race"
                 value={personalInfo.race}
                 onChange={(e) => setPersonalInfo({...personalInfo, race: e.target.value})}
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="alienExp">Alien Exp</Label>
+              <Label htmlFor="alienExp" className="text-sm font-medium text-gray-700">Alien Exp</Label>
               <Input
                 id="alienExp"
                 value={personalInfo.alienExp}
                 onChange={(e) => setPersonalInfo({...personalInfo, alienExp: e.target.value})}
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="veteranStatus">Veteran Status</Label>
+              <Label htmlFor="veteranStatus" className="text-sm font-medium text-gray-700">Veteran Status</Label>
               <Input
                 id="veteranStatus"
                 value={personalInfo.veteranStatus}
                 onChange={(e) => setPersonalInfo({...personalInfo, veteranStatus: e.target.value})}
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="birthDate">Birth Date</Label>
+              <Label htmlFor="birthDate" className="text-sm font-medium text-gray-700">Birth Date</Label>
               <Input
                 id="birthDate"
                 type="text"
@@ -795,7 +795,7 @@ function MyStuffContent() {
                 onChange={(e) => setPersonalInfo({...personalInfo, birthDate: e.target.value})}
                 placeholder="mm-dd-yyyy"
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
           </div>
@@ -1419,7 +1419,7 @@ function MyStuffContent() {
           <Button
             variant="outline"
             onClick={() => setActiveSection(null)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -1437,16 +1437,16 @@ function MyStuffContent() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+      <Card className="border border-gray-200 shadow-md overflow-hidden">
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
           <div className="flex items-center justify-between relative">
             <div>
-              <CardTitle className="text-xl font-semibold">Earning Statements</CardTitle>
+              <CardTitle className="text-xl font-semibold text-gray-900">Earning Statements</CardTitle>
               <div className="flex items-center gap-2 text-gray-600 mt-2">
                 <PersonIcon className="h-4 w-4" />
                 <span className="text-sm font-medium">John Doe</span>
               </div>
-              <CardDescription className="text-base mt-1">View and download your earning statements</CardDescription>
+              <CardDescription className="text-base mt-1 text-gray-600">View and download your earning statements</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               {hasActiveFilters && (
@@ -2173,7 +2173,7 @@ function MyStuffContent() {
           <Button
             variant="outline"
             onClick={() => setActiveSection(null)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -2191,12 +2191,12 @@ function MyStuffContent() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+      <Card className="border border-gray-200 shadow-md overflow-hidden">
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
           <div className="flex items-center justify-between relative">
             <div>
-              <CardTitle className="text-xl font-semibold">W-2 Forms</CardTitle>
-              <CardDescription className="text-base mt-1">View and download your W-2 and W-2c forms</CardDescription>
+              <CardTitle className="text-xl font-semibold text-gray-900">W-2 Forms</CardTitle>
+              <CardDescription className="text-base mt-1 text-gray-600">View and download your W-2 and W-2c forms</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               {hasActiveW2Filters && (
@@ -2523,22 +2523,22 @@ function MyStuffContent() {
       </div>
 
       <div className="space-y-6">
-        <Card>
-          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
-            <CardTitle className="text-xl font-semibold">Tax Withholding Information</CardTitle>
-            <CardDescription className="text-base mt-1">View your tax withholding settings and preferences</CardDescription>
+        <Card className="border border-gray-200 shadow-md overflow-hidden">
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
+            <CardTitle className="text-xl font-semibold text-gray-900">Tax Withholding Information</CardTitle>
+            <CardDescription className="text-base mt-1 text-gray-600">View your tax withholding settings and preferences</CardDescription>
           </CardHeader>
         </Card>
 
         {/* Federal Section */}
-        <Card>
-          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#9CA3AF' }}>
+        <Card className="border border-gray-200 shadow-md overflow-hidden">
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
             <CardTitle className="text-lg font-semibold text-gray-900">Federal</CardTitle>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 bg-white">
             <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="federalExemptions">Exemptions</Label>
+                  <Label htmlFor="federalExemptions" className="text-sm font-medium text-gray-700">Exemptions</Label>
                   <Input
                     id="federalExemptions"
                     value={taxSettings.federal.exemptions}
@@ -2548,11 +2548,11 @@ function MyStuffContent() {
                     })}
                     placeholder="Enter exemptions"
                     disabled
-                    className="bg-gray-50 cursor-not-allowed"
+                    className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="federalExtraWithholding">Extra Withholding</Label>
+                  <Label htmlFor="federalExtraWithholding" className="text-sm font-medium text-gray-700">Extra Withholding</Label>
                   <Input
                     id="federalExtraWithholding"
                     value={taxSettings.federal.extraWithholding}
@@ -2562,7 +2562,7 @@ function MyStuffContent() {
                     })}
                     placeholder="Enter extra withholding"
                     disabled
-                    className="bg-gray-50 cursor-not-allowed"
+                    className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                   />
                 </div>
             </div>
@@ -2570,14 +2570,14 @@ function MyStuffContent() {
         </Card>
 
         {/* Work State Section */}
-        <Card>
-          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#9CA3AF' }}>
+        <Card className="border border-gray-200 shadow-md overflow-hidden">
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
             <CardTitle className="text-lg font-semibold text-gray-900">Work State</CardTitle>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 bg-white">
             <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="workState">State</Label>
+                  <Label htmlFor="workState" className="text-sm font-medium text-gray-700">State</Label>
                   <Input
                     id="workState"
                     value={taxSettings.workState.state}
@@ -2587,11 +2587,11 @@ function MyStuffContent() {
                     })}
                     placeholder="Enter state"
                     disabled
-                    className="bg-gray-50 cursor-not-allowed"
+                    className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="workStateExemptions">Exemptions</Label>
+                  <Label htmlFor="workStateExemptions" className="text-sm font-medium text-gray-700">Exemptions</Label>
                   <Input
                     id="workStateExemptions"
                     value={taxSettings.workState.exemptions}
@@ -2601,11 +2601,11 @@ function MyStuffContent() {
                     })}
                     placeholder="Enter exemptions"
                     disabled
-                    className="bg-gray-50 cursor-not-allowed"
+                    className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="workStateExtraWithholding">Extra Withholding</Label>
+                  <Label htmlFor="workStateExtraWithholding" className="text-sm font-medium text-gray-700">Extra Withholding</Label>
                   <Input
                     id="workStateExtraWithholding"
                     value={taxSettings.workState.extraWithholding}
@@ -2615,11 +2615,11 @@ function MyStuffContent() {
                     })}
                     placeholder="Enter extra withholding"
                     disabled
-                    className="bg-gray-50 cursor-not-allowed"
+                    className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="workStateStatus">Status</Label>
+                  <Label htmlFor="workStateStatus" className="text-sm font-medium text-gray-700">Status</Label>
                   <Input
                     id="workStateStatus"
                     value={taxSettings.workState.status}
@@ -2629,7 +2629,7 @@ function MyStuffContent() {
                     })}
                     placeholder="Enter status"
                     disabled
-                    className="bg-gray-50 cursor-not-allowed"
+                    className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                   />
                 </div>
             </div>
@@ -2637,14 +2637,14 @@ function MyStuffContent() {
         </Card>
 
         {/* Resident State Section */}
-        <Card>
-          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#9CA3AF' }}>
+        <Card className="border border-gray-200 shadow-md overflow-hidden">
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
             <CardTitle className="text-lg font-semibold text-gray-900">Resident State</CardTitle>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 bg-white">
             <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="residentState">State</Label>
+                  <Label htmlFor="residentState" className="text-sm font-medium text-gray-700">State</Label>
                   <Input
                     id="residentState"
                     value={taxSettings.residentState.state}
@@ -2654,11 +2654,11 @@ function MyStuffContent() {
                     })}
                     placeholder="Enter state"
                     disabled
-                    className="bg-gray-50 cursor-not-allowed"
+                    className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="residentStateExemptions">Exemptions</Label>
+                  <Label htmlFor="residentStateExemptions" className="text-sm font-medium text-gray-700">Exemptions</Label>
                   <Input
                     id="residentStateExemptions"
                     value={taxSettings.residentState.exemptions}
@@ -2668,11 +2668,11 @@ function MyStuffContent() {
                     })}
                     placeholder="Enter exemptions"
                     disabled
-                    className="bg-gray-50 cursor-not-allowed"
+                    className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="residentStateExtraWithholding">Extra Withholding</Label>
+                  <Label htmlFor="residentStateExtraWithholding" className="text-sm font-medium text-gray-700">Extra Withholding</Label>
                   <Input
                     id="residentStateExtraWithholding"
                     value={taxSettings.residentState.extraWithholding}
@@ -2682,11 +2682,11 @@ function MyStuffContent() {
                     })}
                     placeholder="Enter extra withholding"
                     disabled
-                    className="bg-gray-50 cursor-not-allowed"
+                    className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="residentStateStatus">Status</Label>
+                  <Label htmlFor="residentStateStatus" className="text-sm font-medium text-gray-700">Status</Label>
                   <Input
                     id="residentStateStatus"
                     value={taxSettings.residentState.status}
@@ -2696,11 +2696,11 @@ function MyStuffContent() {
                     })}
                     placeholder="Enter status"
                     disabled
-                    className="bg-gray-50 cursor-not-allowed"
+                    className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="reciprocityMethod">Reciprocity Method</Label>
+                  <Label htmlFor="reciprocityMethod" className="text-sm font-medium text-gray-700">Reciprocity Method</Label>
                   <Input
                     id="reciprocityMethod"
                     value={taxSettings.residentState.reciprocityMethod}
@@ -2710,7 +2710,7 @@ function MyStuffContent() {
                     })}
                     placeholder="Enter reciprocity method"
                     disabled
-                    className="bg-gray-50 cursor-not-allowed"
+                    className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                   />
                 </div>
             </div>
@@ -2728,7 +2728,7 @@ function MyStuffContent() {
           <Button
             variant="outline"
             onClick={() => setActiveSection(null)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -2747,12 +2747,12 @@ function MyStuffContent() {
       </div>
 
       <div className="space-y-6">
-        <Card>
-          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+        <Card className="border border-gray-200 shadow-md overflow-hidden">
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl font-semibold">Direct Deposit Information</CardTitle>
-                <CardDescription className="text-base mt-1">View your direct deposit accounts and settings</CardDescription>
+                <CardTitle className="text-xl font-semibold text-gray-900">Direct Deposit Information</CardTitle>
+                <CardDescription className="text-base mt-1 text-gray-600">View your direct deposit accounts and settings</CardDescription>
               </div>
               {/* Add Direct Deposit button temporarily removed */}
             </div>
@@ -2761,16 +2761,16 @@ function MyStuffContent() {
 
         <div className="space-y-6">
           {directDeposits.map((deposit, index) => (
-            <Card key={deposit.id}>
-              <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#9CA3AF' }}>
+            <Card key={deposit.id} className="border border-gray-200 shadow-md overflow-hidden">
+              <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
                 <CardTitle className="text-lg font-semibold text-gray-900">
                   Deposit {index + 1}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6">
+              <CardContent className="pt-6 bg-white">
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor={`routingNumber-${deposit.id}`}>Routing Number</Label>
+                    <Label htmlFor={`routingNumber-${deposit.id}`} className="text-sm font-medium text-gray-700">Routing Number</Label>
                     <Input
                       id={`routingNumber-${deposit.id}`}
                       value={deposit.routingNumber || ''}
@@ -2782,11 +2782,11 @@ function MyStuffContent() {
                       }}
                       placeholder="Enter routing number"
                       disabled
-                      className="bg-gray-50 cursor-not-allowed"
+                      className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`account-${deposit.id}`}>Account</Label>
+                    <Label htmlFor={`account-${deposit.id}`} className="text-sm font-medium text-gray-700">Account</Label>
                     <Input
                       id={`account-${deposit.id}`}
                       value={deposit.account || ''}
@@ -2798,11 +2798,11 @@ function MyStuffContent() {
                       }}
                       placeholder="Enter account number"
                       disabled
-                      className="bg-gray-50 cursor-not-allowed"
+                      className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`checkingSavings-${deposit.id}`}>Checking/Savings</Label>
+                    <Label htmlFor={`checkingSavings-${deposit.id}`} className="text-sm font-medium text-gray-700">Checking/Savings</Label>
                     <Input
                       id={`checkingSavings-${deposit.id}`}
                       value={deposit.checkingSavings || ''}
@@ -2814,11 +2814,11 @@ function MyStuffContent() {
                       }}
                       placeholder="Enter checking/savings"
                       disabled
-                      className="bg-gray-50 cursor-not-allowed"
+                      className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`amount-${deposit.id}`}>Amount</Label>
+                    <Label htmlFor={`amount-${deposit.id}`} className="text-sm font-medium text-gray-700">Amount</Label>
                     <Input
                       id={`amount-${deposit.id}`}
                       value={deposit.amount || ''}
@@ -2830,11 +2830,11 @@ function MyStuffContent() {
                       }}
                       placeholder="Enter amount"
                       disabled
-                      className="bg-gray-50 cursor-not-allowed"
+                      className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`amountPercent-${deposit.id}`}>Amount/Percent</Label>
+                    <Label htmlFor={`amountPercent-${deposit.id}`} className="text-sm font-medium text-gray-700">Amount/Percent</Label>
                     <Input
                       id={`amountPercent-${deposit.id}`}
                       value={deposit.amountPercent || ''}
@@ -2846,11 +2846,11 @@ function MyStuffContent() {
                       }}
                       placeholder="Enter amount/percent"
                       disabled
-                      className="bg-gray-50 cursor-not-allowed"
+                      className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`code-${deposit.id}`}>Code</Label>
+                    <Label htmlFor={`code-${deposit.id}`} className="text-sm font-medium text-gray-700">Code</Label>
                     <Input
                       id={`code-${deposit.id}`}
                       value={deposit.code || ''}
@@ -2862,7 +2862,7 @@ function MyStuffContent() {
                       }}
                       placeholder="Enter code"
                       disabled
-                      className="bg-gray-50 cursor-not-allowed"
+                      className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                     />
                   </div>
                 </div>
@@ -3095,7 +3095,7 @@ function MyStuffContent() {
           <Button
             variant="outline"
             onClick={() => setActiveSection(null)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -3113,39 +3113,39 @@ function MyStuffContent() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
-          <CardTitle className="text-xl font-semibold">Emergency Contact Information</CardTitle>
-          <CardDescription className="text-base mt-1">View your emergency contact details</CardDescription>
+      <Card className="border border-gray-200 shadow-md overflow-hidden">
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
+          <CardTitle className="text-xl font-semibold text-gray-900">Emergency Contact Information</CardTitle>
+          <CardDescription className="text-base mt-1 text-gray-600">View your emergency contact details</CardDescription>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 bg-white">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="contact">Contact</Label>
+              <Label htmlFor="contact" className="text-sm font-medium text-gray-700">Contact</Label>
               <Input
                 id="contact"
                 value={emergencyContact.contact}
                 onChange={(e) => setEmergencyContact({...emergencyContact, contact: e.target.value})}
                 placeholder="Enter contact name"
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="relationship">Relationship</Label>
+              <Label htmlFor="relationship" className="text-sm font-medium text-gray-700">Relationship</Label>
               <Input
                 id="relationship"
                 value={emergencyContact.relationship}
                 onChange={(e) => setEmergencyContact({...emergencyContact, relationship: e.target.value})}
                 placeholder="Enter relationship"
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</Label>
               <Input
                 id="phoneNumber"
                 type="tel"
@@ -3153,7 +3153,7 @@ function MyStuffContent() {
                 onChange={(e) => setEmergencyContact({...emergencyContact, phoneNumber: e.target.value})}
                 placeholder="Enter phone number"
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
           </div>
@@ -3171,7 +3171,7 @@ function MyStuffContent() {
           <Button
             variant="outline"
             onClick={() => setActiveSection(null)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -3189,102 +3189,102 @@ function MyStuffContent() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
-          <CardTitle className="text-xl font-semibold">Department Assignment</CardTitle>
-          <CardDescription className="text-base mt-1">View your department assignments and percentages</CardDescription>
+      <Card className="border border-gray-200 shadow-md overflow-hidden">
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
+          <CardTitle className="text-xl font-semibold text-gray-900">Department Assignment</CardTitle>
+          <CardDescription className="text-base mt-1 text-gray-600">View your department assignments and percentages</CardDescription>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 bg-white">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="department1">Department 1</Label>
+              <Label htmlFor="department1" className="text-sm font-medium text-gray-700">Department 1</Label>
               <Input
                 id="department1"
                 value={department.department1}
                 disabled
                 placeholder="Enter department name"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department1Percent">Department 1 Percent</Label>
+              <Label htmlFor="department1Percent" className="text-sm font-medium text-gray-700">Department 1 Percent</Label>
               <Input
                 id="department1Percent"
                 type="number"
                 value={department.department1Percent}
                 disabled
                 placeholder="Enter percentage"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department2">Department 2</Label>
+              <Label htmlFor="department2" className="text-sm font-medium text-gray-700">Department 2</Label>
               <Input
                 id="department2"
                 value={department.department2}
                 disabled
                 placeholder="Enter department name"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department2Percent">Department 2 Percent</Label>
+              <Label htmlFor="department2Percent" className="text-sm font-medium text-gray-700">Department 2 Percent</Label>
               <Input
                 id="department2Percent"
                 type="number"
                 value={department.department2Percent}
                 disabled
                 placeholder="Enter percentage"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department3">Department 3</Label>
+              <Label htmlFor="department3" className="text-sm font-medium text-gray-700">Department 3</Label>
               <Input
                 id="department3"
                 value={department.department3}
                 disabled
                 placeholder="Enter department name"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department3Percent">Department 3 Percent</Label>
+              <Label htmlFor="department3Percent" className="text-sm font-medium text-gray-700">Department 3 Percent</Label>
               <Input
                 id="department3Percent"
                 type="number"
                 value={department.department3Percent}
                 disabled
                 placeholder="Enter percentage"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department4">Department 4</Label>
+              <Label htmlFor="department4" className="text-sm font-medium text-gray-700">Department 4</Label>
               <Input
                 id="department4"
                 value={department.department4}
                 disabled
                 placeholder="Enter department name"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department4Percent">Department 4 Percent</Label>
+              <Label htmlFor="department4Percent" className="text-sm font-medium text-gray-700">Department 4 Percent</Label>
               <Input
                 id="department4Percent"
                 type="number"
                 value={department.department4Percent}
                 disabled
                 placeholder="Enter percentage"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
           </div>
@@ -3476,7 +3476,7 @@ function MyStuffContent() {
           <Button
             variant="outline"
             onClick={() => setActiveSection(null)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -3494,127 +3494,127 @@ function MyStuffContent() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
-          <CardTitle className="text-xl font-semibold">Employment Details</CardTitle>
-          <CardDescription className="text-base mt-1">View your job status and employment information</CardDescription>
+      <Card className="border border-gray-200 shadow-md overflow-hidden">
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
+          <CardTitle className="text-xl font-semibold text-gray-900">Employment Details</CardTitle>
+          <CardDescription className="text-base mt-1 text-gray-600">View your job status and employment information</CardDescription>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 bg-white">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="alternateId">Alternate ID</Label>
+              <Label htmlFor="alternateId" className="text-sm font-medium text-gray-700">Alternate ID</Label>
               <Input
                 id="alternateId"
                 value={jobStatus.alternateId}
                 disabled
                 placeholder="Enter alternate ID"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="occupation">Occupation</Label>
+              <Label htmlFor="occupation" className="text-sm font-medium text-gray-700">Occupation</Label>
               <Input
                 id="occupation"
                 value={jobStatus.occupation}
                 disabled
                 placeholder="Enter occupation"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="workersCompCode">Worker's Comp Code</Label>
+              <Label htmlFor="workersCompCode" className="text-sm font-medium text-gray-700">Worker's Comp Code</Label>
               <Input
                 id="workersCompCode"
                 value={jobStatus.workersCompCode}
                 disabled
                 placeholder="Enter worker's comp code"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="clientHireDate">Client Hire Date</Label>
+              <Label htmlFor="clientHireDate" className="text-sm font-medium text-gray-700">Client Hire Date</Label>
               <Input
                 id="clientHireDate"
                 type="text"
                 value={formatDateToMMDDYYYY(jobStatus.clientHireDate)}
                 placeholder="mm-dd-yyyy"
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="companyHireDate">Company Hire Date</Label>
+              <Label htmlFor="companyHireDate" className="text-sm font-medium text-gray-700">Company Hire Date</Label>
               <Input
                 id="companyHireDate"
                 type="text"
                 value={formatDateToMMDDYYYY(jobStatus.companyHireDate)}
                 placeholder="mm-dd-yyyy"
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="terminationDate">Termination Date</Label>
+              <Label htmlFor="terminationDate" className="text-sm font-medium text-gray-700">Termination Date</Label>
               <Input
                 id="terminationDate"
                 type="text"
                 value={formatDateToMMDDYYYY(jobStatus.terminationDate)}
                 placeholder="mm-dd-yyyy"
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="anniversaryDate">Anniversary Date</Label>
+              <Label htmlFor="anniversaryDate" className="text-sm font-medium text-gray-700">Anniversary Date</Label>
               <Input
                 id="anniversaryDate"
                 type="text"
                 value={formatDateToMMDDYYYY(jobStatus.anniversaryDate)}
                 placeholder="mm-dd-yyyy"
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="reviewDate">Review Date</Label>
+              <Label htmlFor="reviewDate" className="text-sm font-medium text-gray-700">Review Date</Label>
               <Input
                 id="reviewDate"
                 type="text"
                 value={formatDateToMMDDYYYY(jobStatus.reviewDate)}
                 placeholder="mm-dd-yyyy"
                 disabled
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="payRate">Pay Rate</Label>
+              <Label htmlFor="payRate" className="text-sm font-medium text-gray-700">Pay Rate</Label>
               <Input
                 id="payRate"
                 type="number"
                 value={jobStatus.payRate}
                 disabled
                 placeholder="Enter pay rate"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="standardHours">Standard Hours</Label>
+              <Label htmlFor="standardHours" className="text-sm font-medium text-gray-700">Standard Hours</Label>
               <Input
                 id="standardHours"
                 type="number"
                 value={jobStatus.standardHours}
                 disabled
                 placeholder="Enter standard hours"
-                className="bg-gray-50 cursor-not-allowed"
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
           </div>
@@ -3729,7 +3729,7 @@ function MyStuffContent() {
 
       {/* Address Information */}
       <Card className="border border-gray-200 shadow-md overflow-hidden">
-        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50" style={{ borderLeftColor: '#9333EA' }}>
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
           <CardTitle className="text-xl font-semibold text-gray-900">Address Information</CardTitle>
           <CardDescription className="text-base mt-1 text-gray-600">Your residential address details</CardDescription>
         </CardHeader>
@@ -3744,7 +3744,7 @@ function MyStuffContent() {
                   value={basicInfo.address1}
                   disabled
                   placeholder="Enter street address"
-                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-purple-300"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                 />
               </div>
               <div className="space-y-2">
@@ -3754,7 +3754,7 @@ function MyStuffContent() {
                   value={basicInfo.address2}
                   disabled
                   placeholder="Apartment, suite, etc. (optional)"
-                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-purple-300"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                 />
               </div>
             </div>
@@ -3768,7 +3768,7 @@ function MyStuffContent() {
                   value={basicInfo.city}
                   disabled
                   placeholder="Enter city"
-                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-purple-300"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                 />
               </div>
               <div className="space-y-2">
@@ -3778,7 +3778,7 @@ function MyStuffContent() {
                   value={basicInfo.state}
                   disabled
                   placeholder="Enter state"
-                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-purple-300"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                 />
               </div>
               <div className="space-y-2">
@@ -3788,7 +3788,7 @@ function MyStuffContent() {
                   value={basicInfo.zipcode}
                   disabled
                   placeholder="Enter zip code"
-                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-purple-300"
+                  className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                 />
               </div>
             </div>
@@ -3950,8 +3950,13 @@ function MyStuffContent() {
                               navigateToSection(tab.id)
                             }}
                   >
-                    <CardHeader className="pb-3 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#6B7280' }}>
-                      <CardTitle className="text-lg font-semibold">{tab.label}</CardTitle>
+                    <CardHeader className="pb-3 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#4F46E5' }}>
+                      <CardTitle className="text-lg font-semibold flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                          {tab.icon}
+                        </div>
+                        {tab.label}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-4 pb-6">
                       <p className="text-sm text-gray-600">
@@ -3981,15 +3986,20 @@ function MyStuffContent() {
                     key={tab.id}
                     className={`cursor-pointer hover:shadow-md transition-all ${
                       activeSection === tab.id
-                        ? 'border-2 border-blue-500 bg-blue-50'
+                        ? 'border-2 border-green-500 bg-green-50'
                         : ''
                     }`}
                     onClick={() => {
                       navigateToSection(tab.id)
                     }}
                   >
-                    <CardHeader className="pb-3 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#6B7280' }}>
-                      <CardTitle className="text-lg font-semibold">{tab.label}</CardTitle>
+                    <CardHeader className="pb-3 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#10B981' }}>
+                      <CardTitle className="text-lg font-semibold flex items-center gap-3">
+                        <div className="p-2 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                          {tab.icon}
+                        </div>
+                        {tab.label}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-4 pb-6">
                       <p className="text-sm text-gray-600">
