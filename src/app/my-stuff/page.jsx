@@ -386,6 +386,8 @@ function MyStuffContent() {
     {
       id: 1,
       employeeName: 'John Doe',
+      company: 'Tech Solutions Inc',
+      checkNumber: 'CHK-001',
       date: '2025-02-15',
       gross: 4500.00,
       deductions: 450.00,
@@ -395,6 +397,8 @@ function MyStuffContent() {
     {
       id: 2,
       employeeName: 'John Doe',
+      company: 'Tech Solutions Inc',
+      checkNumber: 'CHK-002',
       date: '2025-02-01',
       gross: 4500.00,
       deductions: 450.00,
@@ -404,6 +408,8 @@ function MyStuffContent() {
     {
       id: 3,
       employeeName: 'John Doe',
+      company: 'Digital Innovations',
+      checkNumber: 'CHK-003',
       date: '2025-01-15',
       gross: 4500.00,
       deductions: 450.00,
@@ -413,6 +419,8 @@ function MyStuffContent() {
     {
       id: 4,
       employeeName: 'John Doe',
+      company: 'Digital Innovations',
+      checkNumber: 'CHK-004',
       date: '2025-01-01',
       gross: 4500.00,
       deductions: 450.00,
@@ -424,6 +432,8 @@ function MyStuffContent() {
   // Earning Statement filters
   const [earningFilters, setEarningFilters] = useState({
     date: null, // Date object for date picker
+    company: '',
+    checkNumber: '',
     grossMin: '',
     grossMax: '',
     deductionsMin: '',
@@ -945,6 +955,10 @@ function MyStuffContent() {
       case 'date':
         // Date sorting - convert to timestamp
         return new Date(statement.date).getTime()
+      case 'company':
+      case 'checkNumber':
+        // Text sorting - case insensitive
+        return statement[column]?.toLowerCase() || ''
       case 'gross':
       case 'deductions':
       case 'taxes':
@@ -991,6 +1005,24 @@ function MyStuffContent() {
         const filterDate = new Date(earningFilters.date)
         const statementDate = new Date(statement.date)
         if (filterDate.toDateString() !== statementDate.toDateString()) {
+          return false
+        }
+      }
+
+      // Company filter (text search - case insensitive)
+      if (earningFilters.company) {
+        const companyFilter = earningFilters.company.toLowerCase()
+        const statementCompany = (statement.company || '').toLowerCase()
+        if (!statementCompany.includes(companyFilter)) {
+          return false
+        }
+      }
+
+      // Check Number filter (text search - case insensitive)
+      if (earningFilters.checkNumber) {
+        const checkFilter = earningFilters.checkNumber.toLowerCase()
+        const statementCheck = (statement.checkNumber || '').toLowerCase()
+        if (!statementCheck.includes(checkFilter)) {
           return false
         }
       }
@@ -1086,6 +1118,8 @@ function MyStuffContent() {
   // Column visibility for Earning Statements
   const [earningVisibleCols, setEarningVisibleCols] = useState({
     date: true,
+    company: true,
+    checkNumber: true,
     gross: true,
     deductions: true,
     taxes: true,
@@ -1131,6 +1165,8 @@ function MyStuffContent() {
   const clearFilters = () => {
     setEarningFilters({
       date: null,
+      company: '',
+      checkNumber: '',
       grossMin: '',
       grossMax: '',
       deductionsMin: '',
@@ -1144,6 +1180,7 @@ function MyStuffContent() {
   
   // Check if any filter is active for Earning Statements
   const hasActiveFilters = earningFilters.date || 
+    earningFilters.company || earningFilters.checkNumber ||
     earningFilters.grossMin || earningFilters.grossMax ||
     earningFilters.deductionsMin || earningFilters.deductionsMax ||
     earningFilters.taxesMin || earningFilters.taxesMax ||
@@ -1154,6 +1191,10 @@ function MyStuffContent() {
     switch (filterKey) {
       case 'date':
         return !!earningFilters.date
+      case 'company':
+        return !!earningFilters.company
+      case 'checkNumber':
+        return !!earningFilters.checkNumber
       case 'gross':
         return !!(earningFilters.grossMin || earningFilters.grossMax)
       case 'deductions':
@@ -1318,12 +1359,10 @@ function MyStuffContent() {
         <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
           <div className="flex items-center justify-between relative">
             <div>
-              <div className="flex items-center gap-4">
-                <CardTitle className="text-xl font-semibold">Earning Statements</CardTitle>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <PersonIcon className="h-4 w-4" />
-                  <span className="text-sm font-medium">John Doe</span>
-                </div>
+              <CardTitle className="text-xl font-semibold">Earning Statements</CardTitle>
+              <div className="flex items-center gap-2 text-gray-600 mt-2">
+                <PersonIcon className="h-4 w-4" />
+                <span className="text-sm font-medium">John Doe</span>
               </div>
               <CardDescription className="text-base mt-1">View and download your earning statements</CardDescription>
             </div>
@@ -1358,6 +1397,22 @@ function MyStuffContent() {
                           onChange={(e) => setEarningVisibleCols(v => ({ ...v, date: e.target.checked }))}
                         />
                         <span>Date</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={earningVisibleCols.company}
+                          onChange={(e) => setEarningVisibleCols(v => ({ ...v, company: e.target.checked }))}
+                        />
+                        <span>Company</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={earningVisibleCols.checkNumber}
+                          onChange={(e) => setEarningVisibleCols(v => ({ ...v, checkNumber: e.target.checked }))}
+                        />
+                        <span>Check#</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer select-none">
                         <input
@@ -1405,7 +1460,7 @@ function MyStuffContent() {
                 <tr className="border-b-2 border-gray-200 bg-gray-50">
                   {earningVisibleCols.date && (
                   <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 justify-start">
                       <span>Date</span>
                       <div className="flex items-center gap-0.5">
                         <button
@@ -1477,9 +1532,143 @@ function MyStuffContent() {
                     </div>
                   </th>
                   )}
+                  {earningVisibleCols.company && (
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    <div className="flex items-center gap-1.5 justify-start">
+                      <span>Company</span>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => handleSort('company')}
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${sortColumn === 'company' ? 'text-blue-600' : 'text-gray-400'}`}
+                          title={sortColumn === 'company' ? `Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by company'}
+                        >
+                          {sortColumn === 'company' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <div className="relative filter-dropdown-container inline-flex">
+                          <button
+                            onClick={(e) => handleFilterClick('company', e)}
+                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isFilterActive('company') ? 'text-blue-600' : 'text-gray-400'}`}
+                            title="Filter by company"
+                          >
+                            <Filter className="h-3.5 w-3.5" />
+                          </button>
+                        {typeof window !== 'undefined' && openFilter === 'company' && createPortal(
+                          <div 
+                            className="fixed w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3 overflow-visible"
+                            style={{
+                              top: `${dropdownPositions.company?.top || 0}px`,
+                              left: dropdownPositions.company?.left !== undefined ? `${dropdownPositions.company.left}px` : 'auto',
+                              right: dropdownPositions.company?.right !== undefined ? `${dropdownPositions.company.right}px` : 'auto'
+                            }}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="space-y-3">
+                              <Label className="text-xs font-semibold text-gray-700">Filter by Company</Label>
+                              <Input
+                                type="text"
+                                placeholder="Search company..."
+                                value={earningFilters.company}
+                                onChange={(e) => handleFilterChange('company', e.target.value)}
+                                className="h-9 text-sm w-full"
+                                autoFocus
+                              />
+                              {earningFilters.company && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleFilterChange('company', '')
+                                    setOpenFilter(null)
+                                  }}
+                                  className="w-full h-8 text-xs"
+                                >
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                  )}
+                  {earningVisibleCols.checkNumber && (
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
+                    <div className="flex items-center gap-1.5 justify-start">
+                      <span>Check#</span>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => handleSort('checkNumber')}
+                          className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${sortColumn === 'checkNumber' ? 'text-blue-600' : 'text-gray-400'}`}
+                          title={sortColumn === 'checkNumber' ? `Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}` : 'Sort by check number'}
+                        >
+                          {sortColumn === 'checkNumber' ? (
+                            sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <div className="relative filter-dropdown-container inline-flex">
+                          <button
+                            onClick={(e) => handleFilterClick('checkNumber', e)}
+                            className={`inline-flex items-center justify-center w-5 h-5 rounded hover:bg-gray-200 transition-colors ${isFilterActive('checkNumber') ? 'text-blue-600' : 'text-gray-400'}`}
+                            title="Filter by check number"
+                          >
+                            <Filter className="h-3.5 w-3.5" />
+                          </button>
+                        {typeof window !== 'undefined' && openFilter === 'checkNumber' && createPortal(
+                          <div 
+                            className="fixed w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] p-3 overflow-visible"
+                            style={{
+                              top: `${dropdownPositions.checkNumber?.top || 0}px`,
+                              left: dropdownPositions.checkNumber?.left !== undefined ? `${dropdownPositions.checkNumber.left}px` : 'auto',
+                              right: dropdownPositions.checkNumber?.right !== undefined ? `${dropdownPositions.checkNumber.right}px` : 'auto'
+                            }}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="space-y-3">
+                              <Label className="text-xs font-semibold text-gray-700">Filter by Check#</Label>
+                              <Input
+                                type="text"
+                                placeholder="Search check number..."
+                                value={earningFilters.checkNumber}
+                                onChange={(e) => handleFilterChange('checkNumber', e.target.value)}
+                                className="h-9 text-sm w-full"
+                                autoFocus
+                              />
+                              {earningFilters.checkNumber && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    handleFilterChange('checkNumber', '')
+                                    setOpenFilter(null)
+                                  }}
+                                  className="w-full h-8 text-xs"
+                                >
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                  )}
                   {earningVisibleCols.gross && (
-                  <th className="text-right py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
-                    <div className="flex items-center gap-1.5 justify-end">
+                  <th className="py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle text-center">
+                    <div className="flex items-center gap-1.5 justify-center w-full">
                       <span>Gross</span>
                       <div className="flex items-center gap-0.5">
                         <button
@@ -1559,8 +1748,8 @@ function MyStuffContent() {
                   </th>
                   )}
                   {earningVisibleCols.deductions && (
-                  <th className="text-right py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
-                    <div className="flex items-center gap-1.5 justify-end">
+                  <th className="py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle text-center">
+                    <div className="flex items-center gap-1.5 justify-center w-full">
                       <span>Deductions</span>
                       <div className="flex items-center gap-0.5">
                         <button
@@ -1640,8 +1829,8 @@ function MyStuffContent() {
                   </th>
                   )}
                   {earningVisibleCols.taxes && (
-                  <th className="text-right py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
-                    <div className="flex items-center gap-1.5 justify-end">
+                  <th className="py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle text-center">
+                    <div className="flex items-center gap-1.5 justify-center w-full">
                       <span>Taxes</span>
                       <div className="flex items-center gap-0.5">
                         <button
@@ -1721,8 +1910,8 @@ function MyStuffContent() {
                   </th>
                   )}
                   {earningVisibleCols.net && (
-                  <th className="text-right py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle">
-                    <div className="flex items-center gap-1.5 justify-end">
+                  <th className="py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider align-middle text-right">
+                    <div className="flex items-center gap-1.5 justify-end w-full">
                       <span>Net</span>
                       <div className="flex items-center gap-0.5">
                         <button
@@ -1817,18 +2006,28 @@ function MyStuffContent() {
                       {formatDateToMMDDYYYY(statement.date)}
                     </td>
                     )}
+                    {earningVisibleCols.company && (
+                    <td className="py-4 px-6 text-sm text-gray-900 align-middle">
+                      {statement.company || '-'}
+                    </td>
+                    )}
+                    {earningVisibleCols.checkNumber && (
+                    <td className="py-4 px-6 text-sm text-gray-900 align-middle">
+                      {statement.checkNumber || '-'}
+                    </td>
+                    )}
                     {earningVisibleCols.gross && (
-                    <td className="py-4 px-6 text-sm text-right text-gray-900 font-medium align-middle tabular-nums">
+                    <td className="py-4 px-6 text-sm text-center text-gray-900 font-medium align-middle tabular-nums">
                       {formatCurrency(statement.gross)}
                     </td>
                     )}
                     {earningVisibleCols.deductions && (
-                    <td className="py-4 px-6 text-sm text-right text-gray-900 align-middle tabular-nums">
+                    <td className="py-4 px-6 text-sm text-center text-gray-900 align-middle tabular-nums">
                       {formatCurrency(statement.deductions)}
                     </td>
                     )}
                     {earningVisibleCols.taxes && (
-                    <td className="py-4 px-6 text-sm text-right text-gray-900 align-middle tabular-nums">
+                    <td className="py-4 px-6 text-sm text-center text-gray-900 align-middle tabular-nums">
                       {formatCurrency(statement.taxes)}
                     </td>
                     )}
