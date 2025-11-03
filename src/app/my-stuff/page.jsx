@@ -822,11 +822,11 @@ function MyStuffContent() {
               <div className="space-y-4">
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">As of Date</Label>
-                  <div className="text-sm text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.asOfDate)}</div>
+                  <div className="text-base font-semibold text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.asOfDate)}</div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Date</Label>
-                  <div className="text-sm text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.resetDate)}</div>
+                  <div className="text-base font-semibold text-gray-900">{formatDateToMMDDYYYY(paidLeave.ptoVacation.resetDate)}</div>
                 </div>
               </div>
               
@@ -881,11 +881,11 @@ function MyStuffContent() {
               <div className="space-y-4">
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">As of Date</Label>
-                  <div className="text-sm text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.asOfDate)}</div>
+                  <div className="text-base font-semibold text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.asOfDate)}</div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Reset Date</Label>
-                  <div className="text-sm text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.resetDate)}</div>
+                  <div className="text-base font-semibold text-gray-900">{formatDateToMMDDYYYY(paidLeave.pacWestSickLeave.resetDate)}</div>
                 </div>
               </div>
               
@@ -941,7 +941,7 @@ function MyStuffContent() {
               <tbody>
                 {historicalUsage.map((entry, index) => (
                   <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm text-gray-900">{formatDateToMMDDYYYY(entry.checkDate)}</td>
+                    <td className="py-3 px-4 text-sm font-normal text-gray-900">{formatDateToMMDDYYYY(entry.checkDate)}</td>
                     <td className="py-3 px-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         entry.type === 'PTO/Vacation' 
