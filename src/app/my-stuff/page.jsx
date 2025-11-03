@@ -3803,7 +3803,7 @@ function MyStuffContent() {
 
     return (
       <Layout userRole={currentUser.role} userName={currentUser.name}>
-        <div className="p-6">
+        <div className="p-6 bg-gray-150 min-h-screen">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">My Stuff</h1>
             <p className="text-gray-600">Manage your personal information and payroll details</p>
@@ -3829,9 +3829,11 @@ function MyStuffContent() {
                               navigateToSection(tab.id)
                             }}
                   >
-                    <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
-                      <CardTitle className="text-xl font-semibold">{tab.label}</CardTitle>
-                      <CardDescription className="text-base mt-1">
+                    <CardHeader className="pb-3 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#6B7280' }}>
+                      <CardTitle className="text-lg font-semibold">{tab.label}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 pb-6">
+                      <p className="text-sm text-gray-600">
                         {tab.id === 'basic-info' && 'View and update your basic personal information'}
                         {tab.id === 'job-status' && 'Current employment status and job details'}
                         {tab.id === 'department' && 'Department assignment and team information'}
@@ -3839,17 +3841,6 @@ function MyStuffContent() {
                         {tab.id === 'paid-leave' && 'View leave balance and paid time off history'}
                         {tab.id === 'emergency-contact' && 'Emergency contact information and details'}
                         {tab.id === 'performance-coaching' && 'Performance reviews and coaching sessions'}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                      <p className="text-sm text-gray-600">
-                        {tab.id === 'basic-info' && 'Update your name, employee ID, and basic information'}
-                        {tab.id === 'job-status' && 'View current position, status, and employment details'}
-                        {tab.id === 'department' && 'See your department, team, and reporting structure'}
-                        {tab.id === 'personal-info' && 'Manage address, phone number, and personal details'}
-                        {tab.id === 'paid-leave' && 'Track available leave balance and request time off'}
-                        {tab.id === 'emergency-contact' && 'Add or update emergency contact information'}
-                        {tab.id === 'performance-coaching' && 'Access performance reviews and coaching records'}
                       </p>
                     </CardContent>
                   </Card>
@@ -3876,9 +3867,11 @@ function MyStuffContent() {
                       navigateToSection(tab.id)
                     }}
                   >
-                    <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
-                      <CardTitle className="text-xl font-semibold">{tab.label}</CardTitle>
-                      <CardDescription className="text-base mt-1">
+                    <CardHeader className="pb-3 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#6B7280' }}>
+                      <CardTitle className="text-lg font-semibold">{tab.label}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 pb-6">
+                      <p className="text-sm text-gray-600">
                         {tab.id === 'earning-statement' && 'View your payslips and earning statements'}
                         {tab.id === 'w2-register' && 'Access your W-2 tax forms and documents'}
                         {tab.id === 'tax-settings' && 'Manage tax preferences and withholdings'}
@@ -3886,17 +3879,6 @@ function MyStuffContent() {
                         {tab.id === 'ytd-info' && 'Year-to-date earnings and tax summary'}
                         {tab.id === 'online-timecard' && 'View and submit your timecard online'}
                         {tab.id === 'sundial-clock' && 'Clock in and out using Sundial time clock'}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                      <p className="text-sm text-gray-600">
-                        {tab.id === 'earning-statement' && 'Download and view detailed earning statements'}
-                        {tab.id === 'w2-register' && 'Access all W-2 forms and tax documents'}
-                        {tab.id === 'tax-settings' && 'Update tax withholdings and preferences'}
-                        {tab.id === 'direct-deposits' && 'Manage bank accounts for direct deposit'}
-                        {tab.id === 'ytd-info' && 'View cumulative earnings and deductions'}
-                        {tab.id === 'online-timecard' && 'Enter and submit weekly timecard'}
-                        {tab.id === 'sundial-clock' && 'Punch in and out of work'}
                       </p>
                     </CardContent>
                   </Card>
