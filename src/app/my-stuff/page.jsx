@@ -1384,7 +1384,7 @@ function MyStuffContent() {
                   onClick={() => setShowColumnMenu(prev => !prev)}
                   className="text-sm"
                 >
-                  Columns
+                  Select columns
                 </Button>
                 {showColumnMenu && (
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-50">
@@ -2102,13 +2102,7 @@ function MyStuffContent() {
         <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
           <div className="flex items-center justify-between relative">
             <div>
-              <div className="flex items-center gap-4">
-                <CardTitle className="text-xl font-semibold">W-2 Forms</CardTitle>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <PersonIcon className="h-4 w-4" />
-                  <span className="text-sm font-medium">John Doe</span>
-                </div>
-              </div>
+              <CardTitle className="text-xl font-semibold">W-2 Forms</CardTitle>
               <CardDescription className="text-base mt-1">View and download your W-2 and W-2c forms</CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -2129,7 +2123,7 @@ function MyStuffContent() {
                   onClick={() => setShowW2ColumnMenu(prev => !prev)}
                   className="text-sm"
                 >
-                  Columns
+                  Select columns
                 </Button>
                 {showW2ColumnMenu && (
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-50">
@@ -2627,26 +2621,28 @@ function MyStuffContent() {
         {/* <h2 className="text-2xl font-semibold text-gray-900">Direct Deposit</h2> */}
       </div>
 
-      <Card>
-        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl font-semibold">Direct Deposit Information</CardTitle>
-              <CardDescription className="text-base mt-1">View your direct deposit accounts and settings</CardDescription>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-semibold">Direct Deposit Information</CardTitle>
+                <CardDescription className="text-base mt-1">View your direct deposit accounts and settings</CardDescription>
+              </div>
+              {/* Add Direct Deposit button temporarily removed */}
             </div>
-            {/* Add Direct Deposit button temporarily removed */}
-          </div>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="space-y-8">
-            {directDeposits.map((deposit, index) => (
-              <div key={deposit.id} className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 flex-1">
-                    {index + 1}{index === 0 ? 'st' : index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'} Direct Deposit
-                  </h3>
-                  {/* Remove button temporarily removed */}
-                </div>
+          </CardHeader>
+        </Card>
+
+        <div className="space-y-6">
+          {directDeposits.map((deposit, index) => (
+            <Card key={deposit.id}>
+              <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#9CA3AF' }}>
+                <CardTitle className="text-lg font-semibold text-gray-900">
+                  Deposit {index + 1}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   <div className="space-y-2">
                     <Label htmlFor={`routingNumber-${deposit.id}`}>Routing Number</Label>
@@ -2745,11 +2741,11 @@ function MyStuffContent() {
                     />
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
 
       {/* Remove Warning Modal */}
       {showRemoveWarning && typeof window !== 'undefined' && createPortal(
