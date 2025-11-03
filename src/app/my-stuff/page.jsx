@@ -721,11 +721,22 @@ function MyStuffContent() {
 
   const renderPersonalInfoForm = () => (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" onClick={() => setActiveSection(null)} className="flex items-center gap-2">
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Button>
-        {/* <h2 className="text-2xl font-semibold text-gray-900">Personal Information</h2> */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={() => setActiveSection(null)} className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" /> Back
+          </Button>
+          {/* <h2 className="text-2xl font-semibold text-gray-900">Personal Information</h2> */}
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="p-1.5 bg-blue-100 rounded-md">
+            <WorkIcon className="h-4 w-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+            <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
+          </div>
+        </div>
       </div>
       
       <Card>
@@ -795,11 +806,22 @@ function MyStuffContent() {
 
   const renderPaidLeaveForm = () => (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" onClick={() => setActiveSection(null)} className="flex items-center gap-2">
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Button>
-        {/* <h2 className="text-2xl font-semibold text-gray-900">Paid Leave</h2> */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={() => setActiveSection(null)} className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" /> Back
+          </Button>
+          {/* <h2 className="text-2xl font-semibold text-gray-900">Paid Leave</h2> */}
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="p-1.5 bg-blue-100 rounded-md">
+            <WorkIcon className="h-4 w-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+            <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
+          </div>
+        </div>
       </div>
       
       <div className="grid gap-6 lg:grid-cols-2">
@@ -1392,16 +1414,27 @@ function MyStuffContent() {
   // Render Earning Statement table
   const renderEarningStatement = () => (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          onClick={() => setActiveSection(null)}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        {/* <h2 className="text-2xl font-semibold text-gray-900">Earning Statement</h2> */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setActiveSection(null)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          {/* <h2 className="text-2xl font-semibold text-gray-900">Earning Statement</h2> */}
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="p-1.5 bg-blue-100 rounded-md">
+            <WorkIcon className="h-4 w-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+            <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
+          </div>
+        </div>
       </div>
 
       <Card>
@@ -2135,16 +2168,27 @@ function MyStuffContent() {
   // Render W-2 Register table
   const renderW2Register = () => (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          onClick={() => setActiveSection(null)}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        {/* <h2 className="text-2xl font-semibold text-gray-900">W-2 Register</h2> */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setActiveSection(null)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          {/* <h2 className="text-2xl font-semibold text-gray-900">W-2 Register</h2> */}
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="p-1.5 bg-blue-100 rounded-md">
+            <WorkIcon className="h-4 w-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+            <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
+          </div>
+        </div>
       </div>
 
       <Card>
@@ -2455,16 +2499,27 @@ function MyStuffContent() {
   // Render Tax Settings form
   const renderTaxSettings = () => (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          onClick={() => setActiveSection(null)}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        {/* <h2 className="text-2xl font-semibold text-gray-900">Tax Settings</h2> */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setActiveSection(null)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          {/* <h2 className="text-2xl font-semibold text-gray-900">Tax Settings</h2> */}
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="p-1.5 bg-blue-100 rounded-md">
+            <WorkIcon className="h-4 w-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+            <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -2668,16 +2723,27 @@ function MyStuffContent() {
   // Render Direct Deposit form
   const renderDirectDeposit = () => (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          onClick={() => setActiveSection(null)}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        {/* <h2 className="text-2xl font-semibold text-gray-900">Direct Deposit</h2> */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setActiveSection(null)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          {/* <h2 className="text-2xl font-semibold text-gray-900">Direct Deposit</h2> */}
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="p-1.5 bg-blue-100 rounded-md">
+            <WorkIcon className="h-4 w-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+            <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -2873,9 +2939,21 @@ function MyStuffContent() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Label htmlFor="yearFilter" className="text-sm font-medium text-gray-700 whitespace-nowrap">
-            Year:
-          </Label>
+          <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+            <div className="p-1.5 bg-blue-100 rounded-md">
+              <WorkIcon className="h-4 w-4 text-blue-600" />
+            </div>
+            <div>
+              <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+              <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 mb-4">
+        <Label htmlFor="yearFilter" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+          Year:
+        </Label>
           <select
             id="yearFilter"
             value={selectedYear}
@@ -2888,7 +2966,6 @@ function MyStuffContent() {
               </option>
             ))}
           </select>
-        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -3013,16 +3090,27 @@ function MyStuffContent() {
   // Render Emergency Contact form
   const renderEmergencyContactForm = () => (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          onClick={() => setActiveSection(null)}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        {/* <h2 className="text-2xl font-semibold text-gray-900">Emergency Contact</h2> */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setActiveSection(null)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          {/* <h2 className="text-2xl font-semibold text-gray-900">Emergency Contact</h2> */}
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="p-1.5 bg-blue-100 rounded-md">
+            <WorkIcon className="h-4 w-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+            <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
+          </div>
+        </div>
       </div>
 
       <Card>
@@ -3078,16 +3166,27 @@ function MyStuffContent() {
   // Render Department form
   const renderDepartmentForm = () => (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          onClick={() => setActiveSection(null)}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        {/* <h2 className="text-2xl font-semibold text-gray-900">Department</h2> */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setActiveSection(null)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          {/* <h2 className="text-2xl font-semibold text-gray-900">Department</h2> */}
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="p-1.5 bg-blue-100 rounded-md">
+            <WorkIcon className="h-4 w-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+            <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
+          </div>
+        </div>
       </div>
 
       <Card>
@@ -3198,22 +3297,33 @@ function MyStuffContent() {
   // Render Online Timecard
   const renderOnlineTimecard = () => (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          onClick={() => setActiveSection(null)}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <ScheduleIcon className="text-blue-600" />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setActiveSection(null)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <ScheduleIcon className="text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">Online Timecard</h2>
+              <p className="text-sm text-gray-600 mt-1">Track and submit your work hours</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="p-1.5 bg-blue-100 rounded-md">
+            <WorkIcon className="h-4 w-4 text-blue-600" />
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">Online Timecard</h2>
-            <p className="text-sm text-gray-600 mt-1">Track and submit your work hours</p>
+            <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+            <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
           </div>
         </div>
       </div>
@@ -3361,16 +3471,27 @@ function MyStuffContent() {
   // Render Job Status form
   const renderJobStatusForm = () => (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          onClick={() => setActiveSection(null)}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        {/* <h2 className="text-2xl font-semibold text-gray-900">Job Status</h2> */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setActiveSection(null)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          {/* <h2 className="text-2xl font-semibold text-gray-900">Job Status</h2> */}
+        </div>
+        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+          <div className="p-1.5 bg-blue-100 rounded-md">
+            <WorkIcon className="h-4 w-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+            <div className="text-sm font-semibold text-gray-900">{basicInfo.company || 'Not specified'}</div>
+          </div>
+        </div>
       </div>
 
       <Card>
