@@ -2418,17 +2418,21 @@ function MyStuffContent() {
         {/* <h2 className="text-2xl font-semibold text-gray-900">Tax Settings</h2> */}
       </div>
 
-      <Card>
-        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
-          <CardTitle className="text-xl font-semibold">Tax Withholding Information</CardTitle>
-          <CardDescription className="text-base mt-1">View your tax withholding settings and preferences</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="space-y-8">
-            {/* Federal Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Federal</h3>
-              <div className="grid gap-6 md:grid-cols-2">
+      <div className="space-y-6">
+        <Card>
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-100" style={{ borderLeftColor: '#6B7280' }}>
+            <CardTitle className="text-xl font-semibold">Tax Withholding Information</CardTitle>
+            <CardDescription className="text-base mt-1">View your tax withholding settings and preferences</CardDescription>
+          </CardHeader>
+        </Card>
+
+        {/* Federal Section */}
+        <Card>
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#9CA3AF' }}>
+            <CardTitle className="text-lg font-semibold text-gray-900">Federal</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="federalExemptions">Exemptions</Label>
                   <Input
@@ -2457,13 +2461,17 @@ function MyStuffContent() {
                     className="bg-gray-50 cursor-not-allowed"
                   />
                 </div>
-              </div>
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Work State Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Work State</h3>
-              <div className="grid gap-6 md:grid-cols-2">
+        {/* Work State Section */}
+        <Card>
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#9CA3AF' }}>
+            <CardTitle className="text-lg font-semibold text-gray-900">Work State</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="workState">State</Label>
                   <Input
@@ -2520,13 +2528,17 @@ function MyStuffContent() {
                     className="bg-gray-50 cursor-not-allowed"
                   />
                 </div>
-              </div>
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Resident State Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Resident State</h3>
-              <div className="grid gap-6 md:grid-cols-2">
+        {/* Resident State Section */}
+        <Card>
+          <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gray-50" style={{ borderLeftColor: '#9CA3AF' }}>
+            <CardTitle className="text-lg font-semibold text-gray-900">Resident State</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="residentState">State</Label>
                   <Input
@@ -2597,12 +2609,10 @@ function MyStuffContent() {
                     className="bg-gray-50 cursor-not-allowed"
                   />
                 </div>
-              </div>
             </div>
-          </div>
-
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 
