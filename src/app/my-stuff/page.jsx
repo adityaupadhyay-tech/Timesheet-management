@@ -3920,6 +3920,32 @@ function MyStuffContent() {
       )
     }
 
+    if (activeSection === 'sundial-clock') {
+      return (
+        <Layout userRole={currentUser.role} userName={currentUser.name}>
+          <div className="p-6">
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+              <div className="text-center space-y-6 max-w-md">
+                <div className="flex justify-center">
+                  <div className="p-4 bg-blue-100 rounded-full">
+                    <AccessTimeIcon sx={{ fontSize: 64, color: '#3b82f6' }} />
+                  </div>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Sundial Time Clock</h1>
+                  <p className="text-xl text-gray-600 mb-4">Coming Soon</p>
+                  <p className="text-gray-500">
+                    We're working on bringing you the Sundial Time Clock feature. 
+                    Check back soon for updates!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Layout>
+      )
+    }
+
     return (
       <Layout userRole={currentUser.role} userName={currentUser.name}>
         <div className="p-6 bg-gray-150 min-h-screen">

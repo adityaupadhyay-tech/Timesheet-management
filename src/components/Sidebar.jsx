@@ -51,7 +51,6 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useUser } from "@/contexts/UserContext";
-import { useSupabase } from "@/contexts/SupabaseContext";
 /**
  * @typedef {Object} SidebarProps
  * @property {UserRole} userRole
@@ -63,7 +62,6 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
   const router = useRouter();
   const pathname = usePathname();
   const { user, setUser } = useUser();
-  const { signOut } = useSupabase();
   const [selectedPersona, setSelectedPersona] = useState(userRole);
   const [isMyStuffOpen, setIsMyStuffOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -460,16 +458,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                       <SettingsIcon className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={async () => {
-                        try {
-                          if (signOut) {
-                            await signOut();
-                            router.push('/login');
-                          }
-                        } catch (error) {
-                          console.error('Logout error:', error);
-                        }
-                      }}
+                      type="button"
                       className="p-1 hover:bg-blue-200 rounded transition-colors flex-shrink-0"
                       title="Logout"
                     >
@@ -522,16 +511,17 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
 
       {/* Login Settings Dialog */}
       <Dialog open={isLoginSettingsOpen} onOpenChange={setIsLoginSettingsOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
+        <DialogContent className="w-[600px] h-[650px] max-w-[600px] max-h-[650px] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Login Settings</DialogTitle>
           </DialogHeader>
-          <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="general">General</TabsTrigger>
-              <TabsTrigger value="security">Security</TabsTrigger>
+          <Tabs defaultValue="general" className="w-full flex flex-col flex-1 min-h-0">
+            <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+              <TabsTrigger value="general" className="w-full">General</TabsTrigger>
+              <TabsTrigger value="security" className="w-full">Security</TabsTrigger>
             </TabsList>
-            <TabsContent value="general" className="mt-4">
+            <div className="flex-1 overflow-y-auto mt-4 min-h-0">
+            <TabsContent value="general" className="mt-0 h-full">
               <div className="space-y-4">
                 {/* First Name */}
                 <div className="space-y-2">
@@ -762,7 +752,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                 </div>
               </div>
             </TabsContent>
-            <TabsContent value="security" className="mt-4">
+            <TabsContent value="security" className="mt-0 h-full">
               <div className="space-y-4">
                 {/* Email Address */}
                 <div className="space-y-2">
@@ -875,6 +865,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                 </div>
               </div>
             </TabsContent>
+            </div>
           </Tabs>
         </DialogContent>
       </Dialog>
