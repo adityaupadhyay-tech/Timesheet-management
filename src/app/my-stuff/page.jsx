@@ -2945,14 +2945,7 @@ function MyStuffContent() {
         </div>
         <div>
           <h2 className="text-2xl font-semibold text-gray-900">Year to Date Information</h2>
-          <p className="text-sm text-gray-600 mt-1">Financial summary for {selectedYear}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-3 mb-4">
-        <Label htmlFor="yearFilter" className="text-sm font-medium text-gray-700 whitespace-nowrap">
-          Year:
-        </Label>
-          <select
+          <p className="text-sm text-gray-600 mt-1">Financial summary for {<select
             id="yearFilter"
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
@@ -2963,7 +2956,14 @@ function MyStuffContent() {
                 {year}
               </option>
             ))}
-          </select>
+          </select>}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 mb-4">
+        {/* <Label htmlFor="yearFilter" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+          Year:
+        </Label> */}
+          
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
