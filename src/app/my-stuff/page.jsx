@@ -645,8 +645,8 @@ function MyStuffContent() {
     { id: 'department', label: 'Department', icon: <GroupIcon sx={{ fontSize: 20 }} /> },
     { id: 'personal-info', label: 'Personal Information', icon: <PersonIcon sx={{ fontSize: 20 }} /> },
     { id: 'paid-leave', label: 'Paid Leave', icon: <EventIcon sx={{ fontSize: 20 }} /> },
-    { id: 'emergency-contact', label: 'Emergency Contact', icon: <ContactPhoneIcon sx={{ fontSize: 20 }} /> },
-    { id: 'performance-coaching', label: 'Performance Coaching', icon: <TrendingUpIcon sx={{ fontSize: 20 }} /> }
+    { id: 'emergency-contact', label: 'Emergency Contact', icon: <ContactPhoneIcon sx={{ fontSize: 20 }} /> }
+    //{ id: 'performance-coaching', label: 'Performance Coaching', icon: <TrendingUpIcon sx={{ fontSize: 20 }} /> }
   ], [])
 
   // Sub-tabs for My Payroll
@@ -2780,7 +2780,7 @@ function MyStuffContent() {
                         updated[depositIndex] = { ...updated[depositIndex], routingNumber: e.target.value }
                         setDirectDeposits(updated)
                       }}
-                      placeholder="Enter routing number"
+                      placeholder="Routing number"
                       disabled
                       className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                     />
@@ -2796,7 +2796,7 @@ function MyStuffContent() {
                         updated[depositIndex] = { ...updated[depositIndex], account: e.target.value }
                         setDirectDeposits(updated)
                       }}
-                      placeholder="Enter account number"
+                      placeholder="Account number"
                       disabled
                       className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                     />
@@ -2812,7 +2812,7 @@ function MyStuffContent() {
                         updated[depositIndex] = { ...updated[depositIndex], checkingSavings: e.target.value }
                         setDirectDeposits(updated)
                       }}
-                      placeholder="Enter checking/savings"
+                      placeholder="Checking/savings"
                       disabled
                       className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                     />
@@ -2828,7 +2828,7 @@ function MyStuffContent() {
                         updated[depositIndex] = { ...updated[depositIndex], amount: e.target.value }
                         setDirectDeposits(updated)
                       }}
-                      placeholder="Enter amount"
+                      placeholder="Amount"
                       disabled
                       className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                     />
@@ -2860,7 +2860,7 @@ function MyStuffContent() {
                         updated[depositIndex] = { ...updated[depositIndex], code: e.target.value }
                         setDirectDeposits(updated)
                       }}
-                      placeholder="Enter code"
+                      placeholder="Code"
                       disabled
                       className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
                     />
@@ -3124,7 +3124,7 @@ function MyStuffContent() {
                 id="contact"
                 value={emergencyContact.contact}
                 onChange={(e) => setEmergencyContact({...emergencyContact, contact: e.target.value})}
-                placeholder="Enter contact name"
+                placeholder="Contact name"
                 disabled
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
@@ -3136,7 +3136,7 @@ function MyStuffContent() {
                 id="relationship"
                 value={emergencyContact.relationship}
                 onChange={(e) => setEmergencyContact({...emergencyContact, relationship: e.target.value})}
-                placeholder="Enter relationship"
+                placeholder="Relationship"
                 disabled
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
@@ -3149,7 +3149,7 @@ function MyStuffContent() {
                 type="tel"
                 value={emergencyContact.phoneNumber}
                 onChange={(e) => setEmergencyContact({...emergencyContact, phoneNumber: e.target.value})}
-                placeholder="Enter phone number"
+                placeholder="Phone number"
                 disabled
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
@@ -3200,7 +3200,7 @@ function MyStuffContent() {
                 id="department1"
                 value={department.department1}
                 disabled
-                placeholder="Enter department name"
+                placeholder="Department name"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
@@ -3212,7 +3212,7 @@ function MyStuffContent() {
                 type="number"
                 value={department.department1Percent}
                 disabled
-                placeholder="Enter percentage"
+                placeholder="Percentage"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
@@ -3223,7 +3223,7 @@ function MyStuffContent() {
                 id="department2"
                 value={department.department2}
                 disabled
-                placeholder="Enter department name"
+                placeholder="Department name"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
@@ -3235,7 +3235,7 @@ function MyStuffContent() {
                 type="number"
                 value={department.department2Percent}
                 disabled
-                placeholder="Enter percentage"
+                placeholder="Percentage"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
@@ -3246,7 +3246,7 @@ function MyStuffContent() {
                 id="department3"
                 value={department.department3}
                 disabled
-                placeholder="Enter department name"
+                placeholder="Department name"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
@@ -3258,7 +3258,7 @@ function MyStuffContent() {
                 type="number"
                 value={department.department3Percent}
                 disabled
-                placeholder="Enter percentage"
+                placeholder="Percentage"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
@@ -3269,7 +3269,7 @@ function MyStuffContent() {
                 id="department4"
                 value={department.department4}
                 disabled
-                placeholder="Enter department name"
+                placeholder="Department name"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
@@ -3281,7 +3281,7 @@ function MyStuffContent() {
                 type="number"
                 value={department.department4Percent}
                 disabled
-                placeholder="Enter percentage"
+                placeholder="Percentage"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
@@ -3505,7 +3505,7 @@ function MyStuffContent() {
                 id="alternateId"
                 value={jobStatus.alternateId}
                 disabled
-                placeholder="Enter alternate ID"
+                placeholder="Alternate ID"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
@@ -3516,7 +3516,7 @@ function MyStuffContent() {
                 id="occupation"
                 value={jobStatus.occupation}
                 disabled
-                placeholder="Enter occupation"
+                placeholder="Occupation"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
@@ -3527,7 +3527,7 @@ function MyStuffContent() {
                 id="workersCompCode"
                 value={jobStatus.workersCompCode}
                 disabled
-                placeholder="Enter worker's comp code"
+                placeholder="Worker's comp code"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
@@ -3599,7 +3599,7 @@ function MyStuffContent() {
                 type="number"
                 value={jobStatus.payRate}
                 disabled
-                placeholder="Enter pay rate"
+                placeholder="Pay rate"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
@@ -3611,7 +3611,7 @@ function MyStuffContent() {
                 type="number"
                 value={jobStatus.standardHours}
                 disabled
-                placeholder="Enter standard hours"
+                placeholder="Standard hours"
                 className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
               />
             </div>
