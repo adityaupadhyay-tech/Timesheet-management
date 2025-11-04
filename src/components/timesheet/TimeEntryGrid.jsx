@@ -937,12 +937,11 @@ export default function TimeEntryGrid({
                 )}
               </div>
               <p className="text-gray-600 text-xs sm:text-sm mt-1">
-                Select department, account, and code from dropdowns, then enter time in hh:mm format for each day
                 <span className="ml-2 text-xs text-purple-600 font-medium">
-                  ({cycleType === 'semi-monthly' ? 'Semi-monthly view' : 
+                  {cycleType === 'semi-monthly' ? 'Semi-monthly view' : 
                     cycleType === 'weekly' ? '5-day week (Mon-Fri)' : 
                     cycleType === 'bi-weekly' ? '10-day view (2 weeks, Mon-Fri)' : 
-                    'Monthly view'})
+                    'Monthly view'}
                 </span>
               </p>
             </div>
