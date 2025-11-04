@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, useCallback, useState, useEffect, useRef } from "react";
+import { memo, useMemo, useCallback, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PersonIcon from "@mui/icons-material/Person";
 import ScheduleIcon from "@mui/icons-material/Schedule";
@@ -36,8 +45,11 @@ import CreditCardIcon from "@mui/icons-material/CreditCard";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import SettingsIcon from "@mui/icons-material/Settings";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useUser } from "@/contexts/UserContext";
 import { useSupabase } from "@/contexts/SupabaseContext";
 /**
@@ -56,9 +68,20 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
   const [isMyStuffOpen, setIsMyStuffOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [currentSection, setCurrentSection] = useState(null);
-  const [isAppMenuOpen, setIsAppMenuOpen] = useState(false);
   const [isLoginSettingsOpen, setIsLoginSettingsOpen] = useState(false);
-  const appMenuRef = useRef(null);
+  const [generalSettings, setGeneralSettings] = useState({
+    firstName: '',
+    lastName: '',
+    menuStyle: '',
+    maxClients: 0,
+  });
+  const [securitySettings, setSecuritySettings] = useState({
+    email: '',
+    password: '',
+    securityQuestion: '',
+    securityAnswer: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
   
   // Get current section from URL if on my-stuff page (without useSearchParams)
   useEffect(() => {
@@ -106,22 +129,6 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
     setSelectedPersona(userRole);
   }, [userRole]);
 
-  // Handle clicks outside the app menu to close it
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (appMenuRef.current && !appMenuRef.current.contains(event.target)) {
-        setIsAppMenuOpen(false);
-      }
-    };
-
-    if (isAppMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isAppMenuOpen]);
 
   const handlePersonaChange = useCallback((persona) => {
     setSelectedPersona(persona);
@@ -276,36 +283,9 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
         <div className="flex items-center justify-between h-16 px-4 border-b">
           {/* Only render conditional content after mount to prevent hydration mismatch */}
           {isMounted && isOpen ? (
-            <div className="relative flex-1 flex items-center" ref={appMenuRef}>
-              <Link href="/dashboard" className="flex items-center space-x-1 hover:opacity-80 transition-opacity">
-                <h1 className="text-lg font-semibold text-gray-900">Payplus 360</h1>
-              </Link>
-              <button
-                onClick={() => setIsAppMenuOpen(!isAppMenuOpen)}
-                className="ml-1 p-1 hover:bg-gray-100 rounded transition-colors"
-                aria-label="Application menu"
-              >
-                <ArrowDropDownIcon 
-                  className={`h-5 w-5 text-gray-600 transition-transform ${isAppMenuOpen ? 'rotate-180' : ''}`} 
-                />
-              </button>
-              
-              {/* Dropdown Menu */}
-              {isAppMenuOpen && (
-                <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                  <button
-                    onClick={() => {
-                      setIsAppMenuOpen(false);
-                      setIsLoginSettingsOpen(true);
-                    }}
-                    className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors text-left"
-                  >
-                    <SettingsIcon className="h-4 w-4 text-gray-600" />
-                    <span>Login Settings</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            <Link href="/dashboard" className="flex items-center space-x-3">
+              <h1 className="text-lg font-semibold text-gray-900">Payplus 360</h1>
+            </Link>
           ) : (
             <Link
               href="/dashboard"
@@ -471,22 +451,31 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
               <div className="text-sm">
                 <div className="bg-blue-100 text-blue-900 font-medium truncate px-3 py-2 rounded-md mb-2 shadow-sm flex items-center justify-between">
                   <span className="flex-1 truncate">{userName}</span>
-                  <button
-                    onClick={async () => {
-                      try {
-                        if (signOut) {
-                          await signOut();
-                          router.push('/login');
+                  <div className="flex items-center space-x-1 ml-2">
+                    <button
+                      onClick={() => setIsLoginSettingsOpen(true)}
+                      className="p-1 hover:bg-blue-200 rounded transition-colors flex-shrink-0"
+                      title="Login Settings"
+                    >
+                      <SettingsIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          if (signOut) {
+                            await signOut();
+                            router.push('/login');
+                          }
+                        } catch (error) {
+                          console.error('Logout error:', error);
                         }
-                      } catch (error) {
-                        console.error('Logout error:', error);
-                      }
-                    }}
-                    className="ml-2 p-1 hover:bg-blue-200 rounded transition-colors flex-shrink-0"
-                    title="Logout"
-                  >
-                    <ExitToAppIcon className="h-4 w-4" />
-                  </button>
+                      }}
+                      className="p-1 hover:bg-blue-200 rounded transition-colors flex-shrink-0"
+                      title="Logout"
+                    >
+                      <ExitToAppIcon className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
                 <div className="text-xs bg-gray-100 px-2 py-1 rounded-full font-medium inline-block">
                   {userRole}
@@ -544,18 +533,346 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
             </TabsList>
             <TabsContent value="general" className="mt-4">
               <div className="space-y-4">
-                <p className="text-sm text-gray-600">
-                  General login settings will be displayed here.
-                </p>
-                {/* Add your General settings content here */}
+                {/* First Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    placeholder="Enter first name"
+                    value={generalSettings.firstName}
+                    onChange={(e) =>
+                      setGeneralSettings({
+                        ...generalSettings,
+                        firstName: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                {/* Last Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    placeholder="Enter last name"
+                    value={generalSettings.lastName}
+                    onChange={(e) =>
+                      setGeneralSettings({
+                        ...generalSettings,
+                        lastName: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                {/* Menu Style */}
+                <div className="space-y-2">
+                  <Label htmlFor="menuStyle">Menu Style</Label>
+                  <Select
+                    value={generalSettings.menuStyle}
+                    onValueChange={(value) =>
+                      setGeneralSettings({
+                        ...generalSettings,
+                        menuStyle: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger id="menuStyle">
+                      <SelectValue placeholder="Select menu style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="compact">Compact</SelectItem>
+                      <SelectItem value="expanded">Expanded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Maximum Clients */}
+                <div className="space-y-3">
+                  <Label htmlFor="maxClients">Maximum Clients</Label>
+                  <div className="space-y-3">
+                    {/* Sliding Number Display */}
+                    <div className="flex items-center justify-center">
+                      <div className="relative w-32 h-20 flex items-center justify-center overflow-hidden">
+                        <div 
+                          key={generalSettings.maxClients}
+                          className="text-4xl font-bold text-gray-900"
+                          style={{
+                            animation: 'slideIn 0.4s ease-out'
+                          }}
+                        >
+                          {generalSettings.maxClients}
+                        </div>
+                      </div>
+                    </div>
+                    <style dangerouslySetInnerHTML={{__html: `
+                      @keyframes slideIn {
+                        0% {
+                          opacity: 0;
+                          transform: translateY(10px) scale(0.9);
+                        }
+                        100% {
+                          opacity: 1;
+                          transform: translateY(0) scale(1);
+                        }
+                      }
+                    `}} />
+                    
+                    {/* Slider */}
+                    <div className="relative">
+                      <style dangerouslySetInnerHTML={{__html: `
+                        #maxClients-slider::-webkit-slider-thumb {
+                          appearance: none;
+                          width: 20px;
+                          height: 20px;
+                          border-radius: 50%;
+                          background: #3b82f6;
+                          cursor: pointer;
+                          border: 3px solid white;
+                          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                          transition: transform 0.2s;
+                        }
+                        #maxClients-slider::-webkit-slider-thumb:hover {
+                          transform: scale(1.1);
+                        }
+                        #maxClients-slider::-moz-range-thumb {
+                          width: 20px;
+                          height: 20px;
+                          border-radius: 50%;
+                          background: #3b82f6;
+                          cursor: pointer;
+                          border: 3px solid white;
+                          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                          transition: transform 0.2s;
+                        }
+                        #maxClients-slider::-moz-range-thumb:hover {
+                          transform: scale(1.1);
+                        }
+                      `}} />
+                      <input
+                        type="range"
+                        id="maxClients-slider"
+                        min="0"
+                        max="100"
+                        value={generalSettings.maxClients}
+                        onChange={(e) => {
+                          setGeneralSettings({
+                            ...generalSettings,
+                            maxClients: parseInt(e.target.value) || 0,
+                          });
+                        }}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(generalSettings.maxClients / 100) * 100}%, #e5e7eb ${(generalSettings.maxClients / 100) * 100}%, #e5e7eb 100%)`
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Quick Adjust Buttons */}
+                    <div className="flex items-center justify-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setGeneralSettings({
+                            ...generalSettings,
+                            maxClients: Math.max(0, generalSettings.maxClients - 10),
+                          })
+                        }
+                        disabled={generalSettings.maxClients === 0}
+                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 active:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        -10
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setGeneralSettings({
+                            ...generalSettings,
+                            maxClients: Math.max(0, generalSettings.maxClients - 1),
+                          })
+                        }
+                        disabled={generalSettings.maxClients === 0}
+                        className="flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                        aria-label="Decrease"
+                      >
+                        <RemoveIcon className="h-4 w-4 text-gray-700" />
+                      </button>
+                      <div className="w-20 text-center">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={generalSettings.maxClients}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value) || 0;
+                            setGeneralSettings({
+                              ...generalSettings,
+                              maxClients: Math.max(0, Math.min(100, value)),
+                            });
+                          }}
+                          className="text-center text-sm font-semibold h-8"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setGeneralSettings({
+                            ...generalSettings,
+                            maxClients: Math.min(100, generalSettings.maxClients + 1),
+                          })
+                        }
+                        disabled={generalSettings.maxClients >= 100}
+                        className="flex items-center justify-center w-10 h-10 rounded-lg border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                        aria-label="Increase"
+                      >
+                        <AddIcon className="h-4 w-4 text-gray-700" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setGeneralSettings({
+                            ...generalSettings,
+                            maxClients: Math.min(100, generalSettings.maxClients + 10),
+                          })
+                        }
+                        disabled={generalSettings.maxClients >= 100}
+                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 active:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        +10
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* User Access */}
+                <div className="space-y-2">
+                  <Label>User Access</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      // TODO: Implement manage access functionality
+                      console.log('Manage Access clicked');
+                    }}
+                  >
+                    Manage Access
+                  </Button>
+                </div>
               </div>
             </TabsContent>
             <TabsContent value="security" className="mt-4">
               <div className="space-y-4">
-                <p className="text-sm text-gray-600">
-                  Security settings will be displayed here.
-                </p>
-                {/* Add your Security settings content here */}
+                {/* Email Address */}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter email address"
+                    value={securitySettings.email}
+                    onChange={(e) =>
+                      setSecuritySettings({
+                        ...securitySettings,
+                        email: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                {/* Password Update */}
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter new password"
+                      value={securitySettings.password}
+                      onChange={(e) =>
+                        setSecuritySettings({
+                          ...securitySettings,
+                          password: e.target.value,
+                        })
+                      }
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <VisibilityOffIcon className="h-5 w-5" />
+                      ) : (
+                        <VisibilityIcon className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Security Question */}
+                <div className="space-y-2">
+                  <Label htmlFor="securityQuestion">Security Question</Label>
+                  <Select
+                    value={securitySettings.securityQuestion}
+                    onValueChange={(value) =>
+                      setSecuritySettings({
+                        ...securitySettings,
+                        securityQuestion: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger id="securityQuestion">
+                      <SelectValue placeholder="Select a security question" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mother-maiden-name">
+                        What is your mother's maiden name?
+                      </SelectItem>
+                      <SelectItem value="birth-city">
+                        What city were you born in?
+                      </SelectItem>
+                      <SelectItem value="first-pet">
+                        What was the name of your first pet?
+                      </SelectItem>
+                      <SelectItem value="elementary-school">
+                        What was the name of your elementary school?
+                      </SelectItem>
+                      <SelectItem value="first-car">
+                        What was the make and model of your first car?
+                      </SelectItem>
+                      <SelectItem value="childhood-nickname">
+                        What was your childhood nickname?
+                      </SelectItem>
+                      <SelectItem value="favorite-teacher">
+                        What was the name of your favorite teacher?
+                      </SelectItem>
+                      <SelectItem value="best-friend">
+                        What was the name of your best friend growing up?
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Security Answer */}
+                <div className="space-y-2">
+                  <Label htmlFor="securityAnswer">Security Answer</Label>
+                  <Input
+                    id="securityAnswer"
+                    type="text"
+                    placeholder="Enter your security answer"
+                    value={securitySettings.securityAnswer}
+                    onChange={(e) =>
+                      setSecuritySettings({
+                        ...securitySettings,
+                        securityAnswer: e.target.value,
+                      })
+                    }
+                  />
+                </div>
               </div>
             </TabsContent>
           </Tabs>
