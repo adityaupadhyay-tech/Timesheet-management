@@ -1,9 +1,16 @@
 "use client";
 
-import { memo, useMemo, useCallback, useState, useEffect } from "react";
+import { memo, useMemo, useCallback, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PersonIcon from "@mui/icons-material/Person";
 import ScheduleIcon from "@mui/icons-material/Schedule";
@@ -28,8 +35,11 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { useUser } from "@/contexts/UserContext";
-
+import { useSupabase } from "@/contexts/SupabaseContext";
 /**
  * @typedef {Object} SidebarProps
  * @property {UserRole} userRole
@@ -41,10 +51,14 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
   const router = useRouter();
   const pathname = usePathname();
   const { user, setUser } = useUser();
+  const { signOut } = useSupabase();
   const [selectedPersona, setSelectedPersona] = useState(userRole);
   const [isMyStuffOpen, setIsMyStuffOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [currentSection, setCurrentSection] = useState(null);
+  const [isAppMenuOpen, setIsAppMenuOpen] = useState(false);
+  const [isLoginSettingsOpen, setIsLoginSettingsOpen] = useState(false);
+  const appMenuRef = useRef(null);
   
   // Get current section from URL if on my-stuff page (without useSearchParams)
   useEffect(() => {
@@ -91,6 +105,23 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
   useEffect(() => {
     setSelectedPersona(userRole);
   }, [userRole]);
+
+  // Handle clicks outside the app menu to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (appMenuRef.current && !appMenuRef.current.contains(event.target)) {
+        setIsAppMenuOpen(false);
+      }
+    };
+
+    if (isAppMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isAppMenuOpen]);
 
   const handlePersonaChange = useCallback((persona) => {
     setSelectedPersona(persona);
@@ -245,9 +276,36 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
         <div className="flex items-center justify-between h-16 px-4 border-b">
           {/* Only render conditional content after mount to prevent hydration mismatch */}
           {isMounted && isOpen ? (
-            <Link href="/dashboard" className="flex items-center space-x-3">
-              <h1 className="text-lg font-semibold text-gray-900">Payplus 360</h1>
-            </Link>
+            <div className="relative flex-1 flex items-center" ref={appMenuRef}>
+              <Link href="/dashboard" className="flex items-center space-x-1 hover:opacity-80 transition-opacity">
+                <h1 className="text-lg font-semibold text-gray-900">Payplus 360</h1>
+              </Link>
+              <button
+                onClick={() => setIsAppMenuOpen(!isAppMenuOpen)}
+                className="ml-1 p-1 hover:bg-gray-100 rounded transition-colors"
+                aria-label="Application menu"
+              >
+                <ArrowDropDownIcon 
+                  className={`h-5 w-5 text-gray-600 transition-transform ${isAppMenuOpen ? 'rotate-180' : ''}`} 
+                />
+              </button>
+              
+              {/* Dropdown Menu */}
+              {isAppMenuOpen && (
+                <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                  <button
+                    onClick={() => {
+                      setIsAppMenuOpen(false);
+                      setIsLoginSettingsOpen(true);
+                    }}
+                    className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors text-left"
+                  >
+                    <SettingsIcon className="h-4 w-4 text-gray-600" />
+                    <span>Login Settings</span>
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <Link
               href="/dashboard"
@@ -411,8 +469,24 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
           <div className="px-3 py-2">
             {isMounted && isOpen ? (
               <div className="text-sm">
-                <div className="bg-blue-100 text-blue-900 font-medium truncate px-3 py-2 rounded-md mb-2 shadow-sm">
-                  {userName}
+                <div className="bg-blue-100 text-blue-900 font-medium truncate px-3 py-2 rounded-md mb-2 shadow-sm flex items-center justify-between">
+                  <span className="flex-1 truncate">{userName}</span>
+                  <button
+                    onClick={async () => {
+                      try {
+                        if (signOut) {
+                          await signOut();
+                          router.push('/login');
+                        }
+                      } catch (error) {
+                        console.error('Logout error:', error);
+                      }
+                    }}
+                    className="ml-2 p-1 hover:bg-blue-200 rounded transition-colors flex-shrink-0"
+                    title="Logout"
+                  >
+                    <ExitToAppIcon className="h-4 w-4" />
+                  </button>
                 </div>
                 <div className="text-xs bg-gray-100 px-2 py-1 rounded-full font-medium inline-block">
                   {userRole}
@@ -456,6 +530,37 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
           )}
         </div>
       </div>
+
+      {/* Login Settings Dialog */}
+      <Dialog open={isLoginSettingsOpen} onOpenChange={setIsLoginSettingsOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Login Settings</DialogTitle>
+          </DialogHeader>
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="general">General</TabsTrigger>
+              <TabsTrigger value="security">Security</TabsTrigger>
+            </TabsList>
+            <TabsContent value="general" className="mt-4">
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  General login settings will be displayed here.
+                </p>
+                {/* Add your General settings content here */}
+              </div>
+            </TabsContent>
+            <TabsContent value="security" className="mt-4">
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Security settings will be displayed here.
+                </p>
+                {/* Add your Security settings content here */}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
     </>
   );
 });
