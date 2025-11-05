@@ -512,16 +512,53 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
       {/* Login Settings Dialog */}
       <Dialog open={isLoginSettingsOpen} onOpenChange={setIsLoginSettingsOpen}>
         <DialogContent className="w-[600px] h-[650px] max-w-[600px] max-h-[650px] overflow-hidden flex flex-col">
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes fadeInSlide {
+              from {
+                opacity: 0;
+                transform: translateX(15px);
+              }
+              to {
+                opacity: 1;
+                transform: translateX(0);
+              }
+            }
+            @keyframes fadeInSlideReverse {
+              from {
+                opacity: 0;
+                transform: translateX(-15px);
+              }
+              to {
+                opacity: 1;
+                transform: translateX(0);
+              }
+            }
+            .tab-general-content[data-state="active"] {
+              animation: fadeInSlide 0.4s ease-out;
+            }
+            .tab-security-content[data-state="active"] {
+              animation: fadeInSlideReverse 0.4s ease-out;
+            }
+            .tab-general-content,
+            .tab-security-content {
+              overflow-x: hidden !important;
+              width: 100%;
+              max-width: 100%;
+            }
+          `}} />
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Login Settings</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="general" className="w-full flex flex-col flex-1 min-h-0">
             <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
-              <TabsTrigger value="general" className="w-full">General</TabsTrigger>
-              <TabsTrigger value="security" className="w-full">Security</TabsTrigger>
+              <TabsTrigger value="general" className="w-full transition-all duration-300 ease-in-out">General</TabsTrigger>
+              <TabsTrigger value="security" className="w-full transition-all duration-300 ease-in-out">Security</TabsTrigger>
             </TabsList>
-            <div className="flex-1 overflow-y-auto mt-4 min-h-0">
-            <TabsContent value="general" className="mt-0 h-full">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden mt-4 min-h-0 relative">
+            <TabsContent 
+              value="general" 
+              className="mt-0 h-full tab-general-content overflow-x-hidden"
+            >
               <div className="space-y-4">
                 {/* First Name */}
                 <div className="space-y-2">
@@ -752,7 +789,10 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
                 </div>
               </div>
             </TabsContent>
-            <TabsContent value="security" className="mt-0 h-full">
+            <TabsContent 
+              value="security" 
+              className="mt-0 h-full tab-security-content overflow-x-hidden"
+            >
               <div className="space-y-4">
                 {/* Email Address */}
                 <div className="space-y-2">
