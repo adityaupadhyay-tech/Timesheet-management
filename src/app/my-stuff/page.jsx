@@ -7,7 +7,7 @@
 // React & Next.js
 import { useMemo, useState, useEffect, useRef, Suspense } from 'react'
 import { createPortal } from 'react-dom'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 
 // Context
 import { useUser } from '@/contexts/UserContext'
@@ -54,6 +54,12 @@ import CreditCardIcon from '@mui/icons-material/CreditCard'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import ScheduleIcon from '@mui/icons-material/Schedule'
+import DashboardIcon from '@mui/icons-material/Dashboard'
+import BarChartIcon from '@mui/icons-material/BarChart'
+import HistoryIcon from '@mui/icons-material/History'
+import UpdateIcon from '@mui/icons-material/Update'
+import FolderIcon from '@mui/icons-material/Folder'
+import BeachAccessIcon from '@mui/icons-material/BeachAccess'
 
 // Utilities
 import { 
@@ -75,6 +81,7 @@ import { formatCurrency, formatDateToMMDDYYYY } from './utils/formatters'
 function MyStuffContent() {
   const { user: currentUser } = useUser()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [activeSection, setActiveSection] = useState(null)
   const hasInitializedSectionRef = useRef(false)
   
@@ -270,6 +277,49 @@ function MyStuffContent() {
   const [selectedCompany, setSelectedCompany] = useState(null)
   const [trackingState, setTrackingState] = useState({ isTracking: false, startTime: null })
   const [currentTimesheet, setCurrentTimesheet] = useState(null)
+  
+  // Login history state
+  const [loginHistory, setLoginHistory] = useState([])
+  
+  // Initialize and track login history
+  useEffect(() => {
+    // Load login history from localStorage
+    const loadLoginHistory = () => {
+      try {
+        const stored = localStorage.getItem(`loginHistory_${currentUser.email || 'default'}`)
+        if (stored) {
+          const history = JSON.parse(stored)
+          setLoginHistory(history)
+        }
+      } catch (error) {
+        console.error('Error loading login history:', error)
+      }
+    }
+    
+    // Track current login
+    const trackLogin = () => {
+      const loginTime = new Date().toISOString()
+      try {
+        const stored = localStorage.getItem(`loginHistory_${currentUser.email || 'default'}`)
+        let history = stored ? JSON.parse(stored) : []
+        
+        // Add current login if not already added (check last 5 minutes to avoid duplicates)
+        const lastLogin = history[0]
+        if (!lastLogin || new Date(loginTime) - new Date(lastLogin) > 5 * 60 * 1000) {
+          history.unshift(loginTime)
+          // Keep only last 10 logins
+          history = history.slice(0, 10)
+          localStorage.setItem(`loginHistory_${currentUser.email || 'default'}`, JSON.stringify(history))
+          setLoginHistory(history)
+        }
+      } catch (error) {
+        console.error('Error tracking login:', error)
+      }
+    }
+    
+    loadLoginHistory()
+    trackLogin()
+  }, [currentUser.email])
   
   // Initialize sample data for timesheet components
   useEffect(() => {
