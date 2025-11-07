@@ -374,31 +374,8 @@ export default function DashboardPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {[
-                        { id: 'timesheet-summary', label: 'Timesheet Summary', icon: <ScheduleIcon />, description: 'View your weekly timesheet summary', section: 'online-timecard' },
-                        { id: 'earning-statement', label: 'Earning Statement', icon: <ReceiptIcon />, description: 'View your earnings and deductions', section: 'earning-statement' },
-                        { id: 'leave-balance', label: 'Leave Balance', icon: <BeachAccessIcon />, description: 'Check your PTO and leave balances', section: 'paid-leave' },
-                        { id: 'ytd-summary', label: 'Year to Date Summary', icon: <BarChartIcon />, description: 'View your year-to-date earnings', section: 'ytd-info' }
-                      ].map((report) => (
-                        <Card
-                          key={report.id}
-                          className="cursor-pointer hover:shadow-md transition-all border border-gray-200 hover:border-blue-300"
-                          onClick={() => navigateToMyStuffSection(report.section)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-                                {report.icon}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-gray-900 mb-1">{report.label}</h3>
-                                <p className="text-sm text-gray-600">{report.description}</p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                    <div className="grid gap-4 md:grid-cols-2 min-h-[180px]">
+                      {/* Common Reports section is empty */}
                     </div>
                   </CardContent>
                 </Card>
