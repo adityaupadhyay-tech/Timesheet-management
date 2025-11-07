@@ -2,16 +2,13 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 })
 
-// Obfuscation configuration - only in production
-const WebpackObfuscator = require('webpack-obfuscator');
+// Import webpack obfuscator
+const WebpackObfuscator = require('webpack-obfuscator')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Enable React strict mode for better debugging
   reactStrictMode: true,
-  
-  // Disable SWC minification when obfuscating (webpack-obfuscator will handle it)
-  swcMinify: process.env.OBFUSCATE !== 'true',
   
   // Optimize images
   images: {
@@ -35,7 +32,69 @@ const nextConfig = {
   },
 
   // Webpack optimizations
-  webpack: (config, { dev, isServer }) => {
+  webpack: (config, { dev, isServer, webpack }) => {
+    // Code obfuscation - only in production and client-side
+    if (!dev && !isServer && process.env.NODE_ENV === 'production') {
+      // Only obfuscate client-side chunks
+      const obfuscatorOptions = {
+        // Obfuscation options
+        rotateStringArray: true,
+        stringArray: true,
+        stringArrayCallsTransform: true,
+        stringArrayEncoding: ['base64'],
+        stringArrayIndexShift: true,
+        stringArrayRotate: true,
+        stringArrayShuffle: true,
+        stringArrayWrappersCount: 2,
+        stringArrayWrappersChainedCalls: true,
+        stringArrayWrappersParametersMaxCount: 4,
+        stringArrayWrappersType: 'function',
+        stringArrayThreshold: 0.75,
+        unicodeEscapeSequence: false,
+        
+        // Control flow obfuscation
+        controlFlowFlattening: true,
+        controlFlowFlatteningThreshold: 0.75,
+        deadCodeInjection: true,
+        deadCodeInjectionThreshold: 0.4,
+        
+        // Identifier obfuscation
+        identifierNamesGenerator: 'hexadecimal',
+        identifiersPrefix: '',
+        renameGlobals: false,
+        selfDefending: true,
+        
+        // Performance options
+        compact: true,
+        simplify: true,
+        
+        // Exclude specific files/paths from obfuscation
+        exclude: [
+          /node_modules/,
+          /\.min\.js$/,
+          /webpack[\\/]runtime/,
+          /next[\\/]dist[\\/]client/,
+          /\.next[\\/]server/,
+        ],
+        
+        // Target specific file extensions
+        target: 'browser',
+        
+        // Transform object keys
+        transformObjectKeys: true,
+        
+        // Disable console output
+        disableConsoleOutput: false,
+      }
+      
+      // Apply obfuscation to all client-side JavaScript chunks
+      config.plugins.push(
+        new WebpackObfuscator(obfuscatorOptions, [
+          // Exclude specific bundles if needed
+        ])
+      )
+    }
+    
     // Production optimizations
     if (!dev && !isServer) {
       config.optimization = {
@@ -79,67 +138,6 @@ const nextConfig = {
           },
         },
       };
-
-      // Code obfuscation - only for client-side bundles in production
-      if (process.env.OBFUSCATE === 'true') {
-        console.log('🔒 Obfuscation enabled for client-side bundles');
-        
-        // Disable webpack's built-in minification when obfuscating
-        config.optimization.minimize = true;
-        config.optimization.minimizer = config.optimization.minimizer || [];
-        
-        // Remove TerserPlugin if present (SWC handles minification by default)
-        config.optimization.minimizer = config.optimization.minimizer.filter(
-          (plugin) => plugin.constructor.name !== 'TerserPlugin'
-        );
-        
-        config.plugins.push(
-          new WebpackObfuscator({
-            // Obfuscation options
-            rotateStringArray: true,
-            stringArray: true,
-            stringArrayCallsTransform: true,
-            stringArrayEncoding: ['base64'],
-            stringArrayIndexShift: true,
-            stringArrayRotate: true,
-            stringArrayShuffle: true,
-            stringArrayWrappersCount: 2,
-            stringArrayWrappersChainedCalls: true,
-            stringArrayWrappersParametersMaxCount: 4,
-            stringArrayWrappersType: 'function',
-            stringArrayThreshold: 0.75,
-            transformObjectKeys: true,
-            unicodeEscapeSequence: false,
-            
-            // Exclude certain files from obfuscation
-            exclude: [
-              /node_modules/,
-              /\.next\/server/,
-              /webpack-runtime/,
-              /framework/,
-            ],
-            
-            // Performance options
-            compact: true,
-            controlFlowFlattening: true,
-            controlFlowFlatteningThreshold: 0.75,
-            deadCodeInjection: true,
-            deadCodeInjectionThreshold: 0.4,
-            debugProtection: false, // Set to true for extra protection (may break dev tools)
-            debugProtectionInterval: 0,
-            disableConsoleOutput: false, // Set to true to disable console.log
-            identifierNamesGenerator: 'hexadecimal',
-            log: true, // Enable logging to see what's being obfuscated
-            numbersToExpressions: true,
-            renameGlobals: false,
-            selfDefending: true,
-            simplify: true,
-            splitStrings: true,
-            splitStringsChunkLength: 10,
-            target: 'browser',
-          })
-        );
-      }
     }
     return config;
   },
