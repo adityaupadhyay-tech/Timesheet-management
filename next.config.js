@@ -10,6 +10,9 @@ const nextConfig = {
   // Enable React strict mode for better debugging
   reactStrictMode: true,
   
+  // Disable SWC minification when obfuscating (webpack-obfuscator will handle it)
+  swcMinify: process.env.OBFUSCATE !== 'true',
+  
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -79,6 +82,17 @@ const nextConfig = {
 
       // Code obfuscation - only for client-side bundles in production
       if (process.env.OBFUSCATE === 'true') {
+        console.log('🔒 Obfuscation enabled for client-side bundles');
+        
+        // Disable webpack's built-in minification when obfuscating
+        config.optimization.minimize = true;
+        config.optimization.minimizer = config.optimization.minimizer || [];
+        
+        // Remove TerserPlugin if present (SWC handles minification by default)
+        config.optimization.minimizer = config.optimization.minimizer.filter(
+          (plugin) => plugin.constructor.name !== 'TerserPlugin'
+        );
+        
         config.plugins.push(
           new WebpackObfuscator({
             // Obfuscation options
@@ -101,6 +115,8 @@ const nextConfig = {
             exclude: [
               /node_modules/,
               /\.next\/server/,
+              /webpack-runtime/,
+              /framework/,
             ],
             
             // Performance options
@@ -113,7 +129,7 @@ const nextConfig = {
             debugProtectionInterval: 0,
             disableConsoleOutput: false, // Set to true to disable console.log
             identifierNamesGenerator: 'hexadecimal',
-            log: false,
+            log: true, // Enable logging to see what's being obfuscated
             numbersToExpressions: true,
             renameGlobals: false,
             selfDefending: true,
@@ -121,7 +137,7 @@ const nextConfig = {
             splitStrings: true,
             splitStringsChunkLength: 10,
             target: 'browser',
-          }, ['excluded_bundle_name.js'])
+          })
         );
       }
     }

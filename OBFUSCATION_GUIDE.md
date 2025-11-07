@@ -104,18 +104,51 @@ The `vercel.json` file can be updated to include:
 
 ## 🧪 Testing Obfuscation
 
-1. Build with obfuscation:
+1. **Clean previous builds:**
+   ```bash
+   # Windows PowerShell
+   Remove-Item -Recurse -Force .next
+   
+   # Or manually delete .next folder
+   ```
+
+2. **Build with obfuscation:**
    ```bash
    npm run build:obfuscate
    ```
+   
+   **Look for this message during build:**
+   ```
+   🔒 Obfuscation enabled for client-side bundles
+   ```
 
-2. Start production server:
+3. **Start production server:**
    ```bash
    npm start
    ```
 
-3. Open browser DevTools → Sources tab
-4. Check the JavaScript files - they should be obfuscated
+4. **Verify obfuscation:**
+   - Open browser DevTools (F12)
+   - Go to **Sources** tab
+   - Navigate to `_next/static/chunks/`
+   - Open any `.js` file (not from `node_modules` or `webpack-runtime`)
+   - Code should show:
+     - Hexadecimal names: `_0x1a2b`, `_0x3c4d`
+     - Base64 strings: `'Y29uc29sZQ=='`
+     - Obfuscated function calls
+     - Flattened control flow
+
+5. **What obfuscated code looks like:**
+   ```javascript
+   // Obfuscated (what you should see):
+   var _0x1a2b=['base64string'];
+   function _0x3c4d(_0x5e6f){return _0x1a2b[_0x5e6f];}
+   
+   // NOT obfuscated (what you shouldn't see):
+   function handleClick() {
+     console.log('Button clicked');
+   }
+   ```
 
 ## 📊 What Gets Obfuscated
 
