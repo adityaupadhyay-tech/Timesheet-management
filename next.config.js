@@ -2,6 +2,9 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 })
 
+// Obfuscation configuration - only in production
+const WebpackObfuscator = require('webpack-obfuscator');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Enable React strict mode for better debugging
@@ -73,6 +76,54 @@ const nextConfig = {
           },
         },
       };
+
+      // Code obfuscation - only for client-side bundles in production
+      if (process.env.OBFUSCATE === 'true') {
+        config.plugins.push(
+          new WebpackObfuscator({
+            // Obfuscation options
+            rotateStringArray: true,
+            stringArray: true,
+            stringArrayCallsTransform: true,
+            stringArrayEncoding: ['base64'],
+            stringArrayIndexShift: true,
+            stringArrayRotate: true,
+            stringArrayShuffle: true,
+            stringArrayWrappersCount: 2,
+            stringArrayWrappersChainedCalls: true,
+            stringArrayWrappersParametersMaxCount: 4,
+            stringArrayWrappersType: 'function',
+            stringArrayThreshold: 0.75,
+            transformObjectKeys: true,
+            unicodeEscapeSequence: false,
+            
+            // Exclude certain files from obfuscation
+            exclude: [
+              /node_modules/,
+              /\.next\/server/,
+            ],
+            
+            // Performance options
+            compact: true,
+            controlFlowFlattening: true,
+            controlFlowFlatteningThreshold: 0.75,
+            deadCodeInjection: true,
+            deadCodeInjectionThreshold: 0.4,
+            debugProtection: false, // Set to true for extra protection (may break dev tools)
+            debugProtectionInterval: 0,
+            disableConsoleOutput: false, // Set to true to disable console.log
+            identifierNamesGenerator: 'hexadecimal',
+            log: false,
+            numbersToExpressions: true,
+            renameGlobals: false,
+            selfDefending: true,
+            simplify: true,
+            splitStrings: true,
+            splitStringsChunkLength: 10,
+            target: 'browser',
+          }, ['excluded_bundle_name.js'])
+        );
+      }
     }
     return config;
   },
