@@ -14,7 +14,7 @@ import { ChevronRight } from '@mui/icons-material'
 
 const PageHeader = memo(function PageHeader({ title, subtitle, icon, breadcrumbs }) {
   return (
-    <Card className="mb-6">
+    <Card className="mb-8">
       <CardContent className="py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">

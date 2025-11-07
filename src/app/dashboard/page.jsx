@@ -360,7 +360,7 @@ export default function DashboardPage() {
         {/* Employee-specific sections */}
         {currentUser.role === 'Employee' && (
           <>
-            <div className="grid gap-6 lg:grid-cols-3 mb-8">
+            <div className="grid gap-8 lg:grid-cols-3 mb-8">
               {/* Common Reports View */}
               <div className="lg:col-span-2">
                 <Card className="border border-gray-200 shadow-md">
@@ -417,12 +417,12 @@ export default function DashboardPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="space-y-3">
+                    <div className="space-y-3 max-h-[180px] overflow-y-auto pr-2">
                       {loginHistory.length > 0 ? (
-                        loginHistory.slice(0, 5).map((loginTime, index) => (
+                        loginHistory.slice(0, 10).map((loginTime, index) => (
                           <div
                             key={index}
-                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors flex-shrink-0"
                           >
                             <div className="p-1.5 bg-green-100 rounded-full flex-shrink-0">
                               <UpdateIcon className="h-4 w-4 text-green-600" />
@@ -510,7 +510,7 @@ export default function DashboardPage() {
 
         {/* Recent Activity - Only for Admin and Manager */}
         {currentUser.role !== 'Employee' && (
-          <div>
+          <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
             <Card>
               <CardContent className="p-6">
