@@ -216,8 +216,7 @@ const Sidebar = memo(function Sidebar({ userRole, userName, isOpen, onToggle }) 
           { id: 'job-status', label: 'Job Status', icon: <WorkIcon /> },
           { id: 'department', label: 'Department', icon: <GroupIcon /> },
           { id: 'personal-info', label: 'Personal Information', icon: <PersonIcon /> },
-          { id: 'paid-leave', label: 'Paid Leave', icon: <EventIcon /> },
-          { id: 'emergency-contact', label: 'Emergency Contact', icon: <ContactPhoneIcon /> }
+          { id: 'paid-leave', label: 'Paid Leave', icon: <EventIcon /> }
           //{ id: 'performance-coaching', label: 'Performance Coaching', icon: <TrendingUpIcon /> }
         ],
         payroll: [

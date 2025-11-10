@@ -3,6 +3,7 @@
 import React, { memo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { ChevronRight } from '@mui/icons-material'
+import WorkIcon from '@mui/icons-material/Work'
 
 /**
  * @typedef {Object} PageHeaderProps
@@ -10,9 +11,10 @@ import { ChevronRight } from '@mui/icons-material'
  * @property {string} [subtitle] - Optional subtitle or description
  * @property {string} [icon] - Optional icon component
  * @property {Array<{label: string, href?: string}>} [breadcrumbs] - Optional breadcrumb navigation
+ * @property {string} [companyName] - Optional company name to display in header
  */
 
-const PageHeader = memo(function PageHeader({ title, subtitle, icon, breadcrumbs }) {
+const PageHeader = memo(function PageHeader({ title, subtitle, icon, breadcrumbs, companyName }) {
   return (
     <Card className="mb-8">
       <CardContent className="py-4">
@@ -30,6 +32,17 @@ const PageHeader = memo(function PageHeader({ title, subtitle, icon, breadcrumbs
               )}
             </div>
           </div>
+          {companyName && (
+            <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+              <div className="p-1.5 bg-blue-100 rounded-md">
+                <WorkIcon className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Company Name</div>
+                <div className="text-sm font-semibold text-gray-900">{companyName || 'Not specified'}</div>
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Breadcrumbs */}

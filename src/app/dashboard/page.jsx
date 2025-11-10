@@ -27,6 +27,7 @@ export default function DashboardPage() {
   const { user: currentUser } = useUser()
   const router = useRouter()
   const [loginHistory, setLoginHistory] = useState([])
+  const [companyName, setCompanyName] = useState('Acme Corporation')
   
   // Initialize and track login history
   useEffect(() => {
@@ -329,6 +330,7 @@ export default function DashboardPage() {
           title="Dashboard"
           subtitle={`Welcome back, ${currentUser.name}! Here's what's happening today.`}
           icon={<DashboardIcon />}
+          companyName={companyName}
         />
 
         {/* Stats Cards - Only for Admin and Manager */}
@@ -375,7 +377,11 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent className="pt-6">
                     <div className="grid gap-4 md:grid-cols-2 min-h-[180px]">
-                      {/* Common Reports section is empty */}
+                      <div className="flex flex-col items-center justify-center col-span-2 py-8 text-center">
+                        <BarChartIcon className="text-4xl text-gray-300 mb-3" />
+                        <p className="text-base font-medium text-gray-500">No reports to view</p>
+                        <p className="text-sm text-gray-400 mt-1">Reports will appear here once available</p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -384,9 +390,9 @@ export default function DashboardPage() {
               {/* Last Updated View */}
               <div>
                 <Card className="border border-gray-200 shadow-md">
-                  <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50" style={{ borderLeftColor: '#10B981' }}>
+                  <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
                     <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                      <HistoryIcon className="text-green-600" />
+                      <HistoryIcon className="text-blue-600" />
                       Last Updated
                     </CardTitle>
                     <CardDescription className="text-base mt-1 text-gray-600">
@@ -401,8 +407,8 @@ export default function DashboardPage() {
                             key={index}
                             className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors flex-shrink-0"
                           >
-                            <div className="p-1.5 bg-green-100 rounded-full flex-shrink-0">
-                              <UpdateIcon className="h-4 w-4 text-green-600" />
+                            <div className="p-1.5 bg-blue-100 rounded-full flex-shrink-0">
+                              <UpdateIcon className="h-4 w-4 text-blue-600" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-900">
@@ -435,9 +441,9 @@ export default function DashboardPage() {
             {/* Commonly Used Menu Items */}
             <div className="mb-8">
               <Card className="border border-gray-200 shadow-md">
-                <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50" style={{ borderLeftColor: '#9333EA' }}>
+                <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
                   <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                    <FolderIcon className="text-purple-600" />
+                    <FolderIcon className="text-blue-600" />
                     Commonly Used Menu Items
                   </CardTitle>
                   <CardDescription className="text-base mt-1 text-gray-600">
@@ -447,16 +453,16 @@ export default function DashboardPage() {
                 <CardContent className="pt-6">
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {[
-                      { id: 'online-timecard', label: 'Online Timecard', icon: <AccessTimeIcon />, description: 'Log your work hours', section: 'online-timecard' },
-                      { id: 'basic-info', label: 'Basic Information', icon: <InfoIcon />, description: 'Update your personal details', section: 'basic-info' },
-                      { id: 'earning-statement', label: 'Earning Statement', icon: <ReceiptIcon />, description: 'View your pay stubs', section: 'earning-statement' },
-                      { id: 'paid-leave', label: 'Paid Leave', icon: <EventIcon />, description: 'Manage your time off', section: 'paid-leave' },
-                      { id: 'direct-deposits', label: 'Direct Deposits', icon: <CreditCardIcon />, description: 'Manage your bank accounts', section: 'direct-deposits' },
-                      { id: 'resources', label: 'Resources', icon: <FolderIcon />, description: 'Access company resources', href: '/resources' }
+                      { id: 'online-timecard', label: 'Online Timecard', icon: <AccessTimeIcon className="text-blue-600" />, description: 'Log your work hours', section: 'online-timecard' },
+                      { id: 'basic-info', label: 'Basic Information', icon: <InfoIcon className="text-blue-600" />, description: 'Update your personal details', section: 'basic-info' },
+                      { id: 'earning-statement', label: 'Earning Statement', icon: <ReceiptIcon className="text-blue-600" />, description: 'View your pay stubs', section: 'earning-statement' },
+                      { id: 'paid-leave', label: 'Paid Leave', icon: <EventIcon className="text-blue-600" />, description: 'Manage your time off', section: 'paid-leave' },
+                      { id: 'direct-deposits', label: 'Direct Deposits', icon: <CreditCardIcon className="text-blue-600" />, description: 'Manage your bank accounts', section: 'direct-deposits' },
+                      { id: 'resources', label: 'Resources', icon: <FolderIcon className="text-blue-600" />, description: 'Access company resources', href: '/resources' }
                     ].map((item) => (
                       <Card
                         key={item.id}
-                        className="cursor-pointer hover:shadow-md transition-all border border-gray-200 hover:border-purple-300"
+                        className="cursor-pointer hover:shadow-md transition-all border border-gray-200 hover:border-blue-300"
                         onClick={() => {
                           if (item.href) {
                             router.push(item.href)
@@ -467,7 +473,7 @@ export default function DashboardPage() {
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start gap-3">
-                            <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
+                            <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
                               {item.icon}
                             </div>
                             <div className="flex-1 min-w-0">

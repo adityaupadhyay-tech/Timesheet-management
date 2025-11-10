@@ -894,7 +894,7 @@ export default function TimeEntryGrid({
 
   return (
     <Card className="w-full border-0 shadow-sm bg-white/50 backdrop-blur-sm">
-      <CardHeader className="pb-6">
+      <CardHeader className="pb-6 pt-4">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           {/* Title Section */}
           <div className="flex items-center gap-3 flex-1 min-w-0">

@@ -821,7 +821,7 @@ function TimesheetContent() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-5">
           <Tabs defaultValue="timesheet" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-2 mb-3">
               <TabsTrigger value="timesheet" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 Time Entry
@@ -832,7 +832,7 @@ function TimesheetContent() {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="timesheet" className="space-y-4">
+            <TabsContent value="timesheet" className="space-y-4 mt-0">
               <TimeEntryGrid
                 projects={projects}
                 entries={entries}

@@ -24,7 +24,6 @@ import { DatePickerComponent } from '@/components/ui/date-picker'
 // Timesheet Components
 import TimeEntryGrid from '@/components/timesheet/TimeEntryGrid'
 import TimesheetSummary from '@/components/timesheet/TimesheetSummary'
-import ProjectOverview from '@/components/timesheet/ProjectOverview'
 
 // Icons - Lucide React
 import { 
@@ -694,8 +693,7 @@ function MyStuffContent() {
     { id: 'job-status', label: 'Job Status', icon: <WorkIcon sx={{ fontSize: 20 }} /> },
     { id: 'department', label: 'Department', icon: <GroupIcon sx={{ fontSize: 20 }} /> },
     { id: 'personal-info', label: 'Personal Information', icon: <PersonIcon sx={{ fontSize: 20 }} /> },
-    { id: 'paid-leave', label: 'Paid Leave', icon: <EventIcon sx={{ fontSize: 20 }} /> },
-    { id: 'emergency-contact', label: 'Emergency Contact', icon: <ContactPhoneIcon sx={{ fontSize: 20 }} /> }
+    { id: 'paid-leave', label: 'Paid Leave', icon: <EventIcon sx={{ fontSize: 20 }} /> }
     //{ id: 'performance-coaching', label: 'Performance Coaching', icon: <TrendingUpIcon sx={{ fontSize: 20 }} /> }
   ], [])
 
@@ -3386,50 +3384,29 @@ function MyStuffContent() {
         />
       </div>
 
-      {/* Main Content with Tabs */}
+      {/* Main Content */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-5">
-          <Tabs defaultValue="timesheet" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="timesheet" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Time Entry
-              </TabsTrigger>
-              <TabsTrigger value="projects" className="flex items-center gap-2">
-                <FolderOpen className="h-4 w-4" />
-                Project Overview
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="timesheet" className="space-y-4">
-              <TimeEntryGrid
-                projects={projects}
-                entries={entries}
-                gridRows={gridRows}
-                onSave={() => {}}
-                onUpdate={() => {}}
-                onDelete={() => {}}
-                onStartTimer={() => {}}
-                onStopTimer={() => {}}
-                isTracking={trackingState.isTracking}
-                currentTime={trackingState.isTracking ? '00:00:00' : '00:00:00'}
-                onGridDataChange={setGridRows}
-                selectedCompany={selectedCompany}
-                timesheet={currentTimesheet}
-                onSubmitTimesheet={() => setShowSubmitModal(true)}
-                onApproveTimesheet={() => {}}
-                onRejectTimesheet={() => {}}
-                validationTrigger={validationTrigger}
-                userRole="employee"
-              />
-            </TabsContent>
-            
-            <TabsContent value="projects" className="space-y-4">
-              <ProjectOverview
-                gridRows={gridRows}
-              />
-            </TabsContent>
-          </Tabs>
+          <TimeEntryGrid
+            projects={projects}
+            entries={entries}
+            gridRows={gridRows}
+            onSave={() => {}}
+            onUpdate={() => {}}
+            onDelete={() => {}}
+            onStartTimer={() => {}}
+            onStopTimer={() => {}}
+            isTracking={trackingState.isTracking}
+            currentTime={trackingState.isTracking ? '00:00:00' : '00:00:00'}
+            onGridDataChange={setGridRows}
+            selectedCompany={selectedCompany}
+            timesheet={currentTimesheet}
+            onSubmitTimesheet={() => setShowSubmitModal(true)}
+            onApproveTimesheet={() => {}}
+            onRejectTimesheet={() => {}}
+            validationTrigger={validationTrigger}
+            userRole="employee"
+          />
         </div>
       </div>
 
@@ -3844,6 +3821,54 @@ function MyStuffContent() {
         </CardContent>
       </Card>
 
+      {/* Emergency Contact Information */}
+      <Card className="border border-gray-200 shadow-md overflow-hidden">
+        <CardHeader className="pb-4 border-l-4 pl-6 rounded-t-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50" style={{ borderLeftColor: '#4F46E5' }}>
+          <CardTitle className="text-xl font-semibold text-gray-900">Emergency Contact Information</CardTitle>
+          <CardDescription className="text-base mt-1 text-gray-600">Your emergency contact details</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6 bg-white">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="contact" className="text-sm font-medium text-gray-700">Contact</Label>
+              <Input
+                id="contact"
+                value={emergencyContact.contact}
+                onChange={(e) => setEmergencyContact({...emergencyContact, contact: e.target.value})}
+                placeholder="Contact name"
+                disabled
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="relationship" className="text-sm font-medium text-gray-700">Relationship</Label>
+              <Input
+                id="relationship"
+                value={emergencyContact.relationship}
+                onChange={(e) => setEmergencyContact({...emergencyContact, relationship: e.target.value})}
+                placeholder="Relationship"
+                disabled
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</Label>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                value={emergencyContact.phoneNumber}
+                onChange={(e) => setEmergencyContact({...emergencyContact, phoneNumber: e.target.value})}
+                placeholder="Phone number"
+                disabled
+                className="bg-gray-50 border-gray-200 cursor-not-allowed focus-visible:ring-blue-300"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
     </div>
   )
 
@@ -3895,16 +3920,6 @@ function MyStuffContent() {
         <Layout userRole={currentUser.role} userName={currentUser.name}>
           <div className="p-6">
             {renderPaidLeaveForm()}
-          </div>
-        </Layout>
-      )
-    }
-
-    if (activeSection === 'emergency-contact') {
-      return (
-        <Layout userRole={currentUser.role} userName={currentUser.name}>
-          <div className="p-6">
-            {renderEmergencyContactForm()}
           </div>
         </Layout>
       )
@@ -4039,7 +4054,6 @@ function MyStuffContent() {
                         {tab.id === 'department' && 'Department assignment and team information'}
                         {tab.id === 'personal-info' && 'Manage your contact details and personal information'}
                         {tab.id === 'paid-leave' && 'View leave balance and paid time off history'}
-                        {tab.id === 'emergency-contact' && 'Emergency contact information and details'}
                         {tab.id === 'performance-coaching' && 'Performance reviews and coaching sessions'}
                       </p>
                     </CardContent>
