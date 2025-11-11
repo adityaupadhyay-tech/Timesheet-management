@@ -84,7 +84,6 @@ export const DatePickerComponent = forwardRef(({ value, onChange, className, pla
         dropdownMode="select"
         yearDropdownItemNumber={20}
         scrollableYearDropdown
-        maxDate={new Date()}
         dateFormat="MM-dd-yyyy"
         placeholderText={placeholder}
         autoComplete="off"
