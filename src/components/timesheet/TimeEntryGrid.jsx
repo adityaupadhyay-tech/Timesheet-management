@@ -40,7 +40,8 @@ import {
   formatCyclePeriod, 
   getCycleTitle,
   getNextCycle,
-  getPreviousCycle
+  getPreviousCycle,
+  isCycleEndingDate
 } from '@/lib/cycleUtils'
 
 export default function TimeEntryGrid({
@@ -65,7 +66,14 @@ export default function TimeEntryGrid({
   userRole = 'employee'
 }) {
   const [localGridRows, setLocalGridRows] = useState([])
-  const [selectedDate, setSelectedDate] = useState(() => new Date())
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date()
+    // Initialize with Saturday after today's cycle ending date (default to weekly)
+    const endDate = getCycleEndDate(today, 'weekly')
+    const saturdayDate = new Date(endDate)
+    saturdayDate.setDate(endDate.getDate() + 1)
+    return saturdayDate
+  })
   const [includeSaturday, setIncludeSaturday] = useState(false)
   const [includeSunday, setIncludeSunday] = useState(false)
   const [pendingAutoSaves, setPendingAutoSaves] = useState([])
@@ -88,6 +96,30 @@ export default function TimeEntryGrid({
   const lastEntriesRef = useRef([])
   const isInternalUpdateRef = useRef(false)
 
+  // Ensure selectedDate is always a Saturday (after cycle ending date) when cycle type changes
+  useEffect(() => {
+    if (selectedDate && cycleType) {
+      // If it's a Saturday, verify the previous day (Friday) is an ending date
+      if (selectedDate.getDay() === 6) {
+        const previousDay = new Date(selectedDate)
+        previousDay.setDate(selectedDate.getDate() - 1)
+        if (!isCycleEndingDate(previousDay, cycleType)) {
+          // If the previous day is not an ending date, set to Saturday after the cycle ending date
+          const currentEndDate = getCycleEndDate(selectedDate, cycleType)
+          const saturdayDate = new Date(currentEndDate)
+          saturdayDate.setDate(currentEndDate.getDate() + 1)
+          setSelectedDate(saturdayDate)
+        }
+      } else {
+        // For non-Saturdays, set to Saturday after the cycle ending date
+        const currentEndDate = getCycleEndDate(selectedDate, cycleType)
+        const saturdayDate = new Date(currentEndDate)
+        saturdayDate.setDate(currentEndDate.getDate() + 1)
+        setSelectedDate(saturdayDate)
+      }
+    }
+  }, [cycleType])
+
   // Memoize gridRows to prevent unnecessary re-renders
   const memoizedGridRows = useMemo(() => gridRows, [gridRows?.length, gridRows?.[0]?.id])
   
@@ -99,18 +131,22 @@ export default function TimeEntryGrid({
     isInternalUpdateRef.current = false
   }, [memoizedGridRows])
 
-  // Clear Saturday and Sunday cells when those days are removed
+  // Clear Saturday and Sunday cells when those days are removed, or add them when enabled
   useEffect(() => {
+    // Get the cycle end date (Friday for weekly)
+    const endDate = getCycleEndDate(selectedDate, cycleType)
     
-    const weekStart = new Date(selectedDate)
-    weekStart.setDate(selectedDate.getDate() - selectedDate.getDay())
+    // Saturday is the day after Friday (end date)
+    const saturdayDate = new Date(endDate)
+    saturdayDate.setDate(endDate.getDate() + 1)
+    saturdayDate.setHours(0, 0, 0, 0)
+    const saturdayDateStr = getDateString(saturdayDate)
     
-    const saturdayDate = new Date(weekStart)
-    saturdayDate.setDate(weekStart.getDate() + 6)
-    const saturdayDateStr = saturdayDate.toISOString().split('T')[0]
-    
-    const sundayDate = new Date(weekStart)
-    const sundayDateStr = sundayDate.toISOString().split('T')[0]
+    // Sunday is the start of the cycle
+    const startDate = getCycleStartDate(selectedDate, cycleType)
+    const sundayDate = new Date(startDate)
+    sundayDate.setHours(0, 0, 0, 0)
+    const sundayDateStr = getDateString(sundayDate)
     
     isInternalUpdateRef.current = true
     setLocalGridRows(prevRows => {
@@ -118,11 +154,21 @@ export default function TimeEntryGrid({
         const updatedRow = { ...row }
         const updatedWeekEntries = { ...updatedRow.weekEntries }
         
+        // If Saturday is being removed, clear it
         if (!includeSaturday && updatedWeekEntries[saturdayDateStr]) {
           updatedWeekEntries[saturdayDateStr] = { duration: '' }
         }
+        // If Saturday is being added, initialize it if it doesn't exist
+        else if (includeSaturday && !updatedWeekEntries[saturdayDateStr]) {
+          updatedWeekEntries[saturdayDateStr] = { duration: '' }
+        }
         
+        // If Sunday is being removed, clear it
         if (!includeSunday && updatedWeekEntries[sundayDateStr]) {
+          updatedWeekEntries[sundayDateStr] = { duration: '' }
+        }
+        // If Sunday is being added, initialize it if it doesn't exist
+        else if (includeSunday && !updatedWeekEntries[sundayDateStr]) {
           updatedWeekEntries[sundayDateStr] = { duration: '' }
         }
         
@@ -144,7 +190,7 @@ export default function TimeEntryGrid({
         return true
       })
     })
-  }, [includeSaturday, includeSunday, selectedDate])
+  }, [includeSaturday, includeSunday, selectedDate, cycleType])
 
   // Clear grid only when company changes
   useEffect(() => {
@@ -191,7 +237,7 @@ export default function TimeEntryGrid({
       for (let i = 0; i < 7; i++) {
         const date = new Date(startOfWeek)
         date.setDate(startOfWeek.getDate() + i)
-        const dateStr = date.toISOString().split('T')[0]
+        const dateStr = getDateString(date)
         weekEntries[dateStr] = { duration: '' }
       }
 
@@ -321,7 +367,7 @@ export default function TimeEntryGrid({
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekStart.getDate() + 6)
     
-    const currentWeekKey = weekStart.toISOString().split('T')[0]
+    const currentWeekKey = getDateString(weekStart)
     
     setLocalGridRows(prevRows => {
       
@@ -369,7 +415,7 @@ export default function TimeEntryGrid({
         for (let j = 0; j < 7; j++) {
           const date = new Date(weekStart)
           date.setDate(weekStart.getDate() + j)
-          const dateStr = date.toISOString().split('T')[0]
+          const dateStr = getDateString(date)
           weekEntries[dateStr] = { duration: '' }
         }
         
@@ -397,6 +443,15 @@ export default function TimeEntryGrid({
     }
   }, [])
 
+  // Helper function to create a consistent date string (YYYY-MM-DD) from local date components
+  // This avoids timezone issues with toISOString()
+  const getDateString = (date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const getCycleDays = () => {
     // Use getGridDates which handles monthly as weekly structure
     const gridDates = getGridDates(selectedDate, cycleType)
@@ -408,13 +463,74 @@ export default function TimeEntryGrid({
     
     // For weekly, bi-weekly, and monthly (which uses weekly structure), filter out weekends unless explicitly included
     if (cycleType === 'weekly' || cycleType === 'bi-weekly' || cycleType === 'monthly') {
-      return gridDates.filter(date => {
+      // First, get only Monday through Friday (always included)
+      let filteredDates = gridDates.filter(date => {
         const dayOfWeek = date.getDay()
-        if (dayOfWeek >= 1 && dayOfWeek <= 5) return true // Monday to Friday
-        if (dayOfWeek === 6 && includeSaturday) return true // Saturday
-        if (dayOfWeek === 0 && includeSunday) return true // Sunday
-        return false
+        return dayOfWeek >= 1 && dayOfWeek <= 5 // Monday to Friday
       })
+      
+      // If Saturday should be included, add it after the last Friday
+      if (includeSaturday && filteredDates.length > 0) {
+        // Find the last Friday in filteredDates (should be the last date)
+        const lastDate = filteredDates[filteredDates.length - 1]
+        if (lastDate) {
+          // Create Saturday date by adding 1 day to the last date
+          // Use the same approach as getCycleDates to ensure consistency
+          const saturdayDate = new Date(lastDate)
+          saturdayDate.setDate(lastDate.getDate() + 1)
+          saturdayDate.setHours(0, 0, 0, 0)
+          
+          // Verify it's actually a Saturday (day 6)
+          if (saturdayDate.getDay() === 6) {
+            // Check if Saturday is already in the array using a more reliable date comparison
+            const saturdayYear = saturdayDate.getFullYear()
+            const saturdayMonth = saturdayDate.getMonth()
+            const saturdayDay = saturdayDate.getDate()
+            
+            const saturdayExists = filteredDates.some(date => {
+              return date.getFullYear() === saturdayYear &&
+                     date.getMonth() === saturdayMonth &&
+                     date.getDate() === saturdayDay
+            })
+            
+            if (!saturdayExists) {
+              filteredDates.push(saturdayDate)
+            }
+          }
+        }
+      }
+      
+      // If Sunday should be included, add it at the beginning
+      if (includeSunday) {
+        const startDate = getCycleStartDate(selectedDate, cycleType)
+        const sundayDate = new Date(startDate)
+        sundayDate.setHours(0, 0, 0, 0)
+        
+        // Check if Sunday is already in the array
+        const sundayExists = filteredDates.some(date => 
+          getDateString(date) === getDateString(sundayDate)
+        )
+        
+        if (!sundayExists) {
+          filteredDates.unshift(sundayDate)
+        }
+      }
+      
+      // Sort dates to ensure proper order
+      filteredDates.sort((a, b) => a.getTime() - b.getTime())
+      
+      // Remove any duplicate dates (in case Saturday/Sunday was added multiple times)
+      const uniqueDates = []
+      const seenDates = new Set()
+      for (const date of filteredDates) {
+        const dateKey = getDateString(date)
+        if (!seenDates.has(dateKey)) {
+          seenDates.add(dateKey)
+          uniqueDates.push(date)
+        }
+      }
+      
+      return uniqueDates
     }
     
     return gridDates
@@ -425,7 +541,7 @@ export default function TimeEntryGrid({
     const cycleDays = getCycleDays()
     
     cycleDays.forEach(date => {
-      const dateStr = date.toISOString().split('T')[0]
+      const dateStr = getDateString(date)
       cycleEntries[dateStr] = { duration: '' }
     })
     
@@ -758,7 +874,11 @@ export default function TimeEntryGrid({
     const newDate = direction === 'next' 
       ? getNextCycle(selectedDate, cycleType)
       : getPreviousCycle(selectedDate, cycleType)
-    setSelectedDate(newDate)
+    // Set to Saturday after the cycle ending date (Friday)
+    const endDate = getCycleEndDate(newDate, cycleType)
+    const saturdayDate = new Date(endDate)
+    saturdayDate.setDate(endDate.getDate() + 1)
+    setSelectedDate(saturdayDate)
   }
 
   // Status helper functions
@@ -836,7 +956,8 @@ export default function TimeEntryGrid({
     return `${month}/${day}/${year} ${hour}:${minute}`
   }
 
-  const cycleDays = getCycleDays()
+  // Memoize cycleDays to ensure it updates when includeSaturday/includeSunday changes
+  const cycleDays = useMemo(() => getCycleDays(), [selectedDate, cycleType, includeSaturday, includeSunday])
 
   // Validation functions
   const validateRow = (row) => {
@@ -955,7 +1076,22 @@ export default function TimeEntryGrid({
               </label>
               <DatePickerComponent
                 value={selectedDate}
-                onChange={setSelectedDate}
+                onChange={(date) => {
+                  // Only allow Saturdays - set the date directly
+                  if (date.getDay() === 6) {
+                    setSelectedDate(date)
+                  }
+                }}
+                filterDate={(date) => {
+                  // Only allow Saturdays that come after cycle ending dates (Fridays)
+                  // Do NOT allow Fridays (cycle ending dates)
+                  if (date.getDay() === 6) {
+                    const previousDay = new Date(date)
+                    previousDay.setDate(date.getDate() - 1)
+                    return isCycleEndingDate(previousDay, cycleType)
+                  }
+                  return false
+                }}
               />
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
@@ -1049,22 +1185,25 @@ export default function TimeEntryGrid({
 
         {/* Grid Table */}
         <div className="overflow-x-auto overflow-y-visible">
-          <table className={`w-full border-collapse ${cycleType === 'bi-weekly' ? 'min-w-[1400px]' : 'min-w-[800px]'}`}>
+          <table key={`table-${includeSaturday}-${includeSunday}`} className={`w-full border-collapse ${cycleType === 'bi-weekly' ? 'min-w-[1400px]' : 'min-w-[800px]'}`}>
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/6 min-w-[120px] sm:min-w-[150px]">Department</th>
                 <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/6 min-w-[120px] sm:min-w-[150px]">Jobs</th>
                 <th className="text-left py-3 px-2 sm:px-4 font-medium text-gray-700 w-1/6 min-w-[120px] sm:min-w-[150px]">Code</th>
-                {cycleDays.map((day) => (
-                  <th key={day.toISOString()} className="text-center py-2 px-1 font-medium text-gray-700 w-16 sm:w-20 min-w-[60px] sm:min-w-[80px]">
-                    <div className="text-xs text-gray-500 mb-1">
-                      {getWeekdayShort(day)}
-                    </div>
-                    <div className="text-sm">
-                      {day.getDate()}
-                    </div>
-                  </th>
-                ))}
+                {cycleDays.map((day, dayIndex) => {
+                  const dateStr = getDateString(day)
+                  return (
+                    <th key={`header-${dateStr}-${dayIndex}`} className="text-center py-2 px-1 font-medium text-gray-700 w-16 sm:w-20 min-w-[60px] sm:min-w-[80px]">
+                      <div className="text-xs text-gray-500 mb-1">
+                        {getWeekdayShort(day)}
+                      </div>
+                      <div className="text-sm">
+                        {day.getDate()}
+                      </div>
+                    </th>
+                  )
+                })}
                 <th className="text-left py-3 px-2 font-medium text-gray-700 w-16 sm:w-20">Actions</th>
               </tr>
             </thead>
@@ -1180,12 +1319,12 @@ export default function TimeEntryGrid({
                       </div>
                     )}
                   </td>
-                  {cycleDays.map((day) => {
-                    const dateStr = day.toISOString().split('T')[0]
+                  {cycleDays.map((day, dayIndex) => {
+                    const dateStr = getDateString(day)
                     const dayEntry = row.weekEntries[dateStr] || { duration: '' }
                     
                     return (
-                      <td key={dateStr} className="py-4 px-1 text-center">
+                      <td key={`${row.id}-${dateStr}-${dayIndex}`} className="py-4 px-1 text-center">
                         <input
                           type="text"
                           value={dayEntry.duration || ''}
@@ -1264,13 +1403,13 @@ export default function TimeEntryGrid({
                 <td className="py-4 px-4 font-semibold text-gray-900">Daily Totals</td>
                 <td className="py-4 px-4"></td>
                 <td className="py-4 px-4"></td>
-                {cycleDays.map((day) => {
-                  const dateStr = day.toISOString().split('T')[0]
+                {cycleDays.map((day, dayIndex) => {
+                  const dateStr = getDateString(day)
                   const dailyTotalMinutes = getDailyTotal(dateStr)
                   const formattedTotal = formatMinutesToHHMM(dailyTotalMinutes)
                   
                   return (
-                    <td key={dateStr} className="py-4 px-1 text-center">
+                    <td key={`total-${dateStr}-${dayIndex}`} className="py-4 px-1 text-center">
                       <div className="font-semibold text-blue-600 text-xs sm:text-sm">
                         {formattedTotal || '-'}
                       </div>
@@ -1309,14 +1448,16 @@ export default function TimeEntryGrid({
                 <Button
                   variant={includeSaturday ? "default" : "outline"}
                   size="sm"
-                  onClick={() => {
-                    const wasIncluded = includeSaturday
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
                     setIncludeSaturday(!includeSaturday)
-                    if (wasIncluded) {
-                    }
                   }}
-                  className="flex items-center gap-2"
-                  title={includeSaturday ? "Remove Saturday (will clear all Saturday entries)" : "Add Saturday"}
+                  disabled={isTimesheetLocked}
+                  className={`flex items-center gap-2 ${
+                    isTimesheetLocked ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  title={isTimesheetLocked ? "Timesheet is locked for editing" : (includeSaturday ? "Remove Saturday (will clear all Saturday entries)" : "Add Saturday")}
                 >
                   <Calendar className="h-4 w-4" />
                   <span className="hidden sm:inline">
@@ -1330,14 +1471,16 @@ export default function TimeEntryGrid({
                 <Button
                   variant={includeSunday ? "default" : "outline"}
                   size="sm"
-                  onClick={() => {
-                    const wasIncluded = includeSunday
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
                     setIncludeSunday(!includeSunday)
-                    if (wasIncluded) {
-                    }
                   }}
-                  className="flex items-center gap-2"
-                  title={includeSunday ? "Remove Sunday (will clear all Sunday entries)" : "Add Sunday"}
+                  disabled={isTimesheetLocked}
+                  className={`flex items-center gap-2 ${
+                    isTimesheetLocked ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  title={isTimesheetLocked ? "Timesheet is locked for editing" : (includeSunday ? "Remove Sunday (will clear all Sunday entries)" : "Add Sunday")}
                 >
                   <Calendar className="h-4 w-4" />
                   <span className="hidden sm:inline">
@@ -1377,7 +1520,7 @@ export default function TimeEntryGrid({
                     row.account || '',
                     row.code || '',
                     ...cycleDays.map(day => {
-                      const dateStr = day.toISOString().split('T')[0]
+                      const dateStr = getDateString(day)
                       return row.weekEntries[dateStr]?.duration || ''
                     }),
                     row.total || ''

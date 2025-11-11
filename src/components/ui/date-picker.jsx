@@ -8,7 +8,7 @@ import 'react-datepicker/dist/react-datepicker.css'
 
 
 
-export const DatePickerComponent = forwardRef(({ value, onChange, className, placeholder = "Select date" }, ref) => {
+export const DatePickerComponent = forwardRef(({ value, onChange, className, placeholder = "Select date", filterDate }, ref) => {
   const [isOpen, setIsOpen] = useState(false)
   const inputRef = useRef(null)
   const containerRef = useRef(null)
@@ -88,6 +88,7 @@ export const DatePickerComponent = forwardRef(({ value, onChange, className, pla
         dateFormat="MM-dd-yyyy"
         placeholderText={placeholder}
         autoComplete="off"
+        filterDate={filterDate}
       />
     </div>
   )

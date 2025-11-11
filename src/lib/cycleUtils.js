@@ -78,14 +78,15 @@ export function getCycleEndDate(date, cycleType) {
       return endDate
       
     case 'weekly':
-      // End of week (Saturday)
-      endDate.setDate(startDate.getDate() + 6)
+      // End of week (Friday)
+      endDate.setDate(startDate.getDate() + 5)
       endDate.setHours(23, 59, 59, 999)
       return endDate
       
     case 'bi-weekly':
-      // End of bi-weekly period (13 days after start)
-      endDate.setDate(startDate.getDate() + 13)
+      // End of bi-weekly period (12 days after start to end on Friday)
+      // Start is Sunday (day 0), so day 12 is Friday (second Friday of the bi-week period)
+      endDate.setDate(startDate.getDate() + 12)
       endDate.setHours(23, 59, 59, 999)
       return endDate
       
@@ -283,4 +284,22 @@ export function getCycleTitle(cycleType) {
     default:
       return 'Weekly'
   }
+}
+
+/**
+ * Check if a date is a cycle ending date
+ * @param {Date} date - Date to check
+ * @param {string} cycleType - 'semi-monthly', 'weekly', 'bi-weekly', or 'monthly'
+ * @returns {boolean} True if the date is an ending date
+ */
+export function isCycleEndingDate(date, cycleType) {
+  const endDate = getCycleEndDate(date, cycleType)
+  // Compare dates without time using local date components to avoid timezone issues
+  const dateYear = date.getFullYear()
+  const dateMonth = date.getMonth()
+  const dateDay = date.getDate()
+  const endYear = endDate.getFullYear()
+  const endMonth = endDate.getMonth()
+  const endDay = endDate.getDate()
+  return dateYear === endYear && dateMonth === endMonth && dateDay === endDay
 }
